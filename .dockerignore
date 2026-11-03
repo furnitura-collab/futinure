@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/.env
+**/.expo
+apps/api/uploads
+apps/api/src/generated
+.git
+docs
+*.log
+.DS_Store
