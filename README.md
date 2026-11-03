@@ -54,3 +54,21 @@ apps/mobile       Expo SDK 58 + expo-router (mijoz ilovasi, uz/ru)
 packages/shared   enumlar, zod sxemalar, state machine, narx/miqdor hisobi
 docs/             ER, state machine, API, ekranlar
 ```
+
+## Deploy (bepul sinov serveri)
+
+Bitta Docker servis hammasini beradi: `/api/v1` — API, `/admin/` — admin panel, `/` — mobil ilovaning web versiyasi.
+
+**Lokal production:**
+```bash
+docker build -t mebel-order .
+docker run -p 8080:3000 -e DATABASE_URL=... -e REDIS_URL=... \
+  -e JWT_ACCESS_SECRET=$(openssl rand -base64 48) -e OTP_PEPPER=$(openssl rand -base64 48) \
+  -e DEMO_MODE=true -e OTP_TEST_PHONES=+998900000001,... mebel-order
+```
+Start'da migratsiyalar qo'llanadi, baza bo'sh bo'lsa demo ma'lumotlar yuklanadi.
+
+**Render (bepul):** repo'ni GitHub'ga push qiling → render.com → New → Blueprint → repo. `render.yaml` web servis, Postgres va Key Value (Redis) yaratadi.
+Cheklovlar: 15 daqiqa so'rovsiz servis uxlaydi (birinchi ochilish ~1 daqiqa), yuklangan fayllar qayta ishga tushganda o'chadi, bepul Postgres 30 kun turadi.
+
+`DEMO_MODE=true` — SMS yuborilmaydi, test raqamlar uchun kod `000000`. Haqiqiy foydalanuvchilar uchun o'chirib, Eskiz sozlang.
