@@ -68,7 +68,7 @@ docker run -p 8080:3000 -e DATABASE_URL=... -e REDIS_URL=... \
 ```
 Start'da migratsiyalar qo'llanadi, baza bo'sh bo'lsa demo ma'lumotlar yuklanadi.
 
-**Render (bepul):** repo'ni GitHub'ga push qiling → render.com → New → Blueprint → repo. `render.yaml` web servis, Postgres va Key Value (Redis) yaratadi.
-Cheklovlar: 15 daqiqa so'rovsiz servis uxlaydi (birinchi ochilish ~1 daqiqa), yuklangan fayllar qayta ishga tushganda o'chadi, bepul Postgres 30 kun turadi.
+**Bepul server (Koyeb + Neon + Upstash):** batafsil — [docs/06-deploy.md](docs/06-deploy.md).
+Cheklovlar: 1 soat so'rovsiz servis uxlaydi (keyingi ochilish bir necha soniya), yuklangan fayllar qayta deploy'da o'chadi.
 
 `DEMO_MODE=true` — SMS yuborilmaydi, test raqamlar uchun kod `000000`. Haqiqiy foydalanuvchilar uchun o'chirib, Eskiz sozlang.
