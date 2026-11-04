@@ -1,8 +1,13 @@
 import { PAYMENT_METHODS, PAYMENT_TERMS, type PaymentMethod, type PaymentTerms } from '@mebel/shared';
-import { num, som } from '../../lib/format';
-import { METHOD, TERMS } from '../../lib/labels';
-import type { OrderDetail } from '../../lib/types';
-import { cx, Field, Input, Select } from '../../components/ui';
+import { ChipGroup } from '@/components/ChipGroup';
+import { FormField } from '@/components/FormField';
+import { MoneyInput } from '@/components/MoneyInput';
+import { OptionSelect } from '@/components/OptionSelect';
+import { TotalsList } from '@/components/TotalsList';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useI18n } from '@/i18n';
+import type { OrderDetail } from '@/lib/types';
 
 export interface TermsValue {
   paymentTerms: PaymentTerms;
@@ -12,6 +17,8 @@ export interface TermsValue {
   discountTotal: number;
   deliveryDate: string;
 }
+
+const isTerms = (v: string): v is PaymentTerms => (PAYMENT_TERMS as readonly string[]).includes(v);
 
 export function defaultTerms(order: OrderDetail): TermsValue {
   const profile = order.customer.customerProfile;
@@ -36,19 +43,6 @@ export function termsPayload(v: TermsValue) {
   };
 }
 
-/** "4 620 000" ko'rinishida yoziladigan pul maydoni */
-export function MoneyInput({ value, onChange, id }: { value: number; onChange: (v: number) => void; id?: string }) {
-  return (
-    <Input
-      id={id}
-      inputMode="numeric"
-      value={value ? num(value) : ''}
-      placeholder="0"
-      onChange={(e) => onChange(Number(e.target.value.replace(/\D/g, '')) || 0)}
-    />
-  );
-}
-
 export function TermsForm({
   value,
   onChange,
@@ -60,78 +54,63 @@ export function TermsForm({
   order: OrderDetail;
   itemsTotal: number;
 }) {
+  const { t, money, label } = useI18n();
   const set = <K extends keyof TermsValue>(k: K, v: TermsValue[K]) => onChange({ ...value, [k]: v });
   const credit = order.customer.customerProfile?.creditLimit ?? 0;
   const grand = itemsTotal + order.servicesTotal + value.deliveryFee - value.discountTotal;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="To'lov sharti" hint={value.paymentTerms === 'CREDIT' ? `Kredit limiti: ${som(credit)}` : undefined}>
-          {(id) => (
-            <Select id={id} value={value.paymentTerms} onChange={(e) => set('paymentTerms', e.target.value as PaymentTerms)}>
-              {PAYMENT_TERMS.map((t) => (
-                <option key={t} value={t} disabled={t === 'CREDIT' && credit <= 0}>
-                  {TERMS[t]}
-                  {t === 'CREDIT' && credit <= 0 ? ' (mijozga ochilmagan)' : ''}
-                </option>
-              ))}
-            </Select>
+    <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField label={t('terms.paymentTerms')} hint={value.paymentTerms === 'CREDIT' ? t('terms.creditLimit', { amount: money(credit) }) : undefined}>
+          {(f) => (
+            <OptionSelect
+              {...f}
+              value={value.paymentTerms}
+              onValueChange={(v) => isTerms(v) && set('paymentTerms', v)}
+              options={PAYMENT_TERMS.map((pt) => ({
+                value: pt,
+                disabled: pt === 'CREDIT' && credit <= 0,
+                label: pt === 'CREDIT' && credit <= 0 ? `${label('paymentTerms', pt)} ${t('terms.notOpened')}` : label('paymentTerms', pt),
+              }))}
+            />
           )}
-        </Field>
+        </FormField>
         {value.paymentTerms === 'ADVANCE' && (
-          <Field label="Avans miqdori">{(id) => <MoneyInput id={id} value={value.advanceAmount} onChange={(v) => set('advanceAmount', v)} />}</Field>
+          <FormField label={t('terms.advanceAmount')}>
+            {(f) => <MoneyInput {...f} value={value.advanceAmount} onChange={(v) => set('advanceAmount', v)} />}
+          </FormField>
         )}
       </div>
 
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-stone-700">To'lov usullari</p>
-        <div className="flex flex-wrap gap-2">
-          {PAYMENT_METHODS.map((m) => {
-            const on = value.allowedMethods.includes(m);
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() =>
-                  set('allowedMethods', on ? value.allowedMethods.filter((x) => x !== m) : [...value.allowedMethods, m])
-                }
-                className={cx(
-                  'rounded-full px-3 py-1 text-sm ring-1',
-                  on ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-stone-600 ring-stone-300 hover:bg-stone-50',
-                )}
-              >
-                {METHOD[m]}
-              </button>
-            );
-          })}
-        </div>
+      <div className="grid gap-1.5">
+        <Label>{t('terms.methods')}</Label>
+        <ChipGroup
+          label={t('terms.methods')}
+          value={value.allowedMethods}
+          onChange={(v) => set('allowedMethods', v)}
+          options={PAYMENT_METHODS.map((m) => ({ value: m, label: label('paymentMethod', m) }))}
+        />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <Field label="Yetkazish narxi">{(id) => <MoneyInput id={id} value={value.deliveryFee} onChange={(v) => set('deliveryFee', v)} />}</Field>
-        <Field label="Chegirma">{(id) => <MoneyInput id={id} value={value.discountTotal} onChange={(v) => set('discountTotal', v)} />}</Field>
-        <Field label={order.deliveryType === 'PICKUP' ? 'Tayyor bo\'lish sanasi' : 'Yetkazish sanasi'}>
-          {(id) => <Input id={id} type="date" min={order.today} value={value.deliveryDate} onChange={(e) => set('deliveryDate', e.target.value)} />}
-        </Field>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <FormField label={t('terms.deliveryFee')}>{(f) => <MoneyInput {...f} value={value.deliveryFee} onChange={(v) => set('deliveryFee', v)} />}</FormField>
+        <FormField label={t('terms.discount')}>{(f) => <MoneyInput {...f} value={value.discountTotal} onChange={(v) => set('discountTotal', v)} />}</FormField>
+        <FormField label={order.deliveryType === 'PICKUP' ? t('terms.readyDate') : t('terms.deliveryDate')}>
+          {(f) => <Input {...f} type="date" min={order.today} value={value.deliveryDate} onChange={(e) => set('deliveryDate', e.target.value)} />}
+        </FormField>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-1 rounded-lg bg-stone-50 p-3 text-sm">
-        <dt className="text-stone-500">Tovarlar</dt>
-        <dd className="text-right">{som(itemsTotal)}</dd>
-        {order.servicesTotal > 0 && (
-          <>
-            <dt className="text-stone-500">Xizmatlar</dt>
-            <dd className="text-right">{som(order.servicesTotal)}</dd>
-          </>
-        )}
-        <dt className="text-stone-500">Yetkazish</dt>
-        <dd className="text-right">{som(value.deliveryFee)}</dd>
-        <dt className="text-stone-500">Chegirma</dt>
-        <dd className="text-right">−{som(value.discountTotal)}</dd>
-        <dt className="font-semibold">Jami</dt>
-        <dd className={cx('text-right font-semibold', grand < 0 && 'text-rose-600')}>{som(grand)}</dd>
-      </dl>
+      <TotalsList
+        className="rounded-lg bg-muted/50 p-4"
+        rows={[
+          { label: t('order.itemsTotal'), value: money(itemsTotal) },
+          order.servicesTotal > 0 && { label: t('order.services'), value: money(order.servicesTotal) },
+          { label: t('order.delivery'), value: money(value.deliveryFee) },
+          { label: t('order.discount'), value: `−${money(value.discountTotal)}` },
+          { label: t('order.grandTotal'), value: money(grand), strong: true, className: grand < 0 ? 'text-destructive' : undefined },
+        ]}
+      />
     </div>
   );
 }

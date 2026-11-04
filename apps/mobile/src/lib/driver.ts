@@ -1,14 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import type { DeliveryStatus } from '@mebel/shared';
 import { api } from './api';
 import type { DriverDelivery } from './types';
-
-export const DELIVERY_TONE: Record<DeliveryStatus, 'info' | 'warning' | 'success' | 'danger'> = {
-  ASSIGNED: 'info',
-  IN_TRANSIT: 'warning',
-  DELIVERED: 'success',
-  FAILED: 'danger',
-};
 
 export function useDriverDelivery(id: string) {
   return useQuery({ queryKey: ['driver', 'delivery', id], queryFn: () => api<DriverDelivery>(`/driver/deliveries/${id}`) });

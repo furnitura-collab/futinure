@@ -1,23 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Loader, Text } from '../../../components/ui';
-import { api, authedSource, fileToForm } from '../../../lib/api';
-import { dateTime } from '../../../lib/format';
-import { useI18n } from '../../../lib/i18n';
-import { useApiMutation } from '../../../lib/mutation';
-import { useOrderRoom } from '../../../lib/realtime';
-import { colors, radius, space } from '../../../lib/theme';
-import type { ChatMessage } from '../../../lib/types';
-import { contained, CONTENT } from '../../../lib/layout';
+import { FlatList, TextInput, View } from 'react-native';
+import { MessageBubble } from '@/components/order/MessageBubble';
+import { EmptyState, IconButton, Screen, SkeletonList } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { api, fileToForm } from '@/lib/api';
+import { useSite } from '@/lib/layout';
+import { useApiMutation } from '@/lib/mutation';
+import { useOrderRoom } from '@/lib/realtime';
+import type { ChatMessage, OrderDetail } from '@/lib/types';
+import { font, radius, space, useTheme } from '@/theme';
 
 export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const { site } = useSite();
   useOrderRoom(id);
   const list = useRef<FlatList<ChatMessage>>(null);
   const [text, setText] = useState('');
@@ -26,6 +26,8 @@ export default function Chat() {
     queryFn: () => api<{ items: ChatMessage[] }>(`/orders/${id}/messages`, { query: { limit: 100 } }),
   });
 
+  // Saytdagi yo'l uchun raqam — odatda buyurtma sahifasidan keshda bor
+  const order = useQuery({ queryKey: ['order', id], queryFn: () => api<OrderDetail>(`/orders/${id}`), enabled: site });
   const unread = q.data?.items.some((m) => m.sender.role !== 'CUSTOMER' && !m.readByCustomerAt) ?? false;
   const markRead = useApiMutation(() => api(`/orders/${id}/messages/read`, { method: 'POST' }), { invalidate: [['orders']] });
   useEffect(() => {
@@ -53,78 +55,67 @@ export default function Chat() {
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
     if (!r.canceled && r.assets[0]) send.mutate({ image: r.assets[0] });
   };
-
-  if (q.isPending) return <Loader />;
-  const items = q.data?.items ?? [];
+  const submit = () => {
+    if (text.trim()) send.mutate({ text: text.trim() });
+  };
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90} style={{ flex: 1 }}>
+    <Screen
+      scroll={false}
+      siteWidth="page"
+      title={t('chat')}
+      crumbs={[
+        { label: t('tabOrders'), href: '/orders' },
+        { label: order.data?.number ?? '…', href: { pathname: '/order/[id]', params: { id } } },
+      ]}
+      footer={
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space(2) }}>
+          <IconButton icon="image-outline" label={t('attachImage')} onPress={() => void attach()} />
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={t('messagePlaceholder')}
+            placeholderTextColor={colors.placeholder}
+            multiline
+            accessibilityLabel={t('messagePlaceholder')}
+            style={{
+              flex: 1,
+              maxHeight: 120,
+              minHeight: 44,
+              borderWidth: 1,
+              borderColor: colors.input,
+              backgroundColor: colors.card,
+              borderRadius: radius.xl,
+              paddingHorizontal: space(4),
+              paddingTop: 11,
+              paddingBottom: 11,
+              fontSize: font.base + 1,
+              color: colors.foreground,
+              outlineWidth: 0,
+            }}
+          />
+          <IconButton icon="send" label={t('send')} variant="primary" disabled={!text.trim() || send.isPending} onPress={submit} />
+        </View>
+      }
+    >
+      {(insets) => (
         <FlatList
           ref={list}
-          data={items}
+          data={q.data?.items ?? []}
           keyExtractor={(m) => m.id}
-          contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(2), flexGrow: 1 }}
-          onContentSizeChange={() => list.current?.scrollToEnd({ animated: false })}
-          ListEmptyComponent={
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <Text muted>{t('noMessages')}</Text>
-            </View>
-          }
-          renderItem={({ item: m }) => {
-            const mine = m.sender.role === 'CUSTOMER';
-            return (
-              <View style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                <View
-                  style={{
-                    maxWidth: '82%',
-                    backgroundColor: mine ? colors.brand : colors.card,
-                    borderRadius: radius.lg,
-                    borderWidth: mine ? 0 : 1,
-                    borderColor: colors.border,
-                    padding: space(3),
-                    gap: 4,
-                  }}
-                >
-                  {!mine && <Text v="caption" bold>{m.sender.fullName ?? 'Menejer'}</Text>}
-                  {m.attachment?.mimeType.startsWith('image/') && (
-                    <Image source={authedSource(`/chat/messages/${m.id}/attachment`)} style={{ width: 200, height: 160, borderRadius: radius.sm }} contentFit="cover" />
-                  )}
-                  {m.attachment?.mimeType === 'application/pdf' && <Text color={mine ? '#fff' : colors.text}>📄 PDF</Text>}
-                  {m.text ? <Text color={mine ? '#fff' : colors.text}>{m.text}</Text> : null}
-                  <Text v="caption" color={mine ? colors.brandSoft : colors.faint} style={{ alignSelf: 'flex-end' }}>
-                    {dateTime(m.createdAt).slice(-5)}
-                    {mine && m.readByStaffAt ? ' ✓✓' : ''}
-                  </Text>
-                </View>
-              </View>
-            );
+          contentContainerStyle={{
+            ...insets.container,
+            flexGrow: 1,
+            paddingTop: insets.top + space(4),
+            paddingBottom: insets.bottom + space(4),
+            gap: space(2),
           }}
+          onContentSizeChange={() => list.current?.scrollToEnd({ animated: false })}
+          ListHeaderComponent={insets.header}
+          ListEmptyComponent={q.isPending ? <SkeletonList count={3} lines={1} /> : <EmptyState icon="chatbubbles-outline" title={t('chat')} hint={t('noMessages')} />}
+          renderItem={({ item }) => <MessageBubble m={item} />}
         />
-        <View style={{ padding: space(3), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-          <View style={{ ...contained(CONTENT.page), flexDirection: 'row', alignItems: 'flex-end', gap: space(2) }}>
-            <Pressable onPress={() => void attach()} style={{ padding: space(2) }} accessibilityLabel="attach">
-              <Ionicons name="image-outline" size={24} color={colors.muted} />
-            </Pressable>
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder={t('messagePlaceholder')}
-              placeholderTextColor={colors.faint}
-              multiline
-              style={{ flex: 1, maxHeight: 120, minHeight: 40, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingHorizontal: space(3), paddingTop: 10, fontSize: 16, color: colors.text }}
-            />
-            <Pressable
-              onPress={() => text.trim() && send.mutate({ text: text.trim() })}
-              disabled={!text.trim() || send.isPending}
-              style={{ backgroundColor: text.trim() ? colors.brand : colors.border, borderRadius: radius.full, padding: 10 }}
-              accessibilityLabel={t('send')}
-            >
-              <Ionicons name="send" size={18} color="#fff" />
-            </Pressable>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      )}
+    </Screen>
   );
 }

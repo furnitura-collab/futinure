@@ -1,12 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import type { DeviceTokenInput, UpdateMe } from '@mebel/shared';
+import type { ChangePassword, DeviceTokenInput, UpdateMe } from '@mebel/shared';
 import { AppException } from '../common/app-exception.js';
 import type { AuthUser } from '../auth/decorators.js';
+import { invalidPassword } from '../auth/auth.service.js';
+import { hashPassword, verifyPassword } from '../auth/password.js';
+import { TokenService } from '../auth/token.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
 export class MeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tokens: TokenService,
+  ) {}
 
   async get(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -52,6 +58,19 @@ export class MeService {
       },
     });
     return this.get(user.id);
+  }
+
+  /** Joriy sessiyadan boshqa barcha sessiyalar yopiladi */
+  async changePassword(user: AuthUser, input: ChangePassword) {
+    const { passwordHash } = await this.prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      select: { passwordHash: true },
+    });
+    if (passwordHash && !(input.currentPassword && (await verifyPassword(input.currentPassword, passwordHash)))) {
+      throw invalidPassword();
+    }
+    await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.newPassword) } });
+    await this.tokens.revokeAllForUser(user.id, user.sessionFamily);
   }
 
   async addDevice(userId: string, input: DeviceTokenInput) {

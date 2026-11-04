@@ -1,20 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
-import { Phone } from 'lucide-react';
+import { Banknote, Phone } from 'lucide-react';
 import { useState } from 'react';
-import type { OrderStatus } from '@mebel/shared';
-import { AuthFile } from '../../components/AuthFile';
-import { Badge, Button, Card, Field, Input, Select } from '../../components/ui';
-import { api } from '../../lib/api';
-import { date, dateTime, phone, som } from '../../lib/format';
-import { DELIVERY_STATUS } from '../../lib/labels';
-import { useApiMutation } from '../../lib/mutation';
-import type { Driver, OrderDetail } from '../../lib/types';
+import { formatDate, formatDateTime, formatPhone, type OrderStatus } from '@mebel/shared';
+import { AuthFile } from '@/components/AuthFile';
+import { Callout } from '@/components/Callout';
+import { FormField } from '@/components/FormField';
+import { OptionSelect } from '@/components/OptionSelect';
+import { SectionCard } from '@/components/SectionCard';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useApiMutation } from '@/lib/mutation';
+import type { Driver, OrderDetail } from '@/lib/types';
 
 /** Yo'lga chiqqunga qadar haydovchini almashtirish mumkin (API'dagi qoida bilan bir xil) */
 const ASSIGNABLE: OrderStatus[] = ['CONFIRMED', 'PREPARING', 'READY'];
 
 /** Yetkazish: haydovchi biriktirish va topshirish natijasi (surat, qabul qilgan, naqd) */
 export function DeliveryCard({ order }: { order: OrderDetail }) {
+  const { t, money } = useI18n();
   const d = order.delivery;
   const editable = ASSIGNABLE.includes(order.status);
   const { data: drivers } = useQuery({
@@ -23,64 +29,67 @@ export function DeliveryCard({ order }: { order: OrderDetail }) {
     staleTime: 60_000,
     enabled: editable,
   });
+  const initialDay = (d?.scheduledDate ?? order.deliveryDate ?? '').slice(0, 10);
   const [driverId, setDriverId] = useState(d?.driverId ?? '');
-  const [day, setDay] = useState((d?.scheduledDate ?? order.deliveryDate ?? '').slice(0, 10));
+  const [day, setDay] = useState(initialDay);
 
   const save = useApiMutation(
-    () =>
-      api(`/admin/orders/${order.id}/delivery`, {
-        method: 'PUT',
-        body: { driverId: driverId || null, scheduledDate: day || null },
-      }),
-    { invalidate: [['order', order.id], ['drivers']], success: driverId ? 'Haydovchi biriktirildi' : 'Haydovchi olib tashlandi' },
+    () => api(`/admin/orders/${order.id}/delivery`, { method: 'PUT', body: { driverId: driverId || null, scheduledDate: day || null } }),
+    { invalidate: [['order', order.id], ['drivers']], success: driverId ? t('delivery.assigned') : t('delivery.unassigned') },
   );
-  const changed = driverId !== (d?.driverId ?? '') || day !== (d?.scheduledDate ?? order.deliveryDate ?? '').slice(0, 10);
+  const changed = driverId !== (d?.driverId ?? '') || day !== initialDay;
 
   return (
-    <Card title="Haydovchi" actions={d?.driver && <Badge tone={DELIVERY_STATUS[d.status].tone}>{DELIVERY_STATUS[d.status].label}</Badge>}>
-      <div className="space-y-3 text-sm">
-        {d?.driver && (
-          <div className="space-y-1">
-            <p className="font-medium">{d.driver.fullName ?? '—'}</p>
-            <a href={`tel:${d.driver.phone}`} className="flex items-center gap-1 text-brand-700 hover:underline">
-              <Phone className="size-3.5" /> {phone(d.driver.phone)}
-            </a>
-            {d.scheduledDate && <p className="text-stone-500">Reja: {date(d.scheduledDate)}</p>}
-          </div>
-        )}
+    <SectionCard title={t('delivery.title')} actions={d?.driver && <StatusBadge kind="deliveryStatus" value={d.status} />} contentClassName="space-y-3 text-sm">
+      {d?.driver && (
+        <div className="space-y-1">
+          <p className="font-medium">{d.driver.fullName ?? '—'}</p>
+          <a href={`tel:${d.driver.phone}`} className="inline-flex items-center gap-1.5 text-primary hover:underline">
+            <Phone className="size-3.5" /> {formatPhone(d.driver.phone)}
+          </a>
+          {d.scheduledDate && <p className="text-muted-foreground">{t('delivery.plan', { date: formatDate(d.scheduledDate) })}</p>}
+        </div>
+      )}
 
-        {d?.status === 'FAILED' && d.failReason && <p className="rounded-md bg-rose-50 p-2 text-rose-800">🚫 {d.failReason}</p>}
+      {d?.status === 'FAILED' && d.failReason && <Callout tone="destructive">{d.failReason}</Callout>}
 
-        {d?.status === 'DELIVERED' && (
-          <div className="space-y-1.5 rounded-md bg-emerald-50 p-2">
-            <p>Qabul qildi: <span className="font-medium">{d.receiverName}</span></p>
-            {d.deliveredAt && <p className="text-xs text-stone-500">{dateTime(d.deliveredAt)}</p>}
-            {d.cashCollected !== null && <p>💵 Naqd oldi: <span className="font-medium">{som(d.cashCollected)}</span></p>}
-            {d.proofUploadId && <AuthFile path={`/admin/orders/${order.id}/delivery/proof`} mimeType="image/jpeg" className="max-h-48 rounded-lg ring-1 ring-stone-200" />}
+      {d?.status === 'DELIVERED' && (
+        <Callout tone="success" icon={false}>
+          <div className="space-y-1.5">
+            <p>{t('delivery.received', { name: d.receiverName ?? '—' })}</p>
+            {d.deliveredAt && <p className="text-xs text-muted-foreground">{formatDateTime(d.deliveredAt)}</p>}
+            {d.cashCollected !== null && (
+              <p className="flex items-center gap-1.5">
+                <Banknote className="size-4 text-success" /> {t('delivery.cash', { amount: money(d.cashCollected) })}
+              </p>
+            )}
+            {d.proofUploadId && <AuthFile path={`/admin/orders/${order.id}/delivery/proof`} mimeType="image/jpeg" className="max-h-48" />}
           </div>
-        )}
+        </Callout>
+      )}
 
-        {editable && (
-          <div className="space-y-2">
-            <Field label="Haydovchi">
-              {(id) => (
-                <Select id={id} value={driverId} onChange={(e) => setDriverId(e.target.value)}>
-                  <option value="">— biriktirilmagan —</option>
-                  {drivers?.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.fullName ?? phone(x.phone)} · {x._count.deliveries} ta faol
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-            <Field label="Yetkazish sanasi">{(id) => <Input id={id} type="date" value={day} onChange={(e) => setDay(e.target.value)} />}</Field>
-            <Button size="sm" className="w-full" disabled={!changed} loading={save.isPending} onClick={() => save.mutate(undefined)}>
-              Saqlash
-            </Button>
-          </div>
-        )}
-      </div>
-    </Card>
+      {editable && (
+        <div className="grid gap-3">
+          <FormField label={t('delivery.driver')}>
+            {(f) => (
+              <OptionSelect
+                {...f}
+                value={driverId}
+                onValueChange={setDriverId}
+                emptyLabel={t('common.unassigned')}
+                options={(drivers ?? []).map((x) => ({
+                  value: x.id,
+                  label: `${x.fullName ?? formatPhone(x.phone)} · ${t('delivery.activeCount', { n: x._count.deliveries })}`,
+                }))}
+              />
+            )}
+          </FormField>
+          <FormField label={t('delivery.date')}>{(f) => <Input {...f} type="date" value={day} onChange={(e) => setDay(e.target.value)} />}</FormField>
+          <Button size="sm" className="w-full" disabled={!changed} loading={save.isPending} onClick={() => save.mutate(undefined)}>
+            {t('common.save')}
+          </Button>
+        </div>
+      )}
+    </SectionCard>
   );
 }

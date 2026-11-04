@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { ROUND_TO } from '@mebel/shared';
-import { api } from '../../lib/api';
-import { flattenCategories, useBrands, useCategories } from '../../lib/catalog';
-import { num, som } from '../../lib/format';
-import { useApiMutation } from '../../lib/mutation';
-import { Button, cx, Dialog, Field, Input, Select, Toggle } from '../../components/ui';
+import { Callout } from '@/components/Callout';
+import { FormDialog } from '@/components/FormDialog';
+import { FormField } from '@/components/FormField';
+import { OptionSelect } from '@/components/OptionSelect';
+import { SwitchField } from '@/components/SwitchField';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { flattenCategories, useBrands, useCategories } from '@/lib/catalog';
+import { useApiMutation } from '@/lib/mutation';
 
 interface BulkResult {
   dryRun: boolean;
@@ -14,6 +21,7 @@ interface BulkResult {
 
 /** Masalan dollar kursi oshganda: kategoriya/brend narxini +5%, 1000 so'mga yaxlitlab */
 export function BulkPriceDialog({ onClose }: { onClose: () => void }) {
+  const { t, money } = useI18n();
   const categories = useCategories();
   const brands = useBrands();
   const [categoryId, setCategoryId] = useState('');
@@ -32,106 +40,120 @@ export function BulkPriceDialog({ onClose }: { onClose: () => void }) {
       api<BulkResult>('/admin/prices/bulk-update', {
         body: { categoryId: categoryId || undefined, brandId: brandId || undefined, percent: p, roundTo, includeTiers, includeGroupPrices, dryRun },
       }),
-    {
-      invalidate: [['products']],
-      onSuccess: (r) => setResult(r),
-    },
+    { invalidate: [['products']], onSuccess: setResult },
   );
   // Parametr o'zgarsa — oldingi ko'rinish eskirgan
-  const change = <T,>(set: (v: T) => void) => (v: T) => {
-    set(v);
-    setResult(null);
-  };
+  const change =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setResult(null);
+    };
 
   const applied = result && !result.dryRun;
+  const summary = result && {
+    n: result.summary.variantCount,
+    percent: `${result.summary.percent > 0 ? '+' : ''}${result.summary.percent}`,
+  };
+
   return (
-    <Dialog
-      open
-      wide
+    <FormDialog
+      size="lg"
       onClose={onClose}
-      title="Ommaviy narx o'zgartirish"
+      title={t('bulk.title')}
+      description={t('bulk.hint')}
       footer={
         applied ? (
-          <Button onClick={onClose}>Yopish</Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
         ) : (
           <>
-            <Button variant="secondary" onClick={onClose}>Bekor</Button>
+            <Button variant="outline" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
             {result ? (
-              <Button variant="danger" loading={run.isPending} onClick={() => run.mutate(false)}>
-                {result.summary.variantCount} ta narxni o'zgartirish
+              <Button variant="destructive" loading={run.isPending} onClick={() => run.mutate(false)}>
+                {t('bulk.apply', { n: result.summary.variantCount })}
               </Button>
             ) : (
-              <Button loading={run.isPending} disabled={!valid} onClick={() => run.mutate(true)}>Ko'rish</Button>
+              <Button loading={run.isPending} disabled={!valid} onClick={() => run.mutate(true)}>
+                {t('bulk.preview')}
+              </Button>
             )}
           </>
         )
       }
     >
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Kategoriya">
-            {(id) => (
-              <Select id={id} value={categoryId} onChange={(e) => change(setCategoryId)(e.target.value)}>
-                <option value="">—</option>
-                {flattenCategories(categories.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-              </Select>
+      <div className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label={t('catalog.category')}>
+            {(f) => (
+              <OptionSelect
+                {...f}
+                value={categoryId}
+                onValueChange={change(setCategoryId)}
+                emptyLabel="—"
+                options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
+              />
             )}
-          </Field>
-          <Field label="Brend">
-            {(id) => (
-              <Select id={id} value={brandId} onChange={(e) => change(setBrandId)(e.target.value)}>
-                <option value="">—</option>
-                {brands.data?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </Select>
+          </FormField>
+          <FormField label={t('product.brand')}>
+            {(f) => (
+              <OptionSelect
+                {...f}
+                value={brandId}
+                onValueChange={change(setBrandId)}
+                emptyLabel="—"
+                options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
+              />
             )}
-          </Field>
-          <Field label="Foiz (+ oshirish, − kamaytirish)">
-            {(id) => <Input id={id} inputMode="decimal" value={percent} onChange={(e) => change(setPercent)(e.target.value)} />}
-          </Field>
-          <Field label="Yaxlitlash">
-            {(id) => (
-              <Select id={id} value={roundTo} onChange={(e) => change(setRoundTo)(Number(e.target.value))}>
-                {ROUND_TO.map((r) => <option key={r} value={r}>{r === 1 ? 'Yaxlitlamaslik' : `${num(r)} so'mga`}</option>)}
-              </Select>
+          </FormField>
+          <FormField label={t('bulk.percent')}>
+            {(f) => <Input {...f} inputMode="decimal" value={percent} onChange={(e) => change(setPercent)(e.target.value)} />}
+          </FormField>
+          <FormField label={t('bulk.rounding')}>
+            {(f) => (
+              <OptionSelect
+                {...f}
+                value={String(roundTo)}
+                onValueChange={(v) => change(setRoundTo)(Number(v))}
+                options={ROUND_TO.map((r) => ({ value: String(r), label: r === 1 ? t('bulk.noRounding') : t('bulk.roundTo', { amount: money(r) }) }))}
+              />
             )}
-          </Field>
+          </FormField>
         </div>
-        <div className="flex gap-6">
-          <Toggle checked={includeTiers} onChange={change(setIncludeTiers)} label="Pog'onali narxlar ham" />
-          <Toggle checked={includeGroupPrices} onChange={change(setIncludeGroupPrices)} label="Guruh narxlari ham" />
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <SwitchField checked={includeTiers} onCheckedChange={change(setIncludeTiers)} label={t('bulk.includeTiers')} />
+          <SwitchField checked={includeGroupPrices} onCheckedChange={change(setIncludeGroupPrices)} label={t('bulk.includeGroups')} />
         </div>
 
-        {result && (
-          <div className="space-y-2">
-            <p className={cx('rounded-lg p-3 text-sm ring-1', applied ? 'bg-emerald-50 text-emerald-900 ring-emerald-200' : 'bg-amber-50 text-amber-900 ring-amber-200')}>
-              {applied ? 'Qo\'llandi: ' : 'Ko\'rinish (hali saqlanmadi): '}
-              {result.summary.variantCount} ta variant, {result.summary.percent > 0 ? '+' : ''}{result.summary.percent}%
-            </p>
-            <div className="max-h-72 overflow-y-auto rounded-lg border border-stone-200">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-stone-50 text-left text-xs text-stone-500">
-                  <tr>
-                    <th className="px-3 py-2">SKU</th>
-                    <th className="px-3 py-2">Nomi</th>
-                    <th className="px-3 py-2 text-right">Hozir</th>
-                    <th className="px-3 py-2 text-right">Yangi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
+        {result && summary && (
+          <div className="grid animate-fade-up gap-3">
+            <Callout tone={applied ? 'success' : 'warning'}>{applied ? t('bulk.applied', summary) : t('bulk.previewText', summary)}</Callout>
+            <div className="max-h-72 overflow-y-auto rounded-lg border bg-card">
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="px-3 text-xs text-muted-foreground">SKU</TableHead>
+                    <TableHead className="text-xs text-muted-foreground">{t('bulk.name')}</TableHead>
+                    <TableHead className="text-right text-xs text-muted-foreground">{t('bulk.current')}</TableHead>
+                    <TableHead className="px-3 text-right text-xs text-muted-foreground">{t('bulk.next')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {result.preview.map((r) => (
-                    <tr key={r.variantId}>
-                      <td className="px-3 py-1.5 font-mono text-xs">{r.sku}</td>
-                      <td className="px-3 py-1.5">{r.name}</td>
-                      <td className="px-3 py-1.5 text-right text-stone-500">{som(r.oldPrice)}</td>
-                      <td className="px-3 py-1.5 text-right font-medium">{som(r.newPrice)}</td>
-                    </tr>
+                    <TableRow key={r.variantId}>
+                      <TableCell className="px-3 font-mono text-xs">{r.sku}</TableCell>
+                      <TableCell className="whitespace-normal">{r.name}</TableCell>
+                      <TableCell className="text-right text-muted-foreground tabular">{money(r.oldPrice)}</TableCell>
+                      <TableCell className="px-3 text-right font-medium tabular">{money(r.newPrice)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
       </div>
-    </Dialog>
+    </FormDialog>
   );
 }

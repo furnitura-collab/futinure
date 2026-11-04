@@ -21,6 +21,7 @@ import type { AuthUser } from '../auth/decorators.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { categoryWithDescendants, wouldCreateCycle } from './category-tree.js';
 import { variantStockLevel } from './pricing.service.js';
+import { pageArgs } from '../common/pagination.js';
 
 const adminVariantSelect = {
   id: true,
@@ -178,8 +179,7 @@ export class AdminCatalogService {
       this.prisma.product.findMany({
         where,
         orderBy: [{ updatedAt: 'desc' }],
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
+        ...pageArgs(query),
         include: {
           category: { select: { id: true, nameUz: true } },
           brand: { select: { id: true, name: true } },

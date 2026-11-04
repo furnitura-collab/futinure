@@ -24,7 +24,25 @@ export interface ProductCard {
   basePriceFrom: number;
   stockLevel: StockLevel;
   variantCount: number;
+  /** Yagona variant bo'lsa — ro'yxatdan to'g'ridan-to'g'ri savatga qo'shish uchun */
+  variantId: string | null;
+  minQty: string;
+  qtyStep: string;
 }
+
+export interface BuyAgainItem {
+  variantId: string;
+  sku: string;
+  attributes: unknown;
+  /** Oxirgi buyurtmadagi miqdor — "bir bosishda" qayta qo'shiladi */
+  lastQty: string;
+  lastOrderedAt: Date;
+  unitPrice: number;
+  stockLevel: StockLevel;
+  product: ProductCard;
+}
+
+const BUY_AGAIN_LIMIT = 12;
 
 /** LIKE uchun maxsus belgilarni ekranlash */
 function likePattern(q: string) {
@@ -46,7 +64,16 @@ export class CatalogService {
     });
     // Faol bo'lmagan ota-onaning bolalari ham ko'rinmasin
     const activeIds = new Set(rows.map((r) => r.id));
-    return buildTree(rows.filter((r) => !r.parentId || activeIds.has(r.parentId)));
+    const direct = await this.prisma.$queryRaw<{ category_id: string; n: bigint }[]>`
+      SELECT p.category_id, COUNT(*) AS n FROM products p
+      WHERE p.is_active AND EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id = p.id AND v.is_active)
+      GROUP BY p.category_id`;
+    const own = new Map(direct.map((r) => [r.category_id, Number(r.n)]));
+    const tree = buildTree(rows.filter((r) => !r.parentId || activeIds.has(r.parentId)).map((r) => ({ ...r, productCount: own.get(r.id) ?? 0 })));
+    // Ota kategoriya soni ichidagilarni ham o'z ichiga oladi (katalog filtri ham shunday ishlaydi)
+    const total = (n: (typeof tree)[number]): number => (n.productCount += n.children.reduce((s, c) => s + total(c), 0));
+    tree.forEach(total);
+    return tree;
   }
 
   brands() {
@@ -153,6 +180,9 @@ export class CatalogService {
           basePriceFrom: Math.min(...priced.map((v) => Number(v.basePrice))),
           stockLevel: levels.reduce((best, l) => (LEVEL_RANK[l] > LEVEL_RANK[best] ? l : best)),
           variantCount: p.variants.length,
+          variantId: p.variants.length === 1 ? p.variants[0]!.id : null,
+          minQty,
+          qtyStep: p.qtyStep.toString(),
         },
       ];
     });
@@ -186,6 +216,7 @@ export class CatalogService {
       kind: p.kind,
       minQty: p.minQty,
       qtyStep: p.qtyStep,
+      weightKg: p.weightKg,
       board: p.kind === 'BOARD' ? { lengthMm: p.boardLengthMm, widthMm: p.boardWidthMm, thicknessMm: p.thicknessMm } : null,
       brand: p.brand,
       category: p.category,
@@ -219,6 +250,50 @@ export class CatalogService {
     if (!v) throw AppException.notFound('Artikul');
     const product = await this.detail(v.productId, userId);
     return { variantId: v.id, product };
+  }
+
+  /** Mijoz avval buyurtma qilgan, hozir ham sotuvdagi variantlar — eng so'nggisi birinchi */
+  async buyAgain(userId: string): Promise<BuyAgainItem[]> {
+    const rows = await this.prisma.orderItem.findMany({
+      where: {
+        status: 'ACTIVE',
+        order: { customerId: userId, status: { not: 'CANCELLED' } },
+        variant: { isActive: true, product: { isActive: true, category: { isActive: true } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: { variantId: true, qty: true, createdAt: true },
+    });
+    const seen = new Set<string>();
+    const latest = rows.filter((r) => !seen.has(r.variantId) && seen.add(r.variantId)).slice(0, BUY_AGAIN_LIMIT);
+    if (latest.length === 0) return [];
+
+    const groupId = await this.pricing.priceGroupOf(userId);
+    const variants = await this.prisma.productVariant.findMany({
+      where: { id: { in: latest.map((r) => r.variantId) } },
+      include: variantPricingInclude(groupId),
+    });
+    const byId = new Map(variants.map((v) => [v.id, v]));
+    const cards = new Map((await this.cards([...new Set(variants.map((v) => v.productId))], userId)).map((c) => [c.id, c]));
+
+    return latest.flatMap((r) => {
+      const v = byId.get(r.variantId);
+      const product = v && cards.get(v.productId);
+      if (!v || !product) return [];
+      const lastQty = r.qty.toString();
+      return [
+        {
+          variantId: v.id,
+          sku: v.sku,
+          attributes: v.attributes,
+          lastQty,
+          lastOrderedAt: r.createdAt,
+          unitPrice: priceOf(v, lastQty).unitPrice,
+          stockLevel: variantStockLevel(v),
+          product,
+        },
+      ];
+    });
   }
 
   quote(input: PricingQuoteInput, userId: string | null) {

@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
@@ -8,6 +9,9 @@ export default defineConfig({
   // Bitta serverda: /admin/ (API web fayllarni beradi). Dev'da — /
   base: process.env.ADMIN_BASE ?? '/',
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   server: {
     port: 3001,
     // Dev: API va socket bir xil origin orqali — CORS va cookie muammosiz

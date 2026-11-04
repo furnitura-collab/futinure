@@ -63,6 +63,10 @@ export interface PricedLine {
   nameUz: string | null;
   nameRu: string | null;
   unit: string | null;
+  /** Savatdagi kichik rasm (yoki kategoriya rangidagi belgi) uchun */
+  categoryId: string | null;
+  kind: string | null;
+  imageUrl: string | null;
   /** Miqdor qoidalari — ilova +/- tugmalari uchun */
   minQty: string | null;
   qtyStep: string | null;
@@ -104,7 +108,10 @@ export class PricingService {
     const groupId = await this.priceGroupOf(userId, db);
     const variants = await db.productVariant.findMany({
       where: { id: { in: items.map((i) => i.variantId) } },
-      include: { ...variantPricingInclude(groupId), product: true },
+      include: {
+        ...variantPricingInclude(groupId),
+        product: { include: { images: { orderBy: { sortOrder: 'asc' }, take: 1, select: { url: true } } } },
+      },
     });
     const byId = new Map(variants.map((v) => [v.id, v]));
 
@@ -145,6 +152,9 @@ export class PricingService {
         nameUz: p.nameUz,
         nameRu: p.nameRu,
         unit: p.unit,
+        categoryId: p.categoryId,
+        kind: p.kind,
+        imageUrl: p.images[0]?.url ?? null,
         minQty: p.minQty.toString(),
         qtyStep: p.qtyStep.toString(),
         attributes: v.attributes,
@@ -179,6 +189,9 @@ function emptyLine(item: { variantId: string; qty: string }): Omit<PricedLine, '
     nameUz: null,
     nameRu: null,
     unit: null,
+    categoryId: null,
+    kind: null,
+    imageUrl: null,
     minQty: null,
     qtyStep: null,
     attributes: null,

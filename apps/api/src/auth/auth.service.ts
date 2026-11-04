@@ -36,7 +36,9 @@ export class AuthService {
   /**
    * Telefon + parol (SMS o'rniga, vaqtincha).
    * Yangi raqam — mijoz sifatida shu parol bilan ro'yxatdan o'tadi.
-   * Paroli yo'q mavjud hisob (seed, admin yaratgan xodim) — birinchi kirishda parol o'rnatiladi.
+   * Paroli yo'q mijoz (OTP orqali ro'yxatdan o'tgan) — birinchi kirishda parol o'rnatadi.
+   * Paroli yo'q xodim — yo'q: xodim parolini faqat super admin o'rnatadi, aks holda
+   * raqamni bilgan har kim xodim hisobini egallab olardi.
    */
   async loginWithPassword(phone: string, password: string, userAgent?: string) {
     const failKey = `login:fail:${phone}`;
@@ -54,6 +56,9 @@ export class AuthService {
         data: { phone, role: 'CUSTOMER', passwordHash: await hashPassword(password), customerProfile: { create: {} } },
       });
     } else if (!existing.passwordHash) {
+      if (existing.role !== 'CUSTOMER') {
+        throw AppException.unauthorized('PASSWORD_NOT_SET', 'Parol o\'rnatilmagan, administratorga murojaat qiling');
+      }
       user = await this.prisma.user.update({
         where: { id: existing.id },
         data: { passwordHash: await hashPassword(password), lastLoginAt: new Date() },
@@ -63,7 +68,7 @@ export class AuthService {
       await this.redis.del(failKey);
     } else {
       await this.redis.multi().incr(failKey).expire(failKey, LOGIN_FAIL_WINDOW, 'NX').exec();
-      throw new AppException('INVALID_PASSWORD', 'Parol noto\'g\'ri', HttpStatus.UNAUTHORIZED);
+      throw invalidPassword();
     }
     return this.session(user, userAgent);
   }
@@ -78,4 +83,8 @@ export class AuthService {
       isNew: user.fullName === null,
     };
   }
+}
+
+export function invalidPassword() {
+  return AppException.unauthorized('INVALID_PASSWORD', 'Parol noto\'g\'ri');
 }

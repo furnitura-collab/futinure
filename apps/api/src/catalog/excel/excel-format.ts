@@ -118,7 +118,7 @@ export function parseBool(s: string): Parsed<boolean> {
   return fail('"ha" yoki "yo\'q" bo\'lishi kerak');
 }
 
-export function parseEnum<T extends string>(s: string, values: readonly T[]): Parsed<T> {
+function parseEnum<T extends string>(s: string, values: readonly T[]): Parsed<T> {
   const v = s.toUpperCase() as T;
   return values.includes(v) ? ok(v) : fail(`quyidagilardan biri: ${values.join(', ')}`);
 }

@@ -11,7 +11,7 @@ export async function categoryWithDescendants(prisma: PrismaService, rootId: str
   return collectDescendants(rows, rootId);
 }
 
-export function collectDescendants(rows: readonly CategoryRow[], rootId: string): string[] {
+function collectDescendants(rows: readonly CategoryRow[], rootId: string): string[] {
   const children = new Map<string, string[]>();
   for (const r of rows) {
     if (!r.parentId) continue;

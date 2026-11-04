@@ -110,11 +110,20 @@ describe('auth (e2e)', () => {
       expect(res.body.error.code).toBe('INVALID_PASSWORD');
     });
 
-    it('paroli yo\'q xodim birinchi kirishda parol o\'rnatadi, rol saqlanadi', async () => {
-      await ctx.prisma.user.create({ data: { phone: PHONE, role: 'MANAGER' } });
+    it('paroli yo\'q mijoz (OTP orqali ro\'yxatdan o\'tgan) birinchi kirishda parol o\'rnatadi', async () => {
+      await ctx.prisma.user.create({ data: { phone: PHONE, role: 'CUSTOMER', customerProfile: { create: {} } } });
       const res = await loginPw(PHONE, PASSWORD).expect(200);
-      expect(res.body.user.role).toBe('MANAGER');
+      expect(res.body.user.role).toBe('CUSTOMER');
       await loginPw(PHONE, 'other-pass').expect(401);
+    });
+
+    it('paroli yo\'q xodim parolni o\'zi o\'rnata olmaydi → 401 PASSWORD_NOT_SET', async () => {
+      await ctx.prisma.user.create({ data: { phone: PHONE, role: 'MANAGER' } });
+      const res = await loginPw(PHONE, PASSWORD).expect(401);
+      expect(res.body.error.code).toBe('PASSWORD_NOT_SET');
+      const user = await ctx.prisma.user.findUniqueOrThrow({ where: { phone: PHONE }, omit: { passwordHash: false } });
+      expect(user.passwordHash).toBeNull();
+      expect(await ctx.prisma.refreshSession.count()).toBe(0);
     });
 
     it('qisqa parol → 422', async () => {

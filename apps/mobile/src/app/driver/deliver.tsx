@@ -1,28 +1,18 @@
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Platform, ScrollView, View } from 'react-native';
-import { Button, Input, Loader, Row, Text } from '../../components/ui';
-import { api, fileToForm } from '../../lib/api';
-import { useDriverDelivery } from '../../lib/driver';
-import { som } from '../../lib/format';
-import { useI18n } from '../../lib/i18n';
-import { useApiMutation } from '../../lib/mutation';
-import { colors, radius, space } from '../../lib/theme';
-import { contained, CONTENT } from '../../lib/layout';
-
-interface Picked {
-  uri: string;
-  name: string;
-  mimeType: string;
-  file?: Blob;
-}
+import { AttachmentField } from '@/components/form/AttachmentField';
+import { Button, Card, Input, Screen, Text } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { api, fileToForm } from '@/lib/api';
+import { useDriverDelivery } from '@/lib/driver';
+import { useApiMutation } from '@/lib/mutation';
+import type { Picked } from '@/lib/pick';
+import { space } from '@/theme';
 
 /** Topshirish: kim qabul qildi, surat, olingan naqd pul */
 export default function DriverDeliver() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t, locale } = useI18n();
+  const { t, money } = useI18n();
   const q = useDriverDelivery(id);
   const [receiver, setReceiver] = useState('');
   const [cash, setCash] = useState<string | null>(null);
@@ -49,57 +39,28 @@ export default function DriverDeliver() {
     { invalidate: [['driver']], success: t('drvDelivered'), onSuccess: () => router.dismissTo('/driver') },
   );
 
-  const pick = async (camera: boolean) => {
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.6 };
-    if (camera) {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return;
-    }
-    const r = camera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-    const a = r.assets?.[0];
-    if (!r.canceled && a) setPhoto({ uri: a.uri, name: a.fileName ?? 'foto.jpg', mimeType: a.mimeType ?? 'image/jpeg', file: a.file });
-  };
-
-  if (q.isPending) return <Loader />;
-
   return (
-    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
-      <Text bold>{q.data?.order.number}</Text>
-      <Input label={t('drvReceiver')} value={receiver} onChangeText={setReceiver} autoCapitalize="words" autoFocus />
-
-      {toCollect > 0 && (
-        <View style={{ gap: 4 }}>
-          <Input label={t('drvCash')} value={cashValue} onChangeText={setCash} keyboardType="number-pad" />
-          <Text v="caption">
-            {t('drvToCollect')}: {som(toCollect, locale)}
-          </Text>
-        </View>
-      )}
-
-      <View style={{ gap: space(2) }}>
-        <Text v="small" bold>{t('drvPhoto')}</Text>
-        {photo ? (
-          <View style={{ borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-            <Image source={{ uri: photo.uri }} style={{ height: 220 }} contentFit="cover" />
-            <Button title="✕" variant="ghost" small onPress={() => setPhoto(null)} />
-          </View>
-        ) : (
-          <Row>
-            {Platform.OS !== 'web' && <Button title={t('takePhoto')} icon="camera-outline" variant="secondary" small style={{ flex: 1 }} onPress={() => void pick(true)} />}
-            <Button title={t('pickPhoto')} icon="image-outline" variant="secondary" small style={{ flex: 1 }} onPress={() => void pick(false)} />
-          </Row>
+    <Screen
+      width="form"
+      footer={
+        <Button
+          title={t('drvDeliver')}
+          icon="checkmark-circle-outline"
+          disabled={!q.data || receiver.trim().length < 2 || cashNum > toCollect}
+          loading={send.isPending}
+          onPress={() => send.mutate(undefined)}
+        />
+      }
+    >
+      {q.data && <Text v="h2">{q.data.order.number}</Text>}
+      <Card style={{ gap: space(4) }}>
+        <Input label={t('drvReceiver')} icon="person-outline" value={receiver} onChangeText={setReceiver} autoCapitalize="words" autoFocus />
+        {toCollect > 0 && (
+          <Input label={t('drvCash')} icon="cash-outline" value={cashValue} onChangeText={setCash} keyboardType="number-pad" hint={`${t('drvToCollect')}: ${money(toCollect)}`} />
         )}
-      </View>
-
-      <Input label={t('comment')} value={comment} onChangeText={setComment} multiline />
-
-      <Button
-        title={t('drvDeliver')}
-        icon="checkmark-circle-outline"
-        disabled={receiver.trim().length < 2 || cashNum > toCollect}
-        loading={send.isPending}
-        onPress={() => send.mutate(undefined)}
-      />
-    </ScrollView>
+        <Input label={t('comment')} value={comment} onChangeText={setComment} multiline />
+      </Card>
+      <AttachmentField label={t('drvPhoto')} value={photo} onChange={setPhoto} quality={0.6} />
+    </Screen>
   );
 }

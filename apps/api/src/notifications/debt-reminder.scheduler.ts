@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
 import { addDays, businessDate } from '@mebel/shared';
 import { ENV, type Env } from '../config/env.js';
+import { UNPAID_CREDIT_ORDER } from '../customers/credit-orders.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { TEXTS } from './messages.js';
 import { NotificationsService, stableUuid } from './notifications.service.js';
@@ -42,8 +43,7 @@ export class DebtReminderScheduler implements OnApplicationBootstrap, OnApplicat
       SELECT id, number, customer_id, (grand_total - paid_total)::bigint AS due, due_date,
              (due_date - ${today}::date)::int AS days_left
       FROM orders
-      WHERE payment_terms = 'CREDIT' AND status IN ('DELIVERED', 'COMPLETED')
-        AND grand_total > paid_total AND due_date IS NOT NULL
+      WHERE ${UNPAID_CREDIT_ORDER} AND due_date IS NOT NULL
         AND due_date <= ${addDays(today, SOON_DAYS)}::date`;
 
     let sent = 0;

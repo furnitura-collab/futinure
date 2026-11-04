@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { Unit } from '@mebel/shared';
-import { api } from '../../lib/api';
-import { som } from '../../lib/format';
-import { useDebounced } from '../../lib/hooks';
-import { UNIT } from '../../lib/labels';
-import type { Paginated } from '../../lib/types';
-import { cx, Input, Spinner } from '../../components/ui';
+import { SearchInput } from '@/components/SearchInput';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { attrsText } from '@/lib/catalog';
+import { useDebounced } from '@/lib/hooks';
+import type { AdminProduct, Paginated } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 export interface PickedVariant {
   variantId: string;
@@ -22,26 +22,9 @@ export interface PickedVariant {
   minQty: string;
 }
 
-interface AdminProduct {
-  id: string;
-  nameUz: string;
-  unit: Unit;
-  minQty: string;
-  qtyStep: string;
-  isActive: boolean;
-  variants: {
-    id: string;
-    sku: string;
-    attributes: Record<string, string | number>;
-    basePrice: number;
-    availableQty: string;
-    onOrder: boolean;
-    isActive: boolean;
-  }[];
-}
-
 /** Nom yoki SKU bo'yicha qidirib variant tanlash (xodim aniq qoldiqni ko'radi) */
 export function VariantPicker({ onPick, exclude = [] }: { onPick: (v: PickedVariant) => void; exclude?: string[] }) {
+  const { t, money, label } = useI18n();
   const [q, setQ] = useState('');
   const query = useDebounced(q.trim());
   const { data, isFetching } = useQuery({
@@ -50,14 +33,14 @@ export function VariantPicker({ onPick, exclude = [] }: { onPick: (v: PickedVari
     enabled: query.length >= 2,
   });
 
-  const rows = (data?.items ?? []).flatMap((p) =>
+  const rows: PickedVariant[] = (data?.items ?? []).flatMap((p) =>
     p.variants
       .filter((v) => v.isActive && !exclude.includes(v.id))
       .map((v) => ({
         variantId: v.id,
         productId: p.id,
         sku: v.sku,
-        name: `${p.nameUz}${Object.keys(v.attributes).length ? ` — ${Object.values(v.attributes).join(', ')}` : ''}`,
+        name: Object.keys(v.attributes).length ? `${p.nameUz} — ${attrsText(v.attributes)}` : p.nameUz,
         unit: p.unit,
         basePrice: v.basePrice,
         availableQty: v.availableQty,
@@ -69,14 +52,10 @@ export function VariantPicker({ onPick, exclude = [] }: { onPick: (v: PickedVari
 
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-stone-400" />
-        <Input autoFocus className="pl-9" placeholder="Tovar nomi yoki SKU" value={q} onChange={(e) => setQ(e.target.value)} />
-        {isFetching && <Spinner className="absolute top-2.5 right-3 size-4" />}
-      </div>
+      <SearchInput autoFocus className="sm:w-full" placeholder={t('picker.placeholder')} value={q} onChange={setQ} loading={isFetching} />
       {query.length >= 2 && (
-        <ul className="max-h-60 divide-y divide-stone-100 overflow-y-auto rounded-lg border border-stone-200">
-          {rows.length === 0 && !isFetching && <li className="p-3 text-sm text-stone-500">Topilmadi</li>}
+        <ul role="listbox" className="max-h-64 divide-y overflow-y-auto rounded-lg border bg-card">
+          {rows.length === 0 && !isFetching && <li className="p-3 text-sm text-muted-foreground">{t('picker.notFound')}</li>}
           {rows.map((r) => {
             const empty = Number(r.availableQty) <= 0 && !r.onOrder;
             return (
@@ -88,14 +67,16 @@ export function VariantPicker({ onPick, exclude = [] }: { onPick: (v: PickedVari
                     onPick(r);
                     setQ('');
                   }}
-                  className={cx('flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-brand-50', empty && 'opacity-50')}
+                  className={cn(
+                    'flex w-full flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent focus-visible:bg-accent disabled:opacity-50',
+                  )}
                 >
-                  <span className="w-28 shrink-0 font-mono text-xs text-stone-500">{r.sku}</span>
-                  <span className="flex-1 truncate">{r.name}</span>
-                  <span className="shrink-0 text-xs text-stone-500">
-                    {r.onOrder && Number(r.availableQty) <= 0 ? 'buyurtmaga' : `${r.availableQty} ${UNIT[r.unit]}`}
+                  <span className="w-28 shrink-0 font-mono text-xs text-muted-foreground">{r.sku}</span>
+                  <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {r.onOrder && Number(r.availableQty) <= 0 ? t('picker.onOrder') : `${r.availableQty} ${label('unit', r.unit)}`}
                   </span>
-                  <span className="w-28 shrink-0 text-right font-medium">{som(r.basePrice)}</span>
+                  <span className="w-28 shrink-0 text-right font-medium tabular">{money(r.basePrice)}</span>
                 </button>
               </li>
             );

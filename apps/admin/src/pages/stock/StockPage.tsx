@@ -1,12 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { PackagePlus } from 'lucide-react';
+import { PackageCheck, PackagePlus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import type { Unit } from '@mebel/shared';
-import { api } from '../../lib/api';
-import { UNIT } from '../../lib/labels';
-import type { AdminProduct, LowStockRow } from '../../lib/types';
-import { Button, Card, cx, Empty, ErrorBox, PageHeader, PageLoader } from '../../components/ui';
+import { DataTable, type Column } from '@/components/DataTable';
+import { PageHeader } from '@/components/PageHeader';
+import { SectionCard } from '@/components/SectionCard';
+import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import type { AdminProduct, LowStockRow } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { VariantPicker, type PickedVariant } from '../orders/VariantPicker';
 import { StockDialog } from './StockDialog';
 
@@ -20,75 +24,84 @@ interface Target {
 
 /** Ombor: kam qolganlar va istalgan tovarga kirim/inventarizatsiya. Omborchi ham ishlatadi */
 export function StockPage() {
+  const { t, label } = useI18n();
   const low = useQuery({ queryKey: ['stock-low'], queryFn: () => api<LowStockRow[]>('/admin/stock/low') });
   const [target, setTarget] = useState<Target | null>(null);
 
   // Aniq qoldiq (fizik va band) uchun mahsulotni yuklaymiz — picker faqat mavjudni beradi
   const fromPicker = async (v: PickedVariant) => {
     const product = await api<AdminProduct>(`/admin/products/${v.productId}`);
-    const exact = product.variants.find((x) => x.id === v.variantId)!;
-    setTarget({ id: v.variantId, stockQty: exact.stockQty, reservedQty: exact.reservedQty, unit: v.unit, title: `${v.name} · ${v.sku}` });
+    const exact = product.variants.find((x) => x.id === v.variantId);
+    if (exact) setTarget({ id: v.variantId, stockQty: exact.stockQty, reservedQty: exact.reservedQty, unit: v.unit, title: `${v.name} · ${v.sku}` });
   };
+
+  const columns: Column<LowStockRow>[] = [
+    {
+      id: 'name',
+      header: t('stock.product'),
+      sortValue: (r) => r.name_uz,
+      cell: (r) => (
+        <div className="min-w-40">
+          <Link to={`/catalog/${r.product_id}`} className="font-medium hover:text-primary hover:underline">
+            {r.name_uz}
+          </Link>
+          <p className="font-mono text-xs text-muted-foreground">
+            {r.sku}
+            {r.on_order && ` · ${t('stock.onOrderBasis')}`}
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'available',
+      header: t('stock.available'),
+      align: 'right',
+      sortValue: (r) => Number(r.available_qty),
+      cell: (r) => (
+        <span className={cn('font-medium whitespace-nowrap tabular', Number(r.available_qty) <= 0 ? 'text-destructive' : 'text-warning')}>
+          {r.available_qty} {label('unit', r.unit)}
+        </span>
+      ),
+    },
+    { id: 'reserved', header: t('stock.reserved'), align: 'right', hideBelow: 'sm', cell: (r) => <span className="text-muted-foreground tabular">{r.reserved_qty}</span> },
+    { id: 'threshold', header: t('stock.threshold'), align: 'right', hideBelow: 'md', cell: (r) => <span className="text-muted-foreground tabular">{r.low_stock_threshold}</span> },
+    {
+      id: 'action',
+      header: <span className="sr-only">{t('common.actions')}</span>,
+      align: 'right',
+      cell: (r) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setTarget({ id: r.variant_id, stockQty: r.stock_qty, reservedQty: r.reserved_qty, unit: r.unit, title: `${r.name_uz} · ${r.sku}` })}
+        >
+          <PackagePlus /> <span className="hidden sm:inline">{t('stock.receive')}</span>
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div>
-      <PageHeader title="Ombor" />
-      <div className="grid gap-6 p-6 xl:grid-cols-3">
-        <Card className="xl:col-span-2" title="Kam qolgan tovarlar">
-          {low.isPending ? (
-            <PageLoader />
-          ) : low.error ? (
-            <ErrorBox error={low.error} />
-          ) : low.data.length === 0 ? (
-            <Empty>Hamma tovar yetarli</Empty>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-stone-500">
-                <tr>
-                  <th className="pb-2">Tovar</th>
-                  <th className="pb-2 text-right">Mavjud</th>
-                  <th className="pb-2 text-right">Band</th>
-                  <th className="pb-2 text-right">Chegara</th>
-                  <th className="pb-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {low.data.map((r) => (
-                  <tr key={r.variant_id}>
-                    <td className="py-2">
-                      <Link to={`/catalog/${r.product_id}`} className="font-medium hover:underline">{r.name_uz}</Link>
-                      <p className="font-mono text-xs text-stone-500">{r.sku}{r.on_order && ' · buyurtma asosida'}</p>
-                    </td>
-                    <td className={cx('py-2 text-right font-medium', Number(r.available_qty) <= 0 ? 'text-rose-600' : 'text-amber-700')}>
-                      {r.available_qty} {UNIT[r.unit]}
-                    </td>
-                    <td className="py-2 text-right text-stone-500">{r.reserved_qty}</td>
-                    <td className="py-2 text-right text-stone-500">{r.low_stock_threshold}</td>
-                    <td className="py-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() =>
-                          setTarget({ id: r.variant_id, stockQty: r.stock_qty, reservedQty: r.reserved_qty, unit: r.unit, title: `${r.name_uz} · ${r.sku}` })
-                        }
-                      >
-                        <PackagePlus className="size-4" /> Kirim
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
-        <Card title="Kirim / inventarizatsiya">
-          <p className="mb-3 text-sm text-stone-500">Istalgan tovarni toping:</p>
+      <PageHeader title={t('stock.title')} description={t('stock.subtitle')} />
+      <div className="grid gap-6 xl:grid-cols-3">
+        <SectionCard className="xl:col-span-2" title={t('stock.low')} flush>
+          <DataTable
+            bare
+            columns={columns}
+            rows={low.data}
+            rowKey={(r) => r.variant_id}
+            loading={low.isPending}
+            error={low.error}
+            onRetry={() => void low.refetch()}
+            empty={{ icon: PackageCheck, title: t('stock.allGood'), description: t('stock.allGoodHint') }}
+          />
+        </SectionCard>
+        <SectionCard title={t('stock.findTitle')} description={t('stock.findHint')} className="self-start">
           <VariantPicker onPick={(v) => void fromPicker(v)} />
-        </Card>
+        </SectionCard>
       </div>
-      {target && (
-        <StockDialog variant={{ id: target.id, stockQty: target.stockQty, reservedQty: target.reservedQty }} unit={target.unit} title={target.title} onClose={() => setTarget(null)} />
-      )}
+      {target && <StockDialog variant={target} unit={target.unit} title={target.title} onClose={() => setTarget(null)} />}
     </div>
   );
 }

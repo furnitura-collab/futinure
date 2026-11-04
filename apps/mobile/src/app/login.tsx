@@ -1,75 +1,92 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
-import { Button, Input, Segmented, Text } from '../components/ui';
-import { api, ApiError, type Tokens } from '../lib/api';
-import { useAuth } from '../lib/auth';
-import { useI18n } from '../lib/i18n';
-import { contained, CONTENT } from '../lib/layout';
-import { colors, space } from '../lib/theme';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { Button, Card, Icon, Input, Row, Screen, Text } from '@/components/ui';
+import { AuthSplit, BrandIntro, useAuthSplit } from '@/components/web/AuthSplit';
+import { useI18n } from '@/i18n';
+import { api, ApiError, type Tokens } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { space } from '@/theme';
 
 export default function Login() {
-  const { t, locale, setLocale } = useI18n();
+  const { t, errorText } = useI18n();
+  const split = useAuthSplit();
   const { login } = useAuth();
   const [phone, setPhone] = useState('+998 ');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const normalized = normalizeUzPhone(phone);
+  const ready = !!normalized && password.length >= PASSWORD_MIN;
 
   const submit = async () => {
     if (!normalized) return setError(t('invalidPhone'));
+    if (!ready) return;
     setBusy(true);
     setError(null);
     try {
       await login(await api<Tokens>('/auth/login', { body: { phone: normalized, password } }));
     } catch (e) {
-      const code = e instanceof ApiError ? e.code : null;
-      setError(code === 'INVALID_PASSWORD' ? t('invalidPassword') : code === 'LOGIN_RATE_LIMIT' ? t('tooManyRequests') : (e as Error).message);
+      setError(e instanceof ApiError ? errorText(e.code, e.message) : t('error'));
       setBusy(false);
     }
   };
 
+  const form = (
+    <Card style={{ gap: space(4), padding: space(6) }}>
+      <Text v="h2">{t('loginWelcome')}</Text>
+      <Input label={t('phone')} icon="call-outline" value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" autoFocus />
+      <Input
+        label={t('password')}
+        icon="lock-closed-outline"
+        value={password}
+        onChangeText={setPassword}
+        password
+        autoComplete="current-password"
+        hint={t('passwordFieldHint', { n: PASSWORD_MIN })}
+        textContentType="password"
+        autoCapitalize="none"
+        error={error}
+        onSubmitEditing={() => void submit()}
+      />
+      <Button title={t('login')} onPress={() => void submit()} loading={busy} disabled={!ready} />
+      <Row gap={space(2)} style={{ alignItems: 'flex-start' }}>
+        <Icon name="information-circle-outline" size={18} tone="info" />
+        <Text v="small" muted style={{ flex: 1 }}>{t('passwordHint')}</Text>
+      </Row>
+    </Card>
+  );
+  const language = (
+    <View style={{ alignSelf: 'flex-end', width: 180 }}>
+      <LanguageSwitch short />
+    </View>
+  );
+
+  // Kompyuterda: chapda brend paneli, o'ngda forma
+  if (split) {
+    return (
+      <AuthSplit title={t('login')}>
+        {language}
+        <Animated.View entering={FadeInDown.duration(250)}>{form}</Animated.View>
+      </AuthSplit>
+    );
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.brandBg }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'center', padding: space(6) }}>
-        <View style={{ position: 'absolute', top: space(4), right: space(6), width: 120 }}>
-          <Segmented value={locale} onChange={setLocale} options={[{ value: 'uz', label: 'UZ' }, { value: 'ru', label: 'RU' }]} />
-        </View>
+    <Screen width="form" title={t('login')} contentStyle={{ flexGrow: 1 }}>
+      {language}
 
-        <View style={{ ...contained(CONTENT.form), alignItems: 'center', marginBottom: space(10), gap: space(2) }}>
-          <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' }}>
-            <Text v="title" color="#fff">M</Text>
-          </View>
-          <Text v="title">{t('loginTitle')}</Text>
-          <Text muted>{t('loginSubtitle')}</Text>
-        </View>
+      <View style={{ flex: 1, justifyContent: 'center', gap: space(6), paddingBottom: space(8) }}>
+      <Animated.View entering={FadeInDown.duration(250)}>
+        <BrandIntro />
+      </Animated.View>
 
-        <View style={{ ...contained(420), gap: space(4) }}>
-          <Input
-            label={t('phone')}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            autoComplete="tel"
-            autoFocus
-          />
-          <Input
-            label={t('password')}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="current-password"
-            textContentType="password"
-            autoCapitalize="none"
-            error={error}
-            onSubmitEditing={submit}
-          />
-          <Button title={t('login')} onPress={submit} loading={busy} disabled={!normalized || password.length < PASSWORD_MIN} />
-          <Text muted v="caption" style={{ textAlign: 'center' }}>{t('passwordHint')}</Text>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <Animated.View entering={FadeInDown.duration(250).delay(80)}>
+        {form}
+      </Animated.View>
+      </View>
+    </Screen>
   );
 }

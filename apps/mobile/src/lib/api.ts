@@ -107,11 +107,20 @@ async function send(path: string, o: RequestOptions) {
   return fetch(url(path, o.query), { method: o.method ?? (body ? 'POST' : 'GET'), headers, body });
 }
 
+/** Parol tekshiruvidagi 401 — token eskirgani emas, refresh qilinmaydi */
+async function isWrongPassword(res: Response) {
+  try {
+    return ((await res.clone().json()) as { error?: { code?: string } }).error?.code === 'INVALID_PASSWORD';
+  } catch {
+    return false;
+  }
+}
+
 export async function api<T = unknown>(path: string, o: RequestOptions = {}): Promise<T> {
   let res: Response;
   try {
     res = await send(path, o);
-    if (res.status === 401 && !path.startsWith('/auth/') && (await refresh())) res = await send(path, o);
+    if (res.status === 401 && !path.startsWith('/auth/') && !(await isWrongPassword(res)) && (await refresh())) res = await send(path, o);
   } catch {
     throw new ApiError(0, 'NETWORK', 'Internet aloqasi yo\'q');
   }

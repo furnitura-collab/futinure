@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
@@ -22,8 +21,6 @@ type AuthedSocket = Socket & { data: { userId: string; role: Role } };
  */
 @WebSocketGateway({ namespace: '/rt', cors: { origin: true } })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
-  private readonly logger = new Logger(RealtimeGateway.name);
-
   constructor(
     private readonly jwt: JwtService,
     private readonly prisma: PrismaService,

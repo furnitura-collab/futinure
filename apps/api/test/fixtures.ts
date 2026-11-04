@@ -15,8 +15,8 @@ export async function userWithToken(ctx: TestContext, role: Role, opts: { priceG
       ...(role === 'CUSTOMER' && { customerProfile: { create: { priceGroupId: opts.priceGroupId ?? null } } }),
     },
   });
-  const { accessToken } = await ctx.app.get(TokenService).issue(user);
-  return { user, token: accessToken, auth: { Authorization: `Bearer ${accessToken}` } };
+  const { accessToken, refreshToken } = await ctx.app.get(TokenService).issue(user);
+  return { user, token: accessToken, refreshToken, auth: { Authorization: `Bearer ${accessToken}` } };
 }
 
 /**

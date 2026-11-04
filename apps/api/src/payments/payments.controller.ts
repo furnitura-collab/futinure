@@ -40,6 +40,7 @@ import {
   type RejectPaymentInput,
 } from '@mebel/shared';
 import { AppException } from '../common/app-exception.js';
+import type { PageQuery } from '../common/pagination.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { type AuthUser, CurrentUser, Public, Roles } from '../auth/decorators.js';
 import { AdminCustomersService } from '../customers/admin-customers.service.js';
@@ -49,7 +50,6 @@ import { MAX_RECEIPT_BYTES, PrivateFilesService, RECEIPT_PURPOSE } from '../uplo
 import { PaymentsService } from './payments.service.js';
 
 const uuid = new ParseUUIDPipe();
-type Page = { page: number; limit: number };
 
 // ───────────── Mijoz ─────────────
 
@@ -81,7 +81,7 @@ export class CustomerPaymentsController {
   }
 
   @Get('me/payments')
-  myPayments(@CurrentUser() u: AuthUser, @Query(new ZodPipe(paginationSchema)) q: Page) {
+  myPayments(@CurrentUser() u: AuthUser, @Query(new ZodPipe(paginationSchema)) q: PageQuery) {
     return this.payments.customerPayments(u.id, q.page, q.limit);
   }
 

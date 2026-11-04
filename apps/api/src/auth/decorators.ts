@@ -12,7 +12,7 @@ export const Public = () => SetMetadata(IS_PUBLIC, true);
 /** Faqat shu rollar. Belgilanmasa — har qanday kirgan foydalanuvchi */
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES, roles);
 
-export type AuthUser = { id: string; role: Role };
+export type AuthUser = { id: string; role: Role; sessionFamily?: string };
 
 export type AuthedRequest = Request & { user?: AuthUser };
 
@@ -23,5 +23,5 @@ export const CurrentUser = createParamDecorator((_data: unknown, ctx: ExecutionC
 });
 
 export function toAuthUser(p: AccessPayload): AuthUser {
-  return { id: p.sub, role: p.role };
+  return { id: p.sub, role: p.role, sessionFamily: p.fam };
 }

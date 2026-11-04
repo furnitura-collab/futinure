@@ -1,14 +1,17 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Role } from '@mebel/shared';
 import { ENV, type Env } from '../config/env.js';
 import { AppException } from '../common/app-exception.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export interface AccessPayload {
   sub: string;
   role: Role;
+  /** Refresh sessiya oilasi — "boshqa sessiyalarni yopish" uchun joriy sessiyani ajratadi */
+  fam?: string;
 }
 
 export interface TokenPair {
@@ -35,7 +38,7 @@ export class TokenService {
         expiresAt: new Date(Date.now() + this.env.REFRESH_TTL_DAYS * 86_400_000),
       },
     });
-    const accessToken = await this.jwt.signAsync({ sub: user.id, role: user.role } satisfies AccessPayload);
+    const accessToken = await this.jwt.signAsync({ sub: user.id, role: user.role, fam: familyId } satisfies AccessPayload);
     return { accessToken, refreshToken };
   }
 
@@ -56,36 +59,30 @@ export class TokenService {
     }
     if (session.expiresAt < new Date() || !session.user.isActive) throw invalid();
 
-    const { count } = await this.prisma.refreshSession.updateMany({
-      where: { id: session.id, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-    if (count === 0) {
-      // Parallel refresh — ikkinchisi yutqazadi
-      throw invalid();
-    }
+    // Parallel refresh — ikkinchisi yutqazadi
+    if ((await this.revokeWhere({ id: session.id })) === 0) throw invalid();
     return this.issue(session.user, userAgent, session.familyId);
   }
 
   async revoke(refreshToken: string) {
-    await this.prisma.refreshSession.updateMany({
-      where: { tokenHash: sha256(refreshToken), revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    await this.revokeWhere({ tokenHash: sha256(refreshToken) });
   }
 
-  async revokeAllForUser(userId: string) {
-    await this.prisma.refreshSession.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+  /** `exceptFamilyId` — joriy qurilma sessiyasi saqlanadi */
+  async revokeAllForUser(userId: string, exceptFamilyId?: string) {
+    await this.revokeWhere({ userId, ...(exceptFamilyId && { familyId: { not: exceptFamilyId } }) });
   }
 
   private async revokeFamily(familyId: string) {
-    await this.prisma.refreshSession.updateMany({
-      where: { familyId, revokedAt: null },
+    await this.revokeWhere({ familyId });
+  }
+
+  private async revokeWhere(where: Prisma.RefreshSessionWhereInput) {
+    const { count } = await this.prisma.refreshSession.updateMany({
+      where: { ...where, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    return count;
   }
 }
 
@@ -94,5 +91,5 @@ function sha256(v: string) {
 }
 
 function invalid() {
-  return new AppException('INVALID_REFRESH_TOKEN', 'Sessiya tugagan, qayta kiring', HttpStatus.UNAUTHORIZED);
+  return AppException.unauthorized('INVALID_REFRESH_TOKEN', 'Sessiya tugagan, qayta kiring');
 }

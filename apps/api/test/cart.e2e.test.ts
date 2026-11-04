@@ -37,6 +37,14 @@ describe('savat, sevimlilar, manzillar (e2e)', () => {
       expect(res.body.hasBlockingIssues).toBe(false);
     });
 
+    it('qatorda kichik rasm uchun kategoriya, tur va rasm', async () => {
+      await ctx.prisma.productImage.create({ data: { productId: c.board.id, url: '/uploads/catalog/ldsp.webp' } });
+      await put(c.white.id, 2).expect(200);
+      const res = await put(c.hingeV.id, 2).expect(200);
+      expect(res.body.lines[0]).toMatchObject({ categoryId: c.ldsp.id, kind: 'BOARD', imageUrl: '/uploads/catalog/ldsp.webp' });
+      expect(res.body.lines[1]).toMatchObject({ categoryId: c.furnitura.id, kind: 'GOODS', imageUrl: null });
+    });
+
     it('PUT miqdorni almashtiradi, qo\'shmaydi', async () => {
       await put(c.white.id, 12).expect(200);
       const res = await put(c.white.id, 3).expect(200);

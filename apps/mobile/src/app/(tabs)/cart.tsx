@@ -1,110 +1,81 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
-import { isBlockingIssue } from '@mebel/shared';
-import { Button, Empty, ErrorView, Ionicons, Loader, QtyStepper, Row, Text } from '../../components/ui';
-import { useCart, useSetCartItem } from '../../lib/cart';
-import { attrsText } from '../../lib/catalog';
-import { som } from '../../lib/format';
-import { useI18n } from '../../lib/i18n';
-import { colors, radius, space } from '../../lib/theme';
-import type { CartLine, LineIssue } from '../../lib/types';
-import { contained, CONTENT } from '../../lib/layout';
+import { FlatList } from 'react-native';
+import { CartRow } from '@/components/cart/CartRow';
+import { CartSummary } from '@/components/cart/CartSummary';
+import { Appear, Button, EmptyState, ErrorState, Row, Screen, SkeletonList, Text } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { useCart } from '@/lib/cart';
+import { useSite } from '@/lib/layout';
+import { space } from '@/theme';
 
 export default function CartScreen() {
-  const { t, locale } = useI18n();
+  const { t, money } = useI18n();
   const cart = useCart();
-
-  if (cart.isPending) return <Loader />;
-  if (cart.error) return <ErrorView error={cart.error} onRetry={() => void cart.refetch()} />;
+  const { site } = useSite();
   const c = cart.data;
 
-  if (c.count === 0) {
+  if (!c || c.count === 0) {
     return (
-      <Empty
-        icon="cart-outline"
-        title={t('cartEmpty')}
-        hint={t('cartEmptyHint')}
-        action={<Button title={t('tabCatalog')} variant="secondary" onPress={() => router.navigate('/')} />}
-      />
+      <Screen title={t('tabCart')}>
+        {cart.isPending ? (
+          <SkeletonList count={3} />
+        ) : cart.error ? (
+          <ErrorState error={cart.error} onRetry={() => void cart.refetch()} />
+        ) : (
+          <EmptyState
+            icon="cart-outline"
+            title={t('cartEmpty')}
+            hint={t('cartEmptyHint')}
+            action={<Button title={t('goToCatalog')} icon="grid-outline" variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
+          />
+        )}
+      </Screen>
+    );
+  }
+
+  const footer = (
+    <>
+      {c.hasBlockingIssues ? (
+        <Text v="small" tone="destructive">{t('fixIssues')}</Text>
+      ) : site ? null : (
+        // Saytda jami summa yonidagi xulosa kartasida turibdi
+        <Row between>
+          <Text muted>{t('total')}</Text>
+          <Text v="heading">{money(c.itemsTotal)}</Text>
+        </Row>
+      )}
+      <Button title={t('checkout')} icon="arrow-forward" block disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
+    </>
+  );
+
+  // Saytda: chapda qatorlar, o'ngda yopishgan xulosa va "Rasmiylashtirish"
+  if (site) {
+    return (
+      <Screen title={t('tabCart')} aside={<CartSummary c={c} />} footer={footer} contentStyle={{ gap: space(3) }}>
+        {c.lines.map((l, index) => (
+          <Appear key={l.variantId} index={index}>
+            <CartRow line={l} />
+          </Appear>
+        ))}
+      </Screen>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <FlatList
-        data={c.lines}
-        keyExtractor={(l) => l.variantId}
-        contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(3) }}
-        renderItem={({ item }) => <CartRow line={item} />}
-      />
-      <View style={{ padding: space(4), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-        <View style={{ ...contained(CONTENT.page), gap: space(3) }}>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Text muted>{t('weight')}: {c.totalWeightKg} kg</Text>
-            <Text v="h2">{t('total')}: {som(c.itemsTotal, locale)}</Text>
-          </Row>
-          {c.hasBlockingIssues && <Text v="small" color={colors.danger}>{t('fixIssues')}</Text>}
-          <Button title={t('checkout')} disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function CartRow({ line: l }: { line: CartLine }) {
-  const { t, locale, unit, errorText } = useI18n();
-  const setItem = useSetCartItem();
-  const step = Number(l.qtyStep ?? 1);
-  const min = Number(l.minQty ?? step);
-  // Yozilayotgan qiymat; server javobi kelganda yangilanadi
-  const [draft, setDraft] = useState(l.qty);
-  useEffect(() => setDraft(l.qty), [l.qty]);
-  const blocking = l.issues.filter((i) => isBlockingIssue(i.code));
-
-  return (
-    <View
-      style={{
-        backgroundColor: colors.card,
-        borderRadius: radius.lg,
-        padding: space(3),
-        gap: space(2),
-        borderWidth: 1,
-        borderColor: blocking.length ? colors.danger : colors.border,
-      }}
-    >
-      <Row style={{ alignItems: 'flex-start' }}>
-        <Pressable style={{ flex: 1 }} onPress={() => l.productId && router.push({ pathname: '/product/[id]', params: { id: l.productId } })}>
-          <Text bold numberOfLines={2}>{locale === 'ru' ? l.nameRu : l.nameUz}</Text>
-          <Text v="caption">{[l.sku, attrsText(l.attributes)].filter(Boolean).join(' · ')}</Text>
-        </Pressable>
-        <Pressable onPress={() => setItem.mutate({ variantId: l.variantId, qty: '0' })} hitSlop={10} accessibilityLabel="delete">
-          <Ionicons name="trash-outline" size={20} color={colors.danger} />
-        </Pressable>
-      </Row>
-      <Row style={{ justifyContent: 'space-between' }}>
-        {l.unit ? (
-          <QtyStepper
-            value={draft}
-            step={step}
-            min={min}
-            unit={unit(l.unit)}
-            onChange={setDraft}
-            onCommit={(qty) => {
-              if (qty && qty !== l.qty && Number(qty) > 0) setItem.mutate({ variantId: l.variantId, qty }, { onError: () => setDraft(l.qty) });
-            }}
-          />
-        ) : <View />}
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text bold>{som(l.lineTotal, locale)}</Text>
-          <Text v="caption">{som(l.unitPrice, locale)} / {l.unit ? unit(l.unit) : ''}</Text>
-        </View>
-      </Row>
-      {l.issues.map((i: LineIssue) => (
-        <Text key={i.code} v="small" color={isBlockingIssue(i.code) ? colors.danger : colors.warning}>
-          {i.code === 'EXCEEDS_AVAILABLE' ? t('onlyAvailable', { n: i.available ?? 0 }) : errorText(i.code, i.code)}
-        </Text>
-      ))}
-    </View>
+    <Screen scroll={false} title={t('tabCart')} footer={footer}>
+      {(insets) => (
+        <FlatList
+          data={c.lines}
+          keyExtractor={(l) => l.variantId}
+          contentContainerStyle={{ ...insets.container, paddingTop: insets.top + space(4), paddingBottom: insets.bottom + space(4), gap: space(3) }}
+          renderItem={({ item, index }) => (
+            <Appear index={index}>
+              <CartRow line={item} />
+            </Appear>
+          )}
+          ListFooterComponent={<CartSummary c={c} />}
+        />
+      )}
+    </Screen>
   );
 }

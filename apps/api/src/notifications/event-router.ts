@@ -1,14 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RT, type Role } from '@mebel/shared';
+import { formatMoney, RT, type Role } from '@mebel/shared';
 import { ENV, type Env } from '../config/env.js';
 import type { OutboxHandler } from '../events/outbox.dispatcher.js';
-import type { OutboxEnvelope, OutboxEvents, OutboxType } from '../events/outbox.service.js';
+import type { OutboxEnvelope, OutboxType } from '../events/outbox.service.js';
 import { serialize } from '../common/serialize.interceptor.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
-import { DELIVERY_FAILED, formatSom, READY_FOR_PICKUP, STATUS_TEXT, TEXTS } from './messages.js';
+import { DELIVERY_FAILED, READY_FOR_PICKUP, STATUS_TEXT, TEXTS } from './messages.js';
 import { NotificationsService } from './notifications.service.js';
 import { escapeHtml, TelegramSender } from './senders.js';
+
+const CUSTOMER_CARD = {
+  select: { id: true, phone: true, fullName: true, customerProfile: { select: { companyName: true } } },
+} as const;
 
 type Handlers = { [T in OutboxType]: (e: OutboxEnvelope<T>) => Promise<void> };
 
@@ -38,7 +42,7 @@ export class EventRouter implements OutboxHandler {
       const card = serialize({ id: o.id, number: o.number, status: o.status, grandTotal: o.grandTotal, customer: o.customer, createdAt: o.createdAt });
       this.realtime.toStaff(RT.ORDER_CREATED, card);
       await this.tg(
-        `🆕 <b>Yangi buyurtma ${o.number}</b>\n${this.who(o.customer)}\n${o._count.items} xil tovar, ${formatSom(o.grandTotal)}\n` +
+        `🆕 <b>Yangi buyurtma ${o.number}</b>\n${this.who(o.customer)}\n${o._count.items} xil tovar, ${formatMoney(o.grandTotal)}\n` +
           `${o.deliveryType === 'PICKUP' ? '🏬 Olib ketadi' : '🚚 Yetkazish'}\n${this.link(o.id)}`,
       );
     },
@@ -112,7 +116,7 @@ export class EventRouter implements OutboxHandler {
       const p = await this.payment(payload.paymentId);
       this.realtime.toStaff(RT.PAYMENT_CREATED, serialize(p));
       await this.tg(
-        `${p.method === 'CASH' ? '💵 <b>Haydovchi naqd oldi' : '💳 <b>Yangi chek'}: ${formatSom(p.amount)}</b>\n${this.who(p.customer)}\n` +
+        `${p.method === 'CASH' ? '💵 <b>Haydovchi naqd oldi' : '💳 <b>Yangi chek'}: ${formatMoney(p.amount)}</b>\n${this.who(p.customer)}\n` +
           `${p.order ? `Buyurtma ${p.order.number}` : 'Umumiy qarzga'}\n${this.env.ADMIN_URL}/payments?status=PENDING`,
       );
     },
@@ -207,7 +211,7 @@ export class EventRouter implements OutboxHandler {
     return this.prisma.order.findUniqueOrThrow({
       where: { id },
       include: {
-        customer: { select: { id: true, phone: true, fullName: true, customerProfile: { select: { companyName: true } } } },
+        customer: CUSTOMER_CARD,
         _count: { select: { items: { where: { status: 'ACTIVE' } } } },
       },
     });
@@ -218,7 +222,7 @@ export class EventRouter implements OutboxHandler {
       where: { id },
       include: {
         order: { select: { id: true, number: true, paidTotal: true, grandTotal: true } },
-        customer: { select: { id: true, phone: true, fullName: true, customerProfile: { select: { companyName: true } } } },
+        customer: CUSTOMER_CARD,
       },
     });
   }

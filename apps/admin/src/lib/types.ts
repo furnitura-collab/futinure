@@ -5,6 +5,7 @@
 import type {
   CustomerType,
   DeliveryStatus,
+  Locale,
   DeliveryType,
   OrderStatus,
   PaymentMethod,
@@ -24,7 +25,7 @@ export interface Me {
   phone: string;
   fullName: string | null;
   role: Role;
-  locale: 'uz' | 'ru';
+  locale: Locale;
 }
 
 export interface CustomerBrief {
@@ -371,7 +372,7 @@ export interface CustomerFinance {
 }
 
 export interface CustomerDetail extends Omit<CustomerRow, '_count'> {
-  locale: 'uz' | 'ru';
+  locale: Locale;
   addresses: { id: string; label: string | null; addressText: string }[];
   finance: CustomerFinance;
   stats: { orders: number; turnover: number };
@@ -411,4 +412,14 @@ export interface Receivables {
     overdue: number;
     oldest_due: string | null;
   }[];
+}
+
+export interface StaffMember {
+  id: string;
+  phone: string;
+  fullName: string | null;
+  role: Role;
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
 }

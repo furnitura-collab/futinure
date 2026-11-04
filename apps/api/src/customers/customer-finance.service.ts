@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { businessDate, type LedgerQuery, type PeriodQuery } from '@mebel/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { AppException } from '../common/app-exception.js';
+import { dayRange, dayStart, nextDayStart } from '../common/business-day.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-
-/** Toshkent kunining boshi */
-const dayStart = (d: string) => new Date(`${d}T00:00:00+05:00`);
-const nextDay = (d: string) => new Date(dayStart(d).getTime() + 86_400_000);
+import { UNPAID_CREDIT_ORDER } from './credit-orders.js';
+import { pageArgs, paginate } from '../common/pagination.js';
 
 /** Mijoz moliyasi: balans, daftar, akt-sverka, muddati o'tgan qarz */
 @Injectable()
@@ -37,25 +36,22 @@ export class CustomerFinanceService {
   async overdueAmount(customerId: string): Promise<bigint> {
     const [row] = await this.prisma.$queryRaw<[{ sum: bigint | null }]>`
       SELECT SUM(grand_total - paid_total)::bigint AS sum FROM orders
-      WHERE customer_id = ${customerId}::uuid AND payment_terms = 'CREDIT'
-        AND status IN ('DELIVERED', 'COMPLETED') AND grand_total > paid_total
-        AND due_date < ${businessDate()}::date`;
+      WHERE customer_id = ${customerId}::uuid AND ${UNPAID_CREDIT_ORDER} AND due_date < ${businessDate()}::date`;
     return row.sum ?? 0n;
   }
 
   async ledger(customerId: string, q: LedgerQuery) {
-    const where: Prisma.LedgerEntryWhereInput = { customerId, createdAt: this.range(q) };
-    const [items, total] = await Promise.all([
+    const where: Prisma.LedgerEntryWhereInput = { customerId, createdAt: dayRange(q.from, q.to) };
+    return paginate(
+      q,
       this.prisma.ledgerEntry.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (q.page - 1) * q.limit,
-        take: q.limit,
+        ...pageArgs(q),
         include: { order: { select: { id: true, number: true } }, payment: { select: { id: true, method: true } } },
       }),
       this.prisma.ledgerEntry.count({ where }),
-    ]);
-    return { items, total, page: q.page, limit: q.limit };
+    );
   }
 
   /**
@@ -81,7 +77,7 @@ export class CustomerFinanceService {
         select: { balanceAfter: true },
       }),
       this.prisma.ledgerEntry.findMany({
-        where: { customerId, createdAt: { gte: dayStart(from), lt: nextDay(to) } },
+        where: { customerId, createdAt: { gte: dayStart(from), lt: nextDayStart(to) } },
         orderBy: { createdAt: 'asc' },
         include: { order: { select: { number: true } } },
       }),
@@ -98,10 +94,5 @@ export class CustomerFinanceService {
       closingBalance: opening + debit - credit,
       entries,
     };
-  }
-
-  private range(q: PeriodQuery): Prisma.DateTimeFilter | undefined {
-    if (!q.from && !q.to) return undefined;
-    return { ...(q.from && { gte: dayStart(q.from) }), ...(q.to && { lt: nextDay(q.to) }) };
   }
 }

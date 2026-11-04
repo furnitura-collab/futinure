@@ -25,6 +25,7 @@ enum Role {
 enum Locale {
   uz
   ru
+  en
 }
 
 enum CustomerType {

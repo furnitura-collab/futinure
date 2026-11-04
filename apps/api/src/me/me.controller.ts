@@ -1,5 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
-import { deviceTokenSchema, updateMeSchema, type DeviceTokenInput, type UpdateMe } from '@mebel/shared';
+import {
+  changePasswordSchema,
+  deviceTokenSchema,
+  updateMeSchema,
+  type ChangePassword,
+  type DeviceTokenInput,
+  type UpdateMe,
+} from '@mebel/shared';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { type AuthUser, CurrentUser } from '../auth/decorators.js';
 import { MeService } from './me.service.js';
@@ -16,6 +23,12 @@ export class MeController {
   @Patch()
   update(@CurrentUser() user: AuthUser, @Body(new ZodPipe(updateMeSchema)) body: UpdateMe) {
     return this.me.update(user, body);
+  }
+
+  @Post('password')
+  @HttpCode(204)
+  async changePassword(@CurrentUser() user: AuthUser, @Body(new ZodPipe(changePasswordSchema)) body: ChangePassword) {
+    await this.me.changePassword(user, body);
   }
 
   @Post('devices')

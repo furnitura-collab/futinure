@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, tokens, type Tokens } from './api';
-import { useI18n } from './i18n';
+import { useI18n } from '@/i18n';
 import type { Me } from './types';
 
 interface AuthState {

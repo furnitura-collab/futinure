@@ -5,6 +5,7 @@ import { AppException } from '../common/app-exception.js';
 import { AuditService, type Tx } from '../audit/audit.service.js';
 import type { AuthUser } from '../auth/decorators.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { pageArgs, paginate } from '../common/pagination.js';
 
 interface LockedVariant {
   id: string;
@@ -99,16 +100,15 @@ export class StockService {
 
   async movements(variantId: string, page: number, limit: number) {
     const where = { variantId };
-    const [items, total] = await Promise.all([
+    return paginate(
+      { page, limit },
       this.prisma.stockMovement.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        ...pageArgs({ page, limit }),
         include: { order: { select: { id: true, number: true } } },
       }),
       this.prisma.stockMovement.count({ where }),
-    ]);
-    return { items, total, page, limit };
+    );
   }
 }

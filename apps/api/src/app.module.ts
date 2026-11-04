@@ -15,6 +15,7 @@ import { RedisModule } from './redis/redis.module.js';
 import { ChatModule } from './chat/chat.module.js';
 import { OutboxModule } from './events/outbox.service.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { StaffModule } from './staff/staff.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
 
 @Module({
@@ -33,6 +34,7 @@ import { UploadsModule } from './uploads/uploads.module.js';
     PaymentsModule,
     DeliveriesModule,
     ChatModule,
+    StaffModule,
   ],
   controllers: [HealthController, MeController],
   providers: [MeService],

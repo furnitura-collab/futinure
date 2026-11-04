@@ -1,84 +1,79 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
-import { Button, Card, Ionicons, Row, Segmented, Text, type IconName } from '../../components/ui';
-import { api } from '../../lib/api';
-import { useAuth } from '../../lib/auth';
-import { phone, som } from '../../lib/format';
-import { useI18n } from '../../lib/i18n';
-import { colors, space } from '../../lib/theme';
-import type { Balance, Notification, Paginated } from '../../lib/types';
-import { contained, CONTENT } from '../../lib/layout';
+import { View } from 'react-native';
+import { formatPhone } from '@mebel/shared';
+import { BalanceCard } from '@/components/profile/BalanceCard';
+import { SettingsSections } from '@/components/settings/SettingsSections';
+import { Appear, Avatar, Button, Card, CountBadge, ListGroup, ListItem, Screen, Skeleton, Text } from '@/components/ui';
+import { TwoColumn } from '@/components/web/TwoColumn';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { useSite } from '@/lib/layout';
+import { useUnreadCount } from '@/lib/notifications';
+import type { Balance } from '@/lib/types';
+import { radius, space } from '@/theme';
 
 export default function Profile() {
-  const { me, logout } = useAuth();
-  const { t, locale, setLocale } = useI18n();
+  const { me } = useAuth();
+  const { t, customerType } = useI18n();
+  const { site } = useSite();
   const balance = useQuery({ queryKey: ['balance'], queryFn: () => api<Balance>('/me/balance') });
-  const notifications = useQuery({
-    queryKey: ['notifications', 'count'],
-    queryFn: () => api<Paginated<Notification> & { unread: number }>('/notifications', { query: { limit: 1 } }),
-  });
-  const b = balance.data;
+  const unread = useUnreadCount();
   const p = me?.customerProfile;
+  const b = balance.data;
 
-  return (
-    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }}>
-      <View style={{ gap: 2 }}>
-        <Text v="title">{me?.fullName}</Text>
-        <Text muted>
-          {[p?.companyName, me && phone(me.phone), p?.priceGroup?.name].filter(Boolean).join(' · ')}
-        </Text>
-      </View>
-
-      {b && (
-        <Card style={{ gap: space(3) }} onPress={() => router.push('/balance')}>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Text muted>{t('balance')}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Row>
-          <Text v="title" color={b.balance > 0 ? colors.warning : b.balance < 0 ? colors.success : colors.text}>
-            {b.balance > 0 ? `${t('debt')}: ${som(b.balance, locale)}` : b.balance < 0 ? `${t('credit')}: ${som(-b.balance, locale)}` : som(0, locale)}
+  const account = (
+    <Appear key="account">
+      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space(4) }}>
+        <Avatar name={me?.fullName} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text v="heading" numberOfLines={1}>{me?.fullName}</Text>
+          <Text v="small" muted numberOfLines={2}>
+            {[p?.companyName ?? (p && customerType(p.type)), me && formatPhone(me.phone)].filter(Boolean).join(' · ')}
           </Text>
-          {b.creditLimit > 0 && (
-            <Text v="small" muted>
-              {t('creditLimit')}: {som(b.creditLimit, locale)}
-            </Text>
-          )}
-          {b.overdueAmount > 0 && (
-            <Text v="small" bold color={colors.danger}>
-              {t('overdue')}: {som(b.overdueAmount, locale)}
-            </Text>
-          )}
-        </Card>
-      )}
-
-      <Card style={{ padding: 0 }}>
-        <Item icon="notifications-outline" label={t('notifications')} badge={notifications.data?.unread} onPress={() => router.push('/notifications')} />
-        <Item icon="location-outline" label={t('addresses')} onPress={() => router.push('/addresses')} />
-        <Item icon="document-text-outline" label={t('ledger')} onPress={() => router.push('/balance')} last />
-      </Card>
-
-      <View style={{ gap: space(2) }}>
-        <Text v="small" bold>{t('language')}</Text>
-        <Segmented value={locale} onChange={setLocale} options={[{ value: 'uz', label: "O'zbekcha" }, { value: 'ru', label: 'Русский' }]} />
-      </View>
-
-      <Button title={t('logout')} icon="log-out-outline" variant="ghost" onPress={() => void logout()} />
-    </ScrollView>
-  );
-}
-
-function Item({ icon, label, onPress, badge, last }: { icon: IconName; label: string; onPress: () => void; badge?: number; last?: boolean }) {
-  return (
-    <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: space(3), padding: space(4), borderBottomWidth: last ? 0 : 1, borderColor: colors.border }}>
-      <Ionicons name={icon} size={22} color={colors.brand} />
-      <Text style={{ flex: 1 }}>{label}</Text>
-      {!!badge && (
-        <View style={{ backgroundColor: colors.brand, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>
-          <Text v="caption" bold color="#fff">{badge}</Text>
+          {p?.priceGroup && <Text v="caption" tone="primary">{t('priceGroupLine', { name: p.priceGroup.name })}</Text>}
         </View>
+      </Card>
+    </Appear>
+  );
+  const money = (
+    <Appear key="balance" index={1}>
+      {b ? (
+        <BalanceCard b={b}>
+          {b.balance - b.pendingPayments > 0 && <Button title={t('payDebt')} icon="card-outline" size="md" onPress={() => router.push('/pay')} />}
+        </BalanceCard>
+      ) : (
+        <Skeleton height={120} radius={radius.lg} />
       )}
-      <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-    </Pressable>
+    </Appear>
+  );
+  const links = (
+    <Appear key="links" index={2}>
+      <ListGroup title={t('account')}>
+        <ListItem icon="notifications-outline" title={t('notifications')} right={<CountBadge count={unread} />} onPress={() => router.push('/notifications')} />
+        <ListItem icon="location-outline" title={t('addresses')} onPress={() => router.push('/addresses')} />
+        <ListItem icon="document-text-outline" title={t('paymentsHistory')} onPress={() => router.push('/balance')} />
+      </ListGroup>
+    </Appear>
+  );
+  const settings = (
+    <Appear key="settings" index={3} style={{ gap: space(4) }}>
+      <SettingsSections />
+    </Appear>
+  );
+
+  return (
+    <Screen width="form" title={t('tabProfile')}>
+      {site ? (
+        // Saytda: chapda hisob va balans, o'ngda — sozlamalar guruhlari
+        <TwoColumn sticky={false} aside={[links, settings]}>
+          {account}
+          {money}
+        </TwoColumn>
+      ) : (
+        [account, money, links, settings]
+      )}
+    </Screen>
   );
 }

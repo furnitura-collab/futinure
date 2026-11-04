@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { REDIS } from '../redis/redis.module.js';
 import { SmsSender } from './sms.sender.js';
 
-export const OTP_TTL_SECONDS = 180;
+const OTP_TTL_SECONDS = 180;
 export const OTP_MAX_ATTEMPTS = 5;
 const TEST_CODE = '000000';
 

@@ -1,167 +1,191 @@
 import { useQuery } from '@tanstack/react-query';
-import { Check, X } from 'lucide-react';
+import { Check, MessageSquareText, ReceiptText, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import type { PaymentStatus } from '@mebel/shared';
-import { api } from '../../lib/api';
-import { dateTime, phone, som } from '../../lib/format';
-import { METHOD, PAYMENT_STATUS } from '../../lib/labels';
-import { useApiMutation } from '../../lib/mutation';
-import type { Paginated, PaymentRow } from '../../lib/types';
-import { AuthFile } from '../../components/AuthFile';
-import { Badge, Button, cx, Dialog, Empty, ErrorBox, Field, PageLoader, Textarea } from '../../components/ui';
+import { formatDateTime, formatPhone, type PaymentStatus } from '@mebel/shared';
+import { AuthFile } from '@/components/AuthFile';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { FormDialog } from '@/components/FormDialog';
+import { FormField } from '@/components/FormField';
+import { PageHeader } from '@/components/PageHeader';
+import { Pagination } from '@/components/Pagination';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useI18n, type TKey } from '@/i18n';
+import { api } from '@/lib/api';
+import { customerName } from '@/lib/format';
+import { useApiMutation } from '@/lib/mutation';
+import type { Paginated, PaymentRow } from '@/lib/types';
 
-const TABS: { status: PaymentStatus | 'ALL'; label: string }[] = [
-  { status: 'PENDING', label: 'Tekshirish kerak' },
-  { status: 'CONFIRMED', label: 'Tasdiqlangan' },
-  { status: 'REJECTED', label: 'Rad etilgan' },
-  { status: 'ALL', label: 'Barchasi' },
+type Tab = PaymentStatus | 'ALL';
+const TABS: { value: Tab; label: TKey }[] = [
+  { value: 'PENDING', label: 'payments.pending' },
+  { value: 'CONFIRMED', label: 'payments.confirmed' },
+  { value: 'REJECTED', label: 'payments.rejected' },
+  { value: 'ALL', label: 'payments.all' },
 ];
+const isTab = (v: string): v is Tab => TABS.some((x) => x.value === v);
 
 export function PaymentsPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]['status']>('PENDING');
+  const { t } = useI18n();
+  const [tab, setTab] = useState<Tab>('PENDING');
   const [page, setPage] = useState(1);
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['payments', tab, page],
-    queryFn: () =>
-      api<Paginated<PaymentRow>>('/admin/payments', { query: { status: tab === 'ALL' ? undefined : tab, page, limit: 20 } }),
+    queryFn: () => api<Paginated<PaymentRow>>('/admin/payments', { query: { status: tab === 'ALL' ? undefined : tab, page, limit: 20 } }),
     placeholderData: (prev) => prev,
   });
-  const pages = data ? Math.ceil(data.total / data.limit) : 1;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 p-6">
-      <h1 className="text-xl font-semibold">To'lovlar</h1>
-      <div className="flex gap-1 border-b border-stone-200">
-        {TABS.map((t) => (
-          <button
-            key={t.status}
-            onClick={() => {
-              setTab(t.status);
-              setPage(1);
-            }}
-            className={cx(
-              '-mb-px border-b-2 px-4 py-2 text-sm font-medium',
-              tab === t.status ? 'border-brand-600 text-brand-700' : 'border-transparent text-stone-500 hover:text-stone-800',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader title={t('payments.title')} description={t('payments.subtitle')} />
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          if (!isTab(v)) return;
+          setTab(v);
+          setPage(1);
+        }}
+        className="mb-4"
+      >
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto border-b">
+          {TABS.map((x) => (
+            <TabsTrigger key={x.value} value={x.value} className="flex-none">
+              {t(x.label)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {isPending ? (
-        <PageLoader />
-      ) : error ? (
-        <ErrorBox error={error} />
-      ) : data.items.length === 0 ? (
-        <Empty>{tab === 'PENDING' ? 'Tekshiriladigan chek yo\'q' : 'To\'lov yo\'q'}</Empty>
-      ) : (
         <div className="space-y-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} className="h-36 rounded-xl" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState error={error} onRetry={() => void refetch()} />
+      ) : data.items.length === 0 ? (
+        <EmptyState
+          icon={ReceiptText}
+          title={tab === 'PENDING' ? t('payments.emptyPending') : t('payments.empty')}
+          description={tab === 'PENDING' ? t('payments.emptyPendingHint') : undefined}
+        />
+      ) : (
+        <div className={isFetching ? 'space-y-3 opacity-60 transition-opacity' : 'space-y-3 transition-opacity'}>
           {data.items.map((p) => (
             <PaymentCard key={p.id} payment={p} />
           ))}
         </div>
       )}
 
-      {pages > 1 && (
-        <div className="flex items-center justify-end gap-2 text-sm">
-          <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Oldingi</Button>
-          <span className="text-stone-500">{page} / {pages}</span>
-          <Button variant="secondary" size="sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Keyingi</Button>
-        </div>
-      )}
+      {data && <Pagination className="mt-4" page={page} total={data.total} limit={data.limit} onPage={setPage} />}
     </div>
   );
 }
 
 function PaymentCard({ payment: p }: { payment: PaymentRow }) {
+  const { t, money, label } = useI18n();
   const [showReceipt, setShowReceipt] = useState(p.status === 'PENDING');
   const [rejecting, setRejecting] = useState(false);
   const confirm = useApiMutation(() => api(`/admin/payments/${p.id}/confirm`, { method: 'POST' }), {
     invalidate: [['payments'], ['orders'], ...(p.orderId ? [['order', p.orderId]] : [])],
-    success: `${som(p.amount)} tasdiqlandi`,
+    success: t('payments.confirmedToast', { amount: money(p.amount) }),
   });
-  const c = p.customer!;
   const due = p.order ? p.order.grandTotal - p.order.paidTotal : null;
 
   return (
-    <div className="flex gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold">{som(p.amount)}</span>
-          <Badge tone={PAYMENT_STATUS[p.status].tone}>{PAYMENT_STATUS[p.status].label}</Badge>
-          <span className="text-sm text-stone-500">{METHOD[p.method]}</span>
+    <Card className="animate-fade-up flex-col gap-4 p-4 sm:flex-row">
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-lg font-semibold tabular">{money(p.amount)}</span>
+          <StatusBadge kind="paymentStatus" value={p.status} />
+          <span className="text-sm text-muted-foreground">{label('paymentMethod', p.method)}</span>
         </div>
-        <p className="text-sm">
-          {c.customerProfile?.companyName || c.fullName || '—'} · <span className="text-stone-500">{phone(c.phone)}</span>
-        </p>
-        <p className="text-sm text-stone-600">
+        {p.customer && (
+          <p className="text-sm">
+            {customerName(p.customer)} · <span className="text-muted-foreground">{formatPhone(p.customer.phone)}</span>
+          </p>
+        )}
+        <p className="text-sm text-muted-foreground">
           {p.order ? (
             <>
-              Buyurtma{' '}
-              <Link to={`/orders/${p.order.id}`} className="font-mono text-brand-700 hover:underline">{p.order.number}</Link>
-              {p.status === 'PENDING' && due !== null && <> · qoldiq {som(due)}</>}
+              {t('payments.order')}{' '}
+              <Link to={`/orders/${p.order.id}`} className="font-mono text-primary hover:underline">
+                {p.order.number}
+              </Link>
+              {p.status === 'PENDING' && due !== null && ` · ${t('payments.dueLeft', { amount: money(due) })}`}
             </>
           ) : (
-            'Umumiy qarzga'
+            t('payments.general')
           )}
         </p>
-        <p className="text-xs text-stone-500">{dateTime(p.createdAt)}</p>
-        {p.comment && <p className="text-sm">💬 {p.comment}</p>}
-        {p.rejectReason && <p className="text-sm text-rose-700">Rad etish sababi: {p.rejectReason}</p>}
+        <p className="text-xs text-muted-foreground">{formatDateTime(p.createdAt)}</p>
+        {p.comment && (
+          <p className="flex gap-1.5 text-sm">
+            <MessageSquareText className="mt-0.5 size-4 shrink-0 text-muted-foreground" /> {p.comment}
+          </p>
+        )}
+        {p.rejectReason && <p className="text-sm text-destructive">{t('payments.rejectReason', { reason: p.rejectReason })}</p>}
 
         {p.status === 'PENDING' && (
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <Button size="sm" loading={confirm.isPending} onClick={() => confirm.mutate(undefined)}>
-              <Check className="size-4" /> Pul tushdi — tasdiqlash
+              <Check /> {t('payments.confirm')}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setRejecting(true)}>
-              <X className="size-4" /> Rad etish
+            <Button size="sm" variant="outline" onClick={() => setRejecting(true)}>
+              <X /> {t('payments.reject')}
             </Button>
           </div>
         )}
       </div>
       {p.receipt && (
-        <div className="w-56 shrink-0">
+        <div className="w-full shrink-0 sm:w-56">
           {showReceipt ? (
-            <AuthFile path={`/payments/${p.id}/receipt`} mimeType={p.receipt.mimeType} className="max-h-72 w-full rounded-lg object-contain ring-1 ring-stone-200" />
+            <AuthFile path={`/payments/${p.id}/receipt`} mimeType={p.receipt.mimeType} className="max-h-72 w-full object-contain" />
           ) : (
-            <Button variant="secondary" size="sm" onClick={() => setShowReceipt(true)}>Chekni ko'rish</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowReceipt(true)}>
+              <ReceiptText /> {t('payments.showReceipt')}
+            </Button>
           )}
         </div>
       )}
       {rejecting && <RejectDialog payment={p} onClose={() => setRejecting(false)} />}
-    </div>
+    </Card>
   );
 }
 
 function RejectDialog({ payment, onClose }: { payment: PaymentRow; onClose: () => void }) {
+  const { t, money } = useI18n();
   const [reason, setReason] = useState('');
   const reject = useApiMutation(() => api(`/admin/payments/${payment.id}/reject`, { body: { reason: reason.trim() } }), {
     invalidate: [['payments']],
-    success: 'To\'lov rad etildi',
+    success: t('payments.rejectedToast'),
     onSuccess: onClose,
   });
   return (
-    <Dialog
-      open
+    <FormDialog
       onClose={onClose}
-      title={`${som(payment.amount)} — rad etish`}
+      title={t('payments.rejectTitle', { amount: money(payment.amount) })}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Bekor</Button>
-          <Button variant="danger" loading={reject.isPending} disabled={reason.trim().length < 3} onClick={() => reject.mutate(undefined)}>
-            Rad etish
+          <Button variant="outline" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="destructive" loading={reject.isPending} disabled={reason.trim().length < 3} onClick={() => reject.mutate(undefined)}>
+            {t('payments.reject')}
           </Button>
         </>
       }
     >
-      <Field label="Sabab (mijozga ko'rinadi)">
-        {(id) => (
-          <Textarea id={id} rows={3} autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Masalan: chekdagi summa boshqa / pul tushmagan" />
-        )}
-      </Field>
-    </Dialog>
+      <FormField label={t('payments.reasonLabel')}>
+        {(f) => <Textarea {...f} rows={3} autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('payments.reasonPlaceholder')} />}
+      </FormField>
+    </FormDialog>
   );
 }

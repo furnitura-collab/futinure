@@ -1,201 +1,159 @@
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { lineTotal, resolveUnitPrice, validateQty } from '@mebel/shared';
-import { Badge, Button, Card, ErrorView, Ionicons, Loader, QtyStepper, Row, Text, useToast } from '../../components/ui';
-import { api } from '../../lib/api';
-import { useCart, useSetCartItem } from '../../lib/cart';
-import { som } from '../../lib/format';
-import { useI18n } from '../../lib/i18n';
-import { colors, radius, space } from '../../lib/theme';
-import type { ProductDetail } from '../../lib/types';
-import { attrsText, imageUri, LEVEL_TONE } from '../../lib/catalog';
-import { BREAKPOINT, contained } from '../../lib/layout';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { View } from 'react-native';
+import { AddToCartBar } from '@/components/product/AddToCartBar';
+import { Gallery } from '@/components/product/Gallery';
+import { PriceCard } from '@/components/product/PriceCard';
+import { SpecsTable } from '@/components/product/SpecsTable';
+import { useProductPurchase } from '@/components/product/useProductPurchase';
+import { VariantPicker } from '@/components/product/VariantPicker';
+import { Appear, Card, Divider, ErrorState, Row, Screen, Skeleton, Text } from '@/components/ui';
+import { STICKY } from '@/components/web/TwoColumn';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useLayout, useSite } from '@/lib/layout';
+import type { ProductDetail } from '@/lib/types';
+import { radius, space, useTheme } from '@/theme';
 
 export default function Product() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t, name, locale, unit, level } = useI18n();
-  const toast = useToast();
+  const { t, name, locale } = useI18n();
+  const { colors } = useTheme();
+  const { wide } = useLayout();
+  const { site } = useSite();
   const { data: p, isPending, error, refetch } = useQuery({ queryKey: ['product', id], queryFn: () => api<ProductDetail>(`/products/${id}`) });
-  const cart = useCart();
-  const setItem = useSetCartItem();
-  const [variantId, setVariantId] = useState<string | null>(null);
-  const [qty, setQty] = useState<string | null>(null);
-  // Galereya kengligi — konteynerniki (keng ekranda yarmi), boshida oyna kengligi
-  const window = useWindowDimensions();
-  const [width, setWidth] = useState(window.width);
-  const wide = window.width >= BREAKPOINT.wide;
+  const buy = useProductPurchase(p);
+  const v = buy.variant;
 
-  const v = p?.variants.find((x) => x.id === variantId) ?? p?.variants.find((x) => x.stockLevel !== 'OUT_OF_STOCK') ?? p?.variants[0];
-  const inCart = cart.data?.lines.find((l) => l.variantId === v?.id);
-  const quantity = qty ?? inCart?.qty ?? p?.minQty ?? '1';
+  if (isPending) {
+    return (
+      <Screen>
+        <Skeleton height={220} radius={radius.xl} />
+        <Skeleton width="70%" height={24} />
+        <Skeleton width="40%" height={16} />
+        <Skeleton height={140} radius={radius.lg} />
+      </Screen>
+    );
+  }
+  if (error || !p || !v || !buy.price) {
+    return (
+      <Screen>
+        <ErrorState error={error} onRetry={() => void refetch()} />
+      </Screen>
+    );
+  }
 
-  // Narxni ekranda hisoblaymiz (server bilan bir xil qoida — @mebel/shared)
-  const price = useMemo(() => {
-    if (!v) return null;
-    const check = validateQty(quantity, { minQty: p!.minQty, qtyStep: p!.qtyStep });
-    const unitPrice = resolveUnitPrice({ basePrice: v.basePrice, tiers: v.tiers, groupPrice: v.groupPrice }, quantity).unitPrice;
-    return { ok: check.ok, unitPrice, total: check.ok ? lineTotal(quantity, unitPrice) : 0 };
-  }, [v, quantity, p]);
+  const description = locale === 'ru' ? p.descriptionRu : p.descriptionUz;
+  // Asosiy o'lchamlar sarlavha ostida "chip" bo'lib — ro'yxatni ochmasdan ko'rinadi
+  const keySpecs = [p.board && `${p.board.lengthMm} × ${p.board.widthMm} mm`, p.board?.thicknessMm && `${Number(p.board.thicknessMm)} mm`].filter(Boolean) as string[];
 
-  if (isPending) return <Loader />;
-  if (error || !p || !v) return <ErrorView error={error} onRetry={() => void refetch()} />;
-  const attrs = attrsText;
-  const orderable = v.stockLevel !== 'OUT_OF_STOCK';
-
-  const gallery = (
-    <ScrollView
-      horizontal
-      pagingEnabled
-      showsHorizontalScrollIndicator={false}
-      style={{ backgroundColor: '#f5f5f4' }}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-    >
-      {p.images.length ? (
-        p.images.map((img) => <Image key={img.id} source={{ uri: imageUri(img.url)! }} style={{ width, height: width * 0.75 }} contentFit="cover" />)
-      ) : (
-        <View style={{ width, height: 220, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="cube-outline" size={64} color={colors.faint} />
-        </View>
-      )}
-    </ScrollView>
-  );
   const details = (
     <>
-      <View style={{ gap: 4 }}>
+      <Appear style={{ gap: space(2) }}>
         <Text v="title">{name(p)}</Text>
         <Text muted>{[p.brand?.name, name(p.category)].filter(Boolean).join(' · ')}</Text>
-        {p.board && (
-          <Text v="small" muted>
-            {p.board.lengthMm} × {p.board.widthMm} mm{p.board.thicknessMm ? ` · ${p.board.thicknessMm} mm` : ''}
-          </Text>
-        )}
-      </View>
-
-      {p.variants.length > 1 && (
-        <View style={{ gap: space(2) }}>
-          {p.variants.map((x) => {
-            const on = x.id === v.id;
-            return (
-              <Pressable
-                key={x.id}
-                onPress={() => {
-                  setVariantId(x.id);
-                  setQty(null);
-                }}
-                style={{
-                  padding: space(3),
-                  borderRadius: radius.md,
-                  borderWidth: on ? 2 : 1,
-                  borderColor: on ? colors.brand : colors.border,
-                  backgroundColor: colors.card,
-                  opacity: x.stockLevel === 'OUT_OF_STOCK' ? 0.5 : 1,
-                }}
-              >
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text bold>{attrs(x.attributes) || x.sku}</Text>
-                    <Text v="caption">{x.sku}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                    <Text bold>{som(x.price, locale)}</Text>
-                    <Badge label={level(x.stockLevel)} tone={LEVEL_TONE[x.stockLevel]} />
-                  </View>
-                </Row>
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
-
-      <Card style={{ gap: space(3) }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <View>
-            <Text v="caption">{v.groupPrice !== null ? t('yourPrice') : ''}</Text>
-            <Text v="title" color={colors.brandDark}>
-              {som(price?.unitPrice ?? v.price, locale)}
-              <Text muted> / {unit(p.unit)}</Text>
-            </Text>
-            {(price?.unitPrice ?? v.price) < v.basePrice && (
-              <Text v="small" muted style={{ textDecorationLine: 'line-through' }}>{som(v.basePrice, locale)}</Text>
-            )}
-          </View>
-          <Badge label={level(v.stockLevel)} tone={LEVEL_TONE[v.stockLevel]} />
-        </Row>
-        {v.leadTimeDays ? <Text v="small" color={colors.info}>{t('leadTime', { days: v.leadTimeDays })}</Text> : null}
-        {v.tiers.length > 0 && (
-          <View style={{ gap: 4, backgroundColor: colors.brandBg, padding: space(3), borderRadius: radius.sm }}>
-            <Text v="small" bold>{t('priceTiers')}</Text>
-            {v.tiers.map((tier) => (
-              <Text key={tier.minQty} v="small">
-                {tier.minQty}+ {unit(p.unit)} → {som(tier.price, locale)}
-              </Text>
+        {keySpecs.length > 0 && (
+          <Row style={{ flexWrap: 'wrap' }}>
+            {keySpecs.map((k) => (
+              <View key={k} style={{ paddingHorizontal: space(3), paddingVertical: space(1), borderRadius: radius.full, backgroundColor: colors.muted }}>
+                <Text v="small" bold>{k}</Text>
+              </View>
             ))}
-          </View>
+          </Row>
         )}
-      </Card>
-
-      {(p.descriptionUz || p.descriptionRu) && <Text muted>{locale === 'ru' ? p.descriptionRu : p.descriptionUz}</Text>}
-    </>
-  );
-  const actions = orderable && (
-    <>
-      <Row style={{ justifyContent: 'space-between' }}>
-        <QtyStepper value={quantity} onChange={setQty} step={Number(p.qtyStep)} min={Number(p.minQty)} unit={unit(p.unit)} />
-        <Text v="h2">{price?.ok ? som(price.total, locale) : '—'}</Text>
-      </Row>
-      {!price?.ok && (
-        <Text v="caption" color={colors.danger}>
-          min {p.minQty}, {t('qty').toLowerCase()} × {p.qtyStep}
-        </Text>
+      </Appear>
+      <Appear index={1}>
+        <PriceCard v={v} unitPrice={buy.price.unitPrice} productUnit={p.unit} quantity={buy.quantity} />
+      </Appear>
+      {p.variants.length > 1 && (
+        <Appear index={2}>
+          <Card>
+            <VariantPicker variants={p.variants} selected={v} onSelect={buy.select} />
+          </Card>
+        </Appear>
       )}
-      <Button
-        title={inCart ? `${t('inCart')}: ${inCart.qty} ${unit(p.unit)} — ${t('save').toLowerCase()}` : t('addToCart')}
-        icon="cart"
-        disabled={!price?.ok}
-        loading={setItem.isPending}
-        onPress={() =>
-          setItem.mutate(
-            { variantId: v.id, qty: quantity },
-            {
-              onSuccess: () => {
-                toast(`${name(p)} — ${quantity} ${unit(p.unit)}`, 'success');
-                router.back();
-              },
-            },
-          )
-        }
-      />
+      <Appear index={3}>
+        <SpecsTable p={p} v={v} />
+      </Appear>
+      {description ? <Text muted>{description}</Text> : null}
     </>
   );
 
-  // Keng ekran: chapda rasmlar, o'ngda ma'lumot va savatga qo'shish
+  const title = <Stack.Screen options={{ title: name(p) }} />;
+  const bar = <AddToCartBar p={p} buy={buy} />;
+
+  // Sayt: chapda katta kvadrat rasm (yopishgan), o'ngda bitta xarid bloki; ostida — xususiyatlar va tavsif
+  if (site) {
+    return (
+      <Screen
+        title={name(p)}
+        heading={false}
+        crumbs={[
+          { label: t('tabCatalog'), href: { pathname: '/catalog', params: { categoryId: '' } } },
+          { label: name(p.category), href: { pathname: '/catalog', params: { categoryId: p.category.id } } },
+        ]}
+        contentStyle={{ gap: space(8) }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(8) }}>
+          <View style={[{ flex: 1, minWidth: 0 }, STICKY]}>
+            <Gallery images={p.images} categoryId={p.category.id} kind={p.kind} square />
+          </View>
+          <Card style={{ flex: 1, minWidth: 0, gap: space(4), padding: space(6) }}>
+            <View style={{ gap: space(2) }}>
+              <Text v="display" accessibilityRole="header">{name(p)}</Text>
+              <Text muted>{[p.brand?.name, name(p.category)].filter(Boolean).join(' · ')}</Text>
+              {keySpecs.length > 0 && (
+                <Row style={{ flexWrap: 'wrap' }}>
+                  {keySpecs.map((k) => (
+                    <View key={k} style={{ paddingHorizontal: space(3), paddingVertical: space(1), borderRadius: radius.full, backgroundColor: colors.muted }}>
+                      <Text v="small" bold>{k}</Text>
+                    </View>
+                  ))}
+                </Row>
+              )}
+            </View>
+            <PriceCard v={v} unitPrice={buy.price.unitPrice} productUnit={p.unit} quantity={buy.quantity} flat />
+            {p.variants.length > 1 && (
+              <>
+                <Divider />
+                <VariantPicker variants={p.variants} selected={v} onSelect={buy.select} />
+              </>
+            )}
+            <Divider />
+            {bar}
+          </Card>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(8) }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <SpecsTable p={p} v={v} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>{description ? <Text muted>{description}</Text> : null}</View>
+        </View>
+      </Screen>
+    );
+  }
+
+  // Keng ekran: chapda rasm, o'ngda ma'lumot va savatga qo'shish
   if (wide) {
     return (
-      <ScrollView contentContainerStyle={{ ...contained(1100), flexDirection: 'row', alignItems: 'flex-start', gap: space(8), padding: space(6) }}>
-        <Stack.Screen options={{ title: name(p) }} />
-        <View style={{ flex: 1, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>{gallery}</View>
+      <Screen width="wide" title={name(p)} contentStyle={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(8), paddingHorizontal: space(6), maxWidth: 1100 }}>
+        {title}
+        <View style={{ flex: 1 }}>
+          <Gallery images={p.images} categoryId={p.category.id} kind={p.kind} />
+        </View>
         <View style={{ flex: 1, gap: space(4) }}>
           {details}
-          {actions && <Card style={{ gap: space(3) }}>{actions}</Card>}
+          <Card style={{ gap: space(3) }}>{bar}</Card>
         </View>
-      </ScrollView>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: name(p) }} />
-      <ScrollView contentContainerStyle={{ paddingBottom: space(6) }}>
-        {gallery}
-        <View style={{ padding: space(4), gap: space(4) }}>{details}</View>
-      </ScrollView>
-      {actions && (
-        <View style={{ padding: space(4), gap: space(3), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>{actions}</View>
-      )}
-    </SafeAreaView>
+    <Screen footer={bar} title={name(p)}>
+      {title}
+      <Gallery images={p.images} categoryId={p.category.id} kind={p.kind} />
+      {details}
+    </Screen>
   );
 }

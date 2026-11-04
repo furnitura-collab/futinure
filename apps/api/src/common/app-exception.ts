@@ -18,6 +18,10 @@ export class AppException extends HttpException {
     return new AppException('NOT_FOUND', `${entity} topilmadi`, HttpStatus.NOT_FOUND);
   }
 
+  static unauthorized(code = 'UNAUTHORIZED', message = 'Avtorizatsiya kerak') {
+    return new AppException(code, message, HttpStatus.UNAUTHORIZED);
+  }
+
   static forbidden(message = 'Ruxsat yo\'q') {
     return new AppException('FORBIDDEN', message, HttpStatus.FORBIDDEN);
   }

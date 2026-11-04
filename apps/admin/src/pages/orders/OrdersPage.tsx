@@ -1,26 +1,50 @@
 import { useQuery } from '@tanstack/react-query';
-import { Columns3, List, MessageCircle, Search, Store, Truck } from 'lucide-react';
+import { ClipboardCheck, Columns3, FileClock, Inbox, List, MessageCircle, Receipt, Store, Truck } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
-import { api } from '../../lib/api';
-import { useAuth } from '../../lib/auth';
-import { useDebounced } from '../../lib/hooks';
-import { ago, dateTime, phone, som } from '../../lib/format';
-import { STATUS, TERMS } from '../../lib/labels';
-import type { KanbanColumn, OrderCard, Paginated } from '../../lib/types';
-import { Badge, Button, cx, Empty, ErrorBox, Input, PageLoader, Select } from '../../components/ui';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { formatDateTime, formatPhone, type OrderStatus } from '@mebel/shared';
+import { DataTable, type Column } from '@/components/DataTable';
+import { ErrorState } from '@/components/ErrorState';
+import { MANAGERS } from '@/components/nav';
+import { OptionSelect } from '@/components/OptionSelect';
+import { PageHeader } from '@/components/PageHeader';
+import { SearchInput } from '@/components/SearchInput';
+import { StatCard } from '@/components/StatCard';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { ago, customerName } from '@/lib/format';
+import { useDebounced, usePendingPayments } from '@/lib/hooks';
+import type { KanbanColumn, OrderCard, Paginated } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 type Scope = 'all' | 'mine' | 'none';
+type Filters = { q?: string; managerId?: string };
+
+const isScope = (v: string | null): v is Scope => v === 'all' || v === 'mine' || v === 'none';
+
+function useKanban(filters: Filters) {
+  return useQuery({
+    queryKey: ['orders', 'kanban', filters],
+    queryFn: () => api<KanbanColumn[]>('/admin/orders/kanban', { query: filters }),
+  });
+}
 
 export function OrdersPage() {
+  const { t } = useI18n();
   const { me } = useAuth();
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'list' ? 'list' : 'board';
-  const scope = (params.get('scope') as Scope) ?? 'all';
+  const scopeParam = params.get('scope');
+  const scope: Scope = isScope(scopeParam) ? scopeParam : 'all';
   const [q, setQ] = useState(params.get('q') ?? '');
   const query = useDebounced(q.trim());
 
-  const filters = {
+  const filters: Filters = {
     q: query.length >= 2 ? query : undefined,
     managerId: scope === 'mine' ? me?.id : scope === 'none' ? 'none' : undefined,
   };
@@ -30,156 +54,213 @@ export function OrdersPage() {
       else p.delete(k);
       return p;
     });
+  const kanban = useKanban(filters);
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center gap-3 border-b border-stone-200 bg-white px-6 py-4">
-        <h1 className="mr-auto text-xl font-semibold">Buyurtmalar</h1>
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-stone-400" />
-          <Input className="w-72 pl-9" placeholder="Raqam, mijoz, firma, telefon" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
-        <Select className="w-52" value={scope} onChange={(e) => set('scope', e.target.value === 'all' ? null : e.target.value)}>
-          <option value="all">Barcha menejerlar</option>
-          <option value="mine">Menikilar</option>
-          <option value="none">Biriktirilmagan</option>
-        </Select>
-        <div className="flex rounded-lg ring-1 ring-stone-300">
-          <Button variant={view === 'board' ? 'secondary' : 'ghost'} size="sm" className="rounded-r-none" onClick={() => set('view', null)}>
-            <Columns3 className="size-4" /> Kanban
-          </Button>
-          <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="sm" className="rounded-l-none" onClick={() => set('view', 'list')}>
-            <List className="size-4" /> Jadval
-          </Button>
-        </div>
-      </header>
-      {view === 'board' ? <Board filters={filters} /> : <Table filters={filters} />}
+    <div className="space-y-6">
+      <PageHeader title={t('orders.title')} description={t('orders.subtitle')} className="mb-0">
+        <Tabs value={view} onValueChange={(v) => set('view', v === 'list' ? 'list' : null)}>
+          <TabsList>
+            <TabsTrigger value="board" className="px-3">
+              <Columns3 /> {t('orders.board')}
+            </TabsTrigger>
+            <TabsTrigger value="list" className="px-3">
+              <List /> {t('orders.table')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </PageHeader>
+
+      <OrderStats columns={kanban.data} loading={kanban.isPending} />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <SearchInput value={q} onChange={setQ} placeholder={t('orders.search')} loading={kanban.isFetching && !!filters.q} />
+        <OptionSelect
+          className="sm:w-56"
+          aria-label={t('orders.manager')}
+          value={scope}
+          onValueChange={(v) => set('scope', v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: t('orders.scopeAll') },
+            { value: 'mine', label: t('orders.scopeMine') },
+            { value: 'none', label: t('orders.scopeNone') },
+          ]}
+        />
+      </div>
+
+      {view === 'board' ? <Board query={kanban} /> : <OrdersTable filters={filters} />}
     </div>
   );
 }
 
-type Filters = { q?: string; managerId?: string };
-
-function Board({ filters }: { filters: Filters }) {
-  const { data, isPending, error } = useQuery({
-    queryKey: ['orders', 'kanban', filters],
-    queryFn: () => api<KanbanColumn[]>('/admin/orders/kanban', { query: filters }),
-  });
-  if (isPending) return <PageLoader />;
-  if (error) return <div className="p-6"><ErrorBox error={error} /></div>;
+function OrderStats({ columns, loading }: { columns?: KanbanColumn[]; loading: boolean }) {
+  const { t } = useI18n();
+  const { can } = useAuth();
+  const isManager = can(...MANAGERS);
+  const pending = usePendingPayments(isManager);
+  const count = (...statuses: OrderStatus[]) => columns?.filter((c) => statuses.includes(c.status)).reduce((s, c) => s + c.total, 0) ?? 0;
 
   return (
-    <div className="flex flex-1 gap-4 overflow-x-auto p-6">
-      {data.map((col) => (
-        <section key={col.status} className="flex w-72 shrink-0 flex-col rounded-xl bg-stone-100/80">
-          <header className="flex items-center justify-between px-3 py-2.5">
-            <Badge tone={STATUS[col.status].tone}>{STATUS[col.status].label}</Badge>
-            <span className="text-xs font-medium text-stone-500">{col.total}</span>
-          </header>
-          <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
-            {col.items.map((o) => (
-              <OrderCardView key={o.id} order={o} />
-            ))}
-            {col.total > col.items.length && (
-              <p className="py-2 text-center text-xs text-stone-500">yana {col.total - col.items.length} ta — jadvalda ko'ring</p>
-            )}
-          </div>
-        </section>
-      ))}
+    <div className={cn('grid grid-cols-2 gap-3 sm:gap-4', isManager ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
+      <StatCard label={t('orders.stats.new')} hint={t('orders.stats.newHint')} value={count('NEW')} icon={Inbox} tone="info" loading={loading} />
+      <StatCard label={t('orders.stats.quoted')} hint={t('orders.stats.quotedHint')} value={count('QUOTED')} icon={FileClock} tone="violet" loading={loading} />
+      <StatCard
+        label={t('orders.stats.inProgress')}
+        hint={t('orders.stats.inProgressHint')}
+        value={count('CONFIRMED', 'PREPARING', 'READY')}
+        icon={ClipboardCheck}
+        tone="primary"
+        loading={loading}
+      />
+      <StatCard label={t('orders.stats.onTheWay')} hint={t('orders.stats.onTheWayHint')} value={count('OUT_FOR_DELIVERY')} icon={Truck} tone="teal" loading={loading} />
+      {isManager && (
+        <StatCard
+          label={t('orders.stats.pendingPayments')}
+          hint={t('orders.stats.pendingPaymentsHint')}
+          value={pending.data ?? 0}
+          icon={Receipt}
+          tone="warning"
+          loading={pending.isPending}
+          to="/payments"
+          emphasize={!!pending.data}
+        />
+      )}
     </div>
   );
 }
 
-function OrderCardView({ order: o }: { order: OrderCard }) {
-  const name = o.customer.customerProfile?.companyName || o.customer.fullName || phone(o.customer.phone);
+function Board({ query }: { query: ReturnType<typeof useKanban> }) {
+  const { t } = useI18n();
+  if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
+
+  return (
+    <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      {query.isPending
+        ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-96 w-72 shrink-0 rounded-xl" />)
+        : query.data.map((col) => (
+            <section key={col.status} className="flex max-h-[calc(100dvh-20rem)] min-h-48 w-[17.5rem] shrink-0 snap-start flex-col rounded-xl border bg-muted/40">
+              <header className="flex items-center justify-between px-3 py-2.5">
+                <StatusBadge kind="orderStatus" value={col.status} />
+                <span className="text-xs font-medium text-muted-foreground tabular">{col.total}</span>
+              </header>
+              <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
+                {col.items.map((o) => (
+                  <BoardCard key={o.id} order={o} />
+                ))}
+                {col.items.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">{t('orders.columnEmpty')}</p>}
+                {col.total > col.items.length && (
+                  <p className="py-2 text-center text-xs text-muted-foreground">{t('orders.more', { n: col.total - col.items.length })}</p>
+                )}
+              </div>
+            </section>
+          ))}
+    </div>
+  );
+}
+
+function BoardCard({ order: o }: { order: OrderCard }) {
+  const { t, money, label } = useI18n();
   const waitingQuote = o.status === 'QUOTED' && o.currentQuote?.status === 'PENDING';
   return (
     <Link
       to={`/orders/${o.id}`}
-      className="block rounded-lg border border-stone-200 bg-white p-3 shadow-sm transition hover:border-brand-500 hover:shadow"
+      className="block rounded-lg border bg-card p-3 shadow-xs transition-[border-color,box-shadow,transform] duration-150 ease-out outline-none hover:-translate-y-px hover:border-primary/40 hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <div className="flex items-center justify-between text-xs text-stone-500">
-        <span className="font-mono font-medium text-stone-700">{o.number}</span>
-        <span title={dateTime(o.updatedAt)}>{ago(o.updatedAt)}</span>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-mono font-medium text-foreground">{o.number}</span>
+        <span title={formatDateTime(o.updatedAt)}>{ago(o.updatedAt, t)}</span>
       </div>
-      <p className="mt-1.5 truncate text-sm font-medium">{name}</p>
+      <p className="mt-1.5 truncate text-sm font-medium">{customerName(o.customer)}</p>
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-sm font-semibold">{som(o.grandTotal)}</span>
-        <span className="flex items-center gap-2 text-stone-400">
+        <span className="text-sm font-semibold tabular">{money(o.grandTotal)}</span>
+        <span className="flex items-center gap-2 text-muted-foreground">
           {o.deliveryType === 'DELIVERY' ? <Truck className="size-4" /> : <Store className="size-4" />}
           {o.unreadMessages > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-brand-600 px-1.5 text-xs font-semibold text-white">
+            <span className="flex items-center gap-0.5 rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
               <MessageCircle className="size-3" /> {o.unreadMessages}
             </span>
           )}
         </span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {waitingQuote && <Badge tone="bg-violet-50 text-violet-700 ring-violet-200">Javob kutilmoqda</Badge>}
-        {o.paymentTerms && <Badge tone="bg-stone-50 text-stone-600 ring-stone-200">{TERMS[o.paymentTerms]}</Badge>}
-        {o.balanceDue > 0 && o.paidTotal > 0 && <Badge tone="bg-amber-50 text-amber-700 ring-amber-200">Qoldiq {som(o.balanceDue)}</Badge>}
-        {!o.manager && <Badge tone="bg-rose-50 text-rose-700 ring-rose-200">Menejer yo'q</Badge>}
-      </div>
+      {(waitingQuote || o.paymentTerms || (o.balanceDue > 0 && o.paidTotal > 0) || !o.manager) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {waitingQuote && <Badge variant="violet">{t('orders.awaitingReply')}</Badge>}
+          {o.paymentTerms && <Badge>{label('paymentTerms', o.paymentTerms)}</Badge>}
+          {o.balanceDue > 0 && o.paidTotal > 0 && <Badge variant="warning">{t('orders.balance', { amount: money(o.balanceDue) })}</Badge>}
+          {!o.manager && <Badge variant="destructive">{t('orders.noManager')}</Badge>}
+        </div>
+      )}
     </Link>
   );
 }
 
-function Table({ filters }: { filters: Filters }) {
+function OrdersTable({ filters }: { filters: Filters }) {
+  const { t, money } = useI18n();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['orders', 'list', filters, page],
     queryFn: () => api<Paginated<OrderCard>>('/admin/orders', { query: { ...filters, page, limit: 30 } }),
     placeholderData: (prev) => prev,
   });
-  if (isPending) return <PageLoader />;
-  if (error) return <div className="p-6"><ErrorBox error={error} /></div>;
-  if (!data.items.length) return <div className="p-6"><Empty>Buyurtmalar topilmadi</Empty></div>;
-  const pages = Math.ceil(data.total / data.limit);
+
+  const columns: Column<OrderCard>[] = [
+    {
+      id: 'number',
+      header: t('orders.number'),
+      cell: (o) => <span className="font-mono font-medium text-primary">{o.number}</span>,
+      sortValue: (o) => o.number,
+    },
+    {
+      id: 'customer',
+      header: t('orders.customer'),
+      cell: (o) => (
+        <div className="min-w-40">
+          <p className="font-medium">{customerName(o.customer)}</p>
+          <p className="text-xs text-muted-foreground">{formatPhone(o.customer.phone)}</p>
+        </div>
+      ),
+      sortValue: (o) => customerName(o.customer),
+    },
+    { id: 'status', header: t('common.status'), cell: (o) => <StatusBadge kind="orderStatus" value={o.status} /> },
+    {
+      id: 'total',
+      header: t('orders.grandTotal'),
+      align: 'right',
+      cell: (o) => <span className="font-medium whitespace-nowrap tabular">{money(o.grandTotal)}</span>,
+      sortValue: (o) => o.grandTotal,
+    },
+    {
+      id: 'paid',
+      header: t('orders.paid'),
+      align: 'right',
+      hideBelow: 'md',
+      cell: (o) => (
+        <span className={cn('whitespace-nowrap tabular', o.balanceDue > 0 && o.status !== 'CANCELLED' && 'text-warning')}>{money(o.paidTotal)}</span>
+      ),
+      sortValue: (o) => o.paidTotal,
+    },
+    { id: 'manager', header: t('orders.manager'), hideBelow: 'lg', cell: (o) => <span className="text-muted-foreground">{o.manager?.fullName ?? '—'}</span> },
+    {
+      id: 'date',
+      header: t('orders.createdAt'),
+      hideBelow: 'sm',
+      cell: (o) => <span className="whitespace-nowrap text-muted-foreground">{formatDateTime(o.createdAt)}</span>,
+      sortValue: (o) => o.createdAt,
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-stone-50 text-left text-xs text-stone-500 uppercase">
-            <tr>
-              <th className="px-4 py-3">Raqam</th>
-              <th className="px-4 py-3">Mijoz</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Jami</th>
-              <th className="px-4 py-3 text-right">To'langan</th>
-              <th className="px-4 py-3">Menejer</th>
-              <th className="px-4 py-3">Sana</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-100">
-            {data.items.map((o) => (
-              <tr key={o.id} className="hover:bg-stone-50">
-                <td className="px-4 py-3 font-mono">
-                  <Link to={`/orders/${o.id}`} className="text-brand-700 hover:underline">{o.number}</Link>
-                </td>
-                <td className="px-4 py-3">
-                  <div>{o.customer.customerProfile?.companyName || o.customer.fullName || '—'}</div>
-                  <div className="text-xs text-stone-500">{phone(o.customer.phone)}</div>
-                </td>
-                <td className="px-4 py-3"><Badge tone={STATUS[o.status].tone}>{STATUS[o.status].label}</Badge></td>
-                <td className="px-4 py-3 text-right font-medium">{som(o.grandTotal)}</td>
-                <td className={cx('px-4 py-3 text-right', o.balanceDue > 0 && o.status !== 'CANCELLED' && 'text-amber-700')}>
-                  {som(o.paidTotal)}
-                </td>
-                <td className="px-4 py-3 text-stone-600">{o.manager?.fullName ?? '—'}</td>
-                <td className="px-4 py-3 text-stone-500">{dateTime(o.createdAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {pages > 1 && (
-        <div className="mt-4 flex items-center justify-end gap-2 text-sm">
-          <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Oldingi</Button>
-          <span className="text-stone-500">{page} / {pages}</span>
-          <Button variant="secondary" size="sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Keyingi</Button>
-        </div>
-      )}
-    </div>
+    <DataTable
+      columns={columns}
+      rows={data?.items}
+      rowKey={(o) => o.id}
+      loading={isPending || isFetching}
+      error={error}
+      onRetry={() => void refetch()}
+      onRowClick={(o) => navigate(`/orders/${o.id}`)}
+      empty={{ title: t('orders.empty'), description: t('orders.emptyHint') }}
+      pagination={data && { page, total: data.total, limit: data.limit, onPage: setPage }}
+    />
   );
 }

@@ -105,9 +105,19 @@ async function send(path: string, opts: RequestOptions): Promise<Response> {
   return fetch(buildUrl(path, opts.query), { method: opts.method ?? (body ? 'POST' : 'GET'), headers, body });
 }
 
+/** Faqat token eskirganda yangilaymiz — "parol noto'g'ri" kabi 401 xatolar qayta yuborilmaydi */
+async function isTokenError(res: Response) {
+  try {
+    const code = ((await res.clone().json()) as { error?: { code?: string } }).error?.code;
+    return !code || code === 'UNAUTHORIZED';
+  } catch {
+    return true;
+  }
+}
+
 async function request(path: string, opts: RequestOptions): Promise<Response> {
   let res = await send(path, opts);
-  if (res.status === 401 && !path.startsWith('/auth/') && (await refresh())) {
+  if (res.status === 401 && !path.startsWith('/auth/') && (await isTokenError(res)) && (await refresh())) {
     res = await send(path, opts);
   }
   if (!res.ok) {

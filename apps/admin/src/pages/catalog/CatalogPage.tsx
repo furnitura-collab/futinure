@@ -1,25 +1,43 @@
 import { useQuery } from '@tanstack/react-query';
-import { Download, FolderTree, Percent, Plus, Search, Upload } from 'lucide-react';
+import { Download, FolderTree, ImageOff, PackageSearch, Percent, Plus, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { api, apiDownload } from '../../lib/api';
-import { useAuth } from '../../lib/auth';
-import { flattenCategories, useBrands, useCategories } from '../../lib/catalog';
-import { som } from '../../lib/format';
-import { useDebounced } from '../../lib/hooks';
-import { UNIT } from '../../lib/labels';
-import type { AdminProduct, Paginated } from '../../lib/types';
-import { Badge, Button, cx, Empty, ErrorBox, Input, PageHeader, PageLoader, Pagination, Select, Toggle } from '../../components/ui';
+import { DataTable, type Column } from '@/components/DataTable';
+import { OptionSelect } from '@/components/OptionSelect';
+import { PageHeader } from '@/components/PageHeader';
+import { SearchInput } from '@/components/SearchInput';
+import { SwitchField } from '@/components/SwitchField';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
+import { api, apiDownload } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { flattenCategories, useBrands, useCategories } from '@/lib/catalog';
+import { useDebounced } from '@/lib/hooks';
+import type { AdminProduct, Paginated } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { BulkPriceDialog } from './BulkPriceDialog';
 import { ImportDialog } from './ImportDialog';
 
+type ActiveFilter = '' | 'true' | 'false';
+const isActiveFilter = (v: string): v is ActiveFilter => v === '' || v === 'true' || v === 'false';
+
+function priceRange(p: AdminProduct, money: (n: number) => string) {
+  if (!p.variants.length) return '—';
+  const prices = p.variants.map((v) => v.basePrice);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  return min === max ? money(min) : `${money(min)} – ${money(max)}`;
+}
+
 export function CatalogPage() {
+  const { t, money, label } = useI18n();
   const { can } = useAuth();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
-  const [active, setActive] = useState<'' | 'true' | 'false'>('');
+  const [active, setActive] = useState<ActiveFilter>('');
   const [lowStock, setLowStock] = useState(false);
   const [page, setPage] = useState(1);
   const [dialog, setDialog] = useState<'import' | 'bulk' | null>(null);
@@ -28,123 +46,143 @@ export function CatalogPage() {
   const brands = useBrands();
 
   const filters = {
-    q: query.length >= 1 ? query : undefined,
+    q: query || undefined,
     categoryId: categoryId || undefined,
     brandId: brandId || undefined,
     isActive: active || undefined,
     lowStock: lowStock || undefined,
   };
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['products', filters, page],
     queryFn: () => api<Paginated<AdminProduct>>('/admin/products', { query: { ...filters, page, limit: 25 } }),
     placeholderData: (prev) => prev,
   });
-  const reset = <T,>(set: (v: T) => void) => (v: T) => {
-    set(v);
-    setPage(1);
-  };
+  const resetPage =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPage(1);
+    };
+
+  const columns: Column<AdminProduct>[] = [
+    {
+      id: 'image',
+      header: '',
+      className: 'w-14 pr-0',
+      hideBelow: 'sm',
+      cell: (p) =>
+        p.images[0] ? (
+          <img src={p.images[0].url} alt="" loading="lazy" className="size-10 rounded-md object-cover ring-1 ring-border" />
+        ) : (
+          <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
+            <ImageOff className="size-4" />
+          </div>
+        ),
+    },
+    {
+      id: 'name',
+      header: t('catalog.product'),
+      sortValue: (p) => p.nameUz,
+      cell: (p) => (
+        <div className="min-w-44">
+          <p className="font-medium">{p.nameUz}</p>
+          <p className="text-xs text-muted-foreground">{[p.code, p.brand?.name].filter(Boolean).join(' · ')}</p>
+        </div>
+      ),
+    },
+    { id: 'category', header: t('catalog.category'), hideBelow: 'md', cell: (p) => <span className="text-muted-foreground">{p.category.nameUz}</span> },
+    { id: 'variants', header: t('catalog.variants'), hideBelow: 'lg', align: 'right', sortValue: (p) => p.variants.length, cell: (p) => p.variants.length },
+    { id: 'price', header: t('catalog.price'), align: 'right', cell: (p) => <span className="whitespace-nowrap tabular">{priceRange(p, money)}</span> },
+    {
+      id: 'available',
+      header: t('catalog.available'),
+      align: 'right',
+      hideBelow: 'sm',
+      sortValue: (p) => p.variants.reduce((s, v) => s + Number(v.availableQty), 0),
+      cell: (p) => {
+        const low = p.variants.filter((v) => v.isActive && (v.stockLevel === 'LOW' || v.stockLevel === 'OUT_OF_STOCK')).length;
+        const available = p.variants.reduce((s, v) => s + Number(v.availableQty), 0);
+        return (
+          <div className={cn('whitespace-nowrap tabular', low > 0 && 'text-warning')}>
+            {available} {label('unit', p.unit)}
+            {low > 0 && <p className="text-xs">{t('catalog.lowVariants', { n: low })}</p>}
+          </div>
+        );
+      },
+    },
+    { id: 'state', header: '', align: 'right', cell: (p) => !p.isActive && <Badge>{t('common.inactive')}</Badge> },
+  ];
 
   return (
     <div>
-      <PageHeader title="Katalog">
-        <Link to="/catalog/categories">
-          <Button variant="ghost"><FolderTree className="size-4" /> Kategoriyalar</Button>
-        </Link>
-        <Button variant="secondary" onClick={() => void apiDownload('/admin/catalog/export.xlsx', `katalog-${new Date().toISOString().slice(0, 10)}.xlsx`)}>
-          <Download className="size-4" /> Eksport
+      <PageHeader title={t('catalog.title')} description={t('catalog.subtitle')}>
+        <Button variant="ghost" asChild>
+          <Link to="/catalog/categories">
+            <FolderTree /> {t('catalog.categories')}
+          </Link>
         </Button>
-        <Button variant="secondary" onClick={() => setDialog('import')}><Upload className="size-4" /> Excel import</Button>
+        <Button
+          variant="outline"
+          onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('catalog.exportFile', { date: new Date().toISOString().slice(0, 10) }))}
+        >
+          <Download /> {t('catalog.export')}
+        </Button>
+        <Button variant="outline" onClick={() => setDialog('import')}>
+          <Upload /> {t('catalog.import')}
+        </Button>
         {can('SUPER_ADMIN') && (
-          <Button variant="secondary" onClick={() => setDialog('bulk')}><Percent className="size-4" /> Ommaviy narx</Button>
+          <Button variant="outline" onClick={() => setDialog('bulk')}>
+            <Percent /> {t('catalog.bulkPrice')}
+          </Button>
         )}
-        <Button onClick={() => navigate('/catalog/new')}><Plus className="size-4" /> Mahsulot</Button>
+        <Button onClick={() => navigate('/catalog/new')}>
+          <Plus /> {t('catalog.newProduct')}
+        </Button>
       </PageHeader>
 
-      <div className="space-y-4 p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-stone-400" />
-            <Input className="w-72 pl-9" placeholder="Nom, kod yoki SKU" value={q} onChange={(e) => reset(setQ)(e.target.value)} />
-          </div>
-          <Select className="w-56" value={categoryId} onChange={(e) => reset(setCategoryId)(e.target.value)}>
-            <option value="">Barcha kategoriyalar</option>
-            {flattenCategories(categories.data ?? []).map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </Select>
-          <Select className="w-44" value={brandId} onChange={(e) => reset(setBrandId)(e.target.value)}>
-            <option value="">Barcha brendlar</option>
-            {brands.data?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </Select>
-          <Select className="w-36" value={active} onChange={(e) => reset(setActive)(e.target.value as typeof active)}>
-            <option value="">Hammasi</option>
-            <option value="true">Sotuvda</option>
-            <option value="false">Nofaol</option>
-          </Select>
-          <Toggle checked={lowStock} onChange={reset(setLowStock)} label="Kam qolganlar" />
-        </div>
-
-        {isPending ? (
-          <PageLoader />
-        ) : error ? (
-          <ErrorBox error={error} />
-        ) : data.items.length === 0 ? (
-          <Empty>Mahsulot topilmadi</Empty>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-            <table className="w-full text-sm">
-              <thead className="bg-stone-50 text-left text-xs text-stone-500 uppercase">
-                <tr>
-                  <th className="w-14 px-4 py-3" />
-                  <th className="px-4 py-3">Mahsulot</th>
-                  <th className="px-4 py-3">Kategoriya</th>
-                  <th className="px-4 py-3">Variantlar</th>
-                  <th className="px-4 py-3 text-right">Narx</th>
-                  <th className="px-4 py-3 text-right">Mavjud</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {data.items.map((p) => {
-                  const prices = p.variants.map((v) => v.basePrice);
-                  const min = Math.min(...prices);
-                  const max = Math.max(...prices);
-                  const low = p.variants.filter((v) => v.isActive && (v.stockLevel === 'LOW' || v.stockLevel === 'OUT_OF_STOCK')).length;
-                  const available = p.variants.reduce((s, v) => s + Number(v.availableQty), 0);
-                  return (
-                    <tr key={p.id} className="cursor-pointer hover:bg-stone-50" onClick={() => navigate(`/catalog/${p.id}`)}>
-                      <td className="px-4 py-2">
-                        {p.images[0] ? (
-                          <img src={p.images[0].url} alt="" className="size-10 rounded-md object-cover ring-1 ring-stone-200" />
-                        ) : (
-                          <div className="size-10 rounded-md bg-stone-100" />
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <p className="font-medium">{p.nameUz}</p>
-                        <p className="text-xs text-stone-500">{[p.code, p.brand?.name].filter(Boolean).join(' · ')}</p>
-                      </td>
-                      <td className="px-4 py-2 text-stone-600">{p.category.nameUz}</td>
-                      <td className="px-4 py-2 text-stone-600">{p.variants.length}</td>
-                      <td className="px-4 py-2 text-right whitespace-nowrap">
-                        {p.variants.length ? (min === max ? som(min) : `${som(min)} – ${som(max)}`) : '—'}
-                      </td>
-                      <td className={cx('px-4 py-2 text-right whitespace-nowrap', low && 'text-amber-700')}>
-                        {available} {UNIT[p.unit]}
-                        {low > 0 && <p className="text-xs">{low} ta variant kam</p>}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {!p.isActive && <Badge tone="bg-stone-100 text-stone-600 ring-stone-200">Nofaol</Badge>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {data && <Pagination page={page} total={data.total} limit={data.limit} onPage={setPage} />}
+      <div className="mb-4 flex flex-col flex-wrap gap-3 sm:flex-row sm:items-center">
+        <SearchInput value={q} onChange={resetPage(setQ)} placeholder={t('catalog.search')} loading={isFetching && !!query} />
+        <OptionSelect
+          className="sm:w-56"
+          aria-label={t('catalog.category')}
+          value={categoryId}
+          onValueChange={resetPage(setCategoryId)}
+          emptyLabel={t('catalog.allCategories')}
+          options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
+        />
+        <OptionSelect
+          className="sm:w-44"
+          aria-label={t('product.brand')}
+          value={brandId}
+          onValueChange={resetPage(setBrandId)}
+          emptyLabel={t('catalog.allBrands')}
+          options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
+        />
+        <OptionSelect
+          className="sm:w-36"
+          aria-label={t('common.status')}
+          value={active}
+          onValueChange={(v) => isActiveFilter(v) && resetPage(setActive)(v)}
+          emptyLabel={t('common.all')}
+          options={[
+            { value: 'true', label: t('catalog.onSale') },
+            { value: 'false', label: t('common.inactive') },
+          ]}
+        />
+        <SwitchField checked={lowStock} onCheckedChange={resetPage(setLowStock)} label={t('catalog.lowStock')} />
       </div>
+
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        rowKey={(p) => p.id}
+        loading={isPending || isFetching}
+        error={error}
+        onRetry={() => void refetch()}
+        onRowClick={(p) => navigate(`/catalog/${p.id}`)}
+        empty={{ icon: PackageSearch, title: t('catalog.empty'), description: t('catalog.emptyHint') }}
+        pagination={data && { page, total: data.total, limit: data.limit, onPage: setPage }}
+      />
 
       {dialog === 'import' && <ImportDialog onClose={() => setDialog(null)} />}
       {dialog === 'bulk' && <BulkPriceDialog onClose={() => setDialog(null)} />}

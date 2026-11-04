@@ -72,5 +72,4 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   return parsed.data;
 }
 
-/** DI token */
 export const ENV = Symbol('ENV');

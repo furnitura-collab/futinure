@@ -1,136 +1,139 @@
-import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet } from 'lucide-react';
+import { Download, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
-import { api, apiDownload } from '../../lib/api';
-import { useApiMutation } from '../../lib/mutation';
-import type { ImportResult } from '../../lib/types';
-import { Button, Dialog } from '../../components/ui';
+import { Callout } from '@/components/Callout';
+import { FormDialog } from '@/components/FormDialog';
+import { TONE_TEXT } from '@/components/tone';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useI18n, type TKey } from '@/i18n';
+import { api, apiDownload } from '@/lib/api';
+import { useApiMutation } from '@/lib/mutation';
+import type { ImportIssue, ImportResult } from '@/lib/types';
+import { cn } from '@/lib/utils';
+
+const SUMMARY: [TKey, (r: ImportResult) => number][] = [
+  ['import.rows', (r) => r.rows],
+  ['import.productsCreated', (r) => r.summary.productsCreated],
+  ['import.productsUpdated', (r) => r.summary.productsUpdated],
+  ['import.variantsCreated', (r) => r.summary.variantsCreated],
+  ['import.variantsUpdated', (r) => r.summary.variantsUpdated],
+  ['import.priceChanges', (r) => r.summary.priceChanges],
+  ['import.stockChanges', (r) => r.summary.stockChanges],
+];
+
+function IssueList({ title, issues, tone }: { title: string; issues: ImportIssue[]; tone: 'destructive' | 'warning' }) {
+  const { t } = useI18n();
+  if (!issues.length) return null;
+  return (
+    <div>
+      <h3 className="mb-1.5 text-sm font-semibold">{title}</h3>
+      <ul className="max-h-64 divide-y overflow-y-auto rounded-lg border bg-card text-sm">
+        {issues.map((e, i) => (
+          <li key={i} className="flex flex-wrap gap-x-3 px-3 py-1.5">
+            <span className="w-20 text-muted-foreground">{t('import.row', { n: e.row })}</span>
+            {e.column && <span className="font-mono text-xs leading-5">{e.column}</span>}
+            <span className={cn('flex-1', TONE_TEXT[tone])}>{e.message}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 /**
  * Ikki bosqich: 1) tekshirish (dry-run) — nima o'zgarishini va xatolarni ko'rsatadi;
  * 2) xato bo'lmasa — o'sha faylni saqlash.
  */
 export function ImportDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const run = useApiMutation(
     (commit: boolean) => {
       const form = new FormData();
-      form.set('file', file!);
+      if (file) form.set('file', file);
       return api<ImportResult>('/admin/catalog/import', { form, query: { commit } });
     },
-    {
-      invalidate: [['products'], ['brands']],
-      onSuccess: (r) => setResult(r),
-    },
+    { invalidate: [['products'], ['brands']], onSuccess: setResult },
   );
 
   const s = result?.summary;
   const nothing = s && !s.productsCreated && !s.productsUpdated && !s.variantsCreated && !s.variantsUpdated && !s.stockChanges;
 
   return (
-    <Dialog
-      open
-      wide
+    <FormDialog
+      size="lg"
       onClose={onClose}
-      title="Excel'dan import"
+      title={t('import.title')}
       footer={
         result?.committed ? (
-          <Button onClick={onClose}>Yopish</Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
         ) : (
           <>
-            <Button variant="secondary" onClick={onClose}>Bekor</Button>
+            <Button variant="outline" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
             {result && !result.errors.length && !nothing ? (
-              <Button loading={run.isPending} onClick={() => run.mutate(true)}>Saqlash</Button>
+              <Button loading={run.isPending} onClick={() => run.mutate(true)}>
+                {t('common.save')}
+              </Button>
             ) : (
-              <Button loading={run.isPending} disabled={!file} onClick={() => run.mutate(false)}>Tekshirish</Button>
+              <Button loading={run.isPending} disabled={!file} onClick={() => run.mutate(false)}>
+                {t('import.check')}
+              </Button>
             )}
           </>
         )
       }
     >
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 rounded-lg border border-dashed border-stone-300 p-4">
-          <FileSpreadsheet className="size-8 text-emerald-600" />
-          <div className="flex-1">
-            <input
+      <div className="grid gap-4">
+        <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center">
+          <FileSpreadsheet className="size-8 shrink-0 text-success" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Input
               type="file"
               accept=".xlsx"
+              aria-label={t('import.chooseFile')}
               onChange={(e) => {
                 setFile(e.target.files?.[0] ?? null);
                 setResult(null);
               }}
-              className="text-sm"
             />
-            <p className="mt-1 text-xs text-stone-500">
-              Format — eksport fayli bilan bir xil ("Yo'riqnoma" varag'ida har ustun tushuntirilgan). Bir qator = bitta SKU.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('import.formatHint')}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => void apiDownload('/admin/catalog/export.xlsx', 'katalog-shablon.xlsx')}>
-            <Download className="size-4" /> Joriy katalog
+          <Button variant="ghost" size="sm" onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('import.templateFile'))}>
+            <Download /> {t('import.currentCatalog')}
           </Button>
         </div>
 
-        {result && (
-          <>
+        {result && s && (
+          <div className="grid animate-fade-up gap-4">
             {result.committed ? (
-              <p className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
-                <CheckCircle2 className="size-4" /> Saqlandi
-              </p>
+              <Callout tone="success">{t('import.saved')}</Callout>
             ) : result.errors.length ? (
-              <p className="flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 ring-1 ring-rose-200">
-                <AlertTriangle className="size-4" /> {result.errors.length} ta xato — tuzatib, faylni qayta yuklang. Hech narsa saqlanmadi.
-              </p>
+              <Callout tone="destructive">{t('import.errorsFound', { n: result.errors.length })}</Callout>
             ) : nothing ? (
-              <p className="rounded-lg bg-stone-50 p-3 text-sm text-stone-700">Fayl katalog bilan bir xil — o'zgarish yo'q.</p>
+              <Callout tone="info">{t('import.noChanges')}</Callout>
             ) : (
-              <p className="rounded-lg bg-sky-50 p-3 text-sm text-sky-900 ring-1 ring-sky-200">Xato yo'q. Natijani ko'rib, "Saqlash"ni bosing.</p>
+              <Callout tone="info">{t('import.ready')}</Callout>
             )}
 
-            <dl className="grid grid-cols-3 gap-3 text-sm">
-              {[
-                ['Qatorlar', result.rows],
-                ['Yangi mahsulot', s!.productsCreated],
-                ['O\'zgargan mahsulot', s!.productsUpdated],
-                ['Yangi variant', s!.variantsCreated],
-                ['O\'zgargan variant', s!.variantsUpdated],
-                ['Narxi o\'zgargan', s!.priceChanges],
-                ['Qoldig\'i o\'zgargan', s!.stockChanges],
-              ].map(([k, v]) => (
-                <div key={k} className="rounded-lg bg-stone-50 p-3">
-                  <dt className="text-xs text-stone-500">{k}</dt>
-                  <dd className="text-lg font-semibold">{v}</dd>
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {SUMMARY.map(([key, get]) => (
+                <div key={key} className="rounded-lg bg-muted/50 p-3">
+                  <dt className="text-xs text-muted-foreground">{t(key)}</dt>
+                  <dd className="text-lg font-semibold tabular">{get(result)}</dd>
                 </div>
               ))}
             </dl>
-            {!!s!.brandsCreated.length && <p className="text-sm">Yangi brendlar: {s!.brandsCreated.join(', ')}</p>}
+            {!!s.brandsCreated.length && <p className="text-sm">{t('import.newBrands', { list: s.brandsCreated.join(', ') })}</p>}
 
-            {[
-              ['Xatolar', result.errors, 'text-rose-700'],
-              ['Ogohlantirishlar', result.warnings, 'text-amber-700'],
-            ].map(([title, list, tone]) =>
-              (list as ImportResult['errors']).length ? (
-                <div key={title as string}>
-                  <h3 className="mb-1 text-sm font-semibold">{title as string}</h3>
-                  <div className="max-h-64 overflow-y-auto rounded-lg border border-stone-200">
-                    <table className="w-full text-sm">
-                      <tbody className="divide-y divide-stone-100">
-                        {(list as ImportResult['errors']).map((e, i) => (
-                          <tr key={i}>
-                            <td className="w-20 px-3 py-1.5 text-stone-500">{e.row}-qator</td>
-                            <td className="w-40 px-3 py-1.5 font-mono text-xs">{e.column ?? ''}</td>
-                            <td className={`px-3 py-1.5 ${tone as string}`}>{e.message}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : null,
-            )}
-          </>
+            <IssueList title={t('import.errors')} issues={result.errors} tone="destructive" />
+            <IssueList title={t('import.warnings')} issues={result.warnings} tone="warning" />
+          </div>
         )}
       </div>
-    </Dialog>
+    </FormDialog>
   );
 }

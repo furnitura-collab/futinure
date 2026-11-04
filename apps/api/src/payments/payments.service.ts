@@ -18,6 +18,7 @@ import { lockOrder } from '../orders/order-lock.js';
 import { OrderWorkflowService } from '../orders/order-workflow.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RECEIPT_PURPOSE } from '../uploads/private-files.service.js';
+import { pageArgs, paginate } from '../common/pagination.js';
 
 /** Shu statuslarda buyurtmaga to'lov qabul qilinadi (taklif kelishilgandan keyin) */
 const PAYABLE: readonly OrderStatus[] = ['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'];
@@ -142,17 +143,16 @@ export class PaymentsService {
 
   async customerPayments(customerId: string, page: number, limit: number) {
     const where = { customerId };
-    const [items, total] = await Promise.all([
+    return paginate(
+      { page, limit },
       this.prisma.payment.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        ...pageArgs({ page, limit }),
         include: { order: { select: { id: true, number: true } } },
       }),
       this.prisma.payment.count({ where }),
-    ]);
-    return { items, total, page, limit };
+    );
   }
 
   // ───────────── Menejer ─────────────
@@ -163,18 +163,17 @@ export class PaymentsService {
       ...(q.customerId && { customerId: q.customerId }),
       ...(q.orderId && { orderId: q.orderId }),
     };
-    const [items, total] = await Promise.all([
+    return paginate(
+      q,
       this.prisma.payment.findMany({
         where,
         // Tasdiq navbatida eng eskisi birinchi
         orderBy: { createdAt: q.status === 'PENDING' ? 'asc' : 'desc' },
-        skip: (q.page - 1) * q.limit,
-        take: q.limit,
+        ...pageArgs(q),
         include: paymentInclude,
       }),
       this.prisma.payment.count({ where }),
-    ]);
-    return { items, total, page: q.page, limit: q.limit };
+    );
   }
 
   /** Menejer qabul qilgan pul (naqd, bank) — darhol tasdiqlangan */

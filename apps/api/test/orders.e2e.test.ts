@@ -184,6 +184,31 @@ describe('buyurtmalar — mijoz (e2e)', () => {
       expect(list.body.items[0]).toMatchObject({ number: res.body.number, itemsCount: 2, hasPendingQuote: false });
     });
 
+    it('ro\'yxat kartasida tovarlar va hozir to\'lanadigan summa', async () => {
+      await fillCart();
+      const o = await create(pickup()).expect(201);
+      const total = 12 * 380_000 + 4 * 14_000;
+      let item = (await ctx.http.get('/api/v1/orders').set(auth).expect(200)).body.items[0];
+      expect(item.preview).toEqual([
+        { nameUz: 'LDSP Kronospan 16 mm', nameRu: 'ЛДСП Kronospan 16 мм', qty: '12', unit: 'SHEET' },
+        { nameUz: 'Petlya dovodchikli', nameRu: 'Петля с доводчиком', qty: '4', unit: 'PIECE' },
+      ]);
+      // Kelishilmagan buyurtmada to'lov so'ralmaydi
+      expect(item).toMatchObject({ balanceDue: total, amountDue: 0 });
+
+      await ctx.prisma.order.update({ where: { id: o.body.id }, data: { status: 'CONFIRMED', paymentTerms: 'ADVANCE', advanceAmount: 1_000_000n } });
+      item = (await ctx.http.get('/api/v1/orders').set(auth).expect(200)).body.items[0];
+      expect(item).toMatchObject({ paymentTerms: 'ADVANCE', amountDue: 1_000_000 });
+
+      // Tekshirilayotgan chek summasi qayta so'ralmaydi
+      await ctx.prisma.payment.create({
+        data: { orderId: o.body.id, customerId: customer.user.id, createdBy: customer.user.id, amount: 400_000n, method: 'CARD_TRANSFER', status: 'PENDING' },
+      });
+      item = (await ctx.http.get('/api/v1/orders').set(auth).expect(200)).body.items[0];
+      expect(item.amountDue).toBe(600_000);
+      expect((await ctx.http.get(`/api/v1/orders/${o.body.id}`).set(auth).expect(200)).body.amountDue).toBe(600_000);
+    });
+
     it('faol / tugagan filtri', async () => {
       await fillCart();
       const o = await create(pickup()).expect(201);
@@ -235,6 +260,48 @@ describe('buyurtmalar — mijoz (e2e)', () => {
           sm.transition(tx, order, 'CANCELLED', { id: customer.user.id, role: 'CUSTOMER' }, { comment: 'x' }),
         ),
       ).rejects.toMatchObject({ code: 'ORDER_CONFLICT' });
+    });
+  });
+
+  describe('yana buyurtma qilish (/me/buy-again)', () => {
+    it('oldin olingan variantlar, eng so\'nggisi birinchi, oxirgi miqdor va joriy narx bilan', async () => {
+      await fillCart();
+      await create(pickup()).expect(201);
+      await ctx.http.put(`/api/v1/cart/items/${c.white.id}`).set(auth).send({ qty: 3 }).expect(200);
+      await create(pickup()).expect(201);
+
+      const res = await ctx.http.get('/api/v1/me/buy-again').set(auth).expect(200);
+      expect(res.body.map((i: { sku: string }) => i.sku)).toEqual(['KR-W980-16', 'GTV-PB-110']);
+      expect(res.body[0]).toMatchObject({
+        variantId: c.white.id,
+        lastQty: '3',
+        unitPrice: 380_000,
+        stockLevel: 'IN_STOCK',
+        attributes: { color: 'Oq', decor_code: 'W980' },
+        product: { id: c.board.id, nameUz: 'LDSP Kronospan 16 mm' },
+      });
+      expect(res.body[1]).toMatchObject({ lastQty: '4', product: { id: c.hinge.id, variantId: c.hingeV.id } });
+    });
+
+    it('bekor qilingan buyurtma va sotuvdan olingan tovar ko\'rsatilmaydi; boshqa mijozniki yo\'q', async () => {
+      await fillCart();
+      const o = await create(pickup()).expect(201);
+      await ctx.http.put(`/api/v1/cart/items/${c.slideV.id}`).set(auth).send({ qty: 1 }).expect(200);
+      await create(pickup()).expect(201);
+      await ctx.http.post(`/api/v1/orders/${o.body.id}/cancel`).set(auth).send({ reason: 'Kerak emas' }).expect(200);
+      expect((await ctx.http.get('/api/v1/me/buy-again').set(auth).expect(200)).body.map((i: { sku: string }) => i.sku)).toEqual(['GTV-SL-500']);
+
+      await ctx.prisma.productVariant.update({ where: { id: c.slideV.id }, data: { isActive: false } });
+      expect((await ctx.http.get('/api/v1/me/buy-again').set(auth).expect(200)).body).toEqual([]);
+
+      const other = (await userWithToken(ctx, 'CUSTOMER')).auth;
+      expect((await ctx.http.get('/api/v1/me/buy-again').set(other).expect(200)).body).toEqual([]);
+    });
+
+    it('faqat mijoz uchun', async () => {
+      const m = (await userWithToken(ctx, 'MANAGER')).auth;
+      await ctx.http.get('/api/v1/me/buy-again').set(m).expect(403);
+      await ctx.http.get('/api/v1/me/buy-again').expect(401);
     });
   });
 

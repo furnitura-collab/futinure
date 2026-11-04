@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import {
   addDays,
+  amountDueNow,
   businessDate,
   CUSTOMER_CANCELLABLE,
   isValidIsoDate,
@@ -8,7 +9,9 @@ import {
   TERMINAL_STATUSES,
   type CreateOrderInput,
   type OrderListQuery,
+  type OrderStatus,
   type Paginated,
+  type PaymentTerms,
 } from '@mebel/shared';
 import { Prisma } from '../generated/prisma/client.js';
 import { AppException } from '../common/app-exception.js';
@@ -20,8 +23,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { lockOrder } from './order-lock.js';
 import { presentQuote } from './order-quotes.service.js';
 import { OrderWorkflowService } from './order-workflow.service.js';
+import { pageArgs } from '../common/pagination.js';
 
-export const orderDetailInclude = {
+const orderDetailInclude = {
   items: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } },
   statusHistory: { orderBy: { createdAt: 'asc' }, select: { fromStatus: true, toStatus: true, comment: true, createdAt: true } },
   pickupWarehouse: { select: { id: true, name: true, addressText: true, phone: true, workHours: true } },
@@ -31,6 +35,29 @@ export const orderDetailInclude = {
   },
   currentQuote: true,
 } satisfies Prisma.OrderInclude;
+
+const PREVIEW_ITEMS = 3;
+
+/** Mijoz hozir to'lashi kerak summa — tekshirilayotgan cheklar ayirib */
+function amountDue(o: {
+  status: OrderStatus;
+  paymentTerms: PaymentTerms | null;
+  grandTotal: bigint;
+  paidTotal: bigint;
+  advanceAmount: bigint;
+  dueDate: Date | null;
+  payments: { amount: bigint; status: string }[];
+}) {
+  return amountDueNow({
+    status: o.status,
+    paymentTerms: o.paymentTerms,
+    grandTotal: Number(o.grandTotal),
+    paidTotal: Number(o.paidTotal),
+    advanceAmount: Number(o.advanceAmount),
+    dueDate: o.dueDate,
+    pendingTotal: o.payments.filter((p) => p.status === 'PENDING').reduce((s, p) => s + Number(p.amount), 0),
+  });
+}
 
 @Injectable()
 export class OrdersService {
@@ -179,8 +206,7 @@ export class OrdersService {
       this.prisma.order.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
+        ...pageArgs(query),
         select: {
           id: true,
           number: true,
@@ -188,8 +214,14 @@ export class OrdersService {
           deliveryType: true,
           grandTotal: true,
           paidTotal: true,
+          advanceAmount: true,
+          paymentTerms: true,
+          dueDate: true,
           createdAt: true,
           currentQuote: { select: { status: true } },
+          // Kartada "nima buyurtma qilingan"ni ko'rsatish uchun birinchi tovarlar
+          items: { where: { status: 'ACTIVE' }, orderBy: { createdAt: 'asc' }, take: PREVIEW_ITEMS, select: { nameUz: true, nameRu: true, qty: true, unit: true } },
+          payments: { where: { status: 'PENDING' }, select: { amount: true, status: true } },
           _count: {
             select: {
               items: { where: { status: 'ACTIVE' } },
@@ -201,8 +233,11 @@ export class OrdersService {
       this.prisma.order.count({ where }),
     ]);
     return {
-      items: rows.map(({ _count, currentQuote, ...o }) => ({
+      items: rows.map(({ _count, currentQuote, items, payments, ...o }) => ({
         ...o,
+        preview: items,
+        balanceDue: o.grandTotal - o.paidTotal,
+        amountDue: amountDue({ ...o, payments }),
         itemsCount: _count.items,
         unreadMessages: _count.chatMessages,
         hasPendingQuote: o.status === 'QUOTED' && currentQuote?.status === 'PENDING',
@@ -226,6 +261,7 @@ export class OrdersService {
       // Faqat javob kutayotgan taklif ko'rsatiladi
       pendingQuote: currentQuote?.status === 'PENDING' && order.status === 'QUOTED' ? presentQuote(currentQuote) : null,
       balanceDue: order.grandTotal - order.paidTotal,
+      amountDue: amountDue(order),
       canCancel: CUSTOMER_CANCELLABLE.includes(order.status),
     };
   }

@@ -1,69 +1,54 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
-import { Badge, Card, Empty, ErrorView, Ionicons, Loader, Row, Segmented, Text } from '../../components/ui';
-import { api } from '../../lib/api';
-import { STATUS_TONE } from '../../lib/catalog';
-import { date, som } from '../../lib/format';
-import { useI18n } from '../../lib/i18n';
-import { colors, space } from '../../lib/theme';
-import type { OrderListItem, Paginated } from '../../lib/types';
-import { contained, CONTENT } from '../../lib/layout';
+import { OrderCard } from '@/components/order/OrderCard';
+import { OrderRow } from '@/components/order/OrderRow';
+import { Appear, Button, EmptyState, ErrorState, Screen, Segmented, SkeletonList } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { useSite } from '@/lib/layout';
+import { usePaginated } from '@/lib/query';
+import type { OrderListItem } from '@/lib/types';
+import { space, useTheme } from '@/theme';
 
 export default function Orders() {
-  const { t, status, locale } = useI18n();
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const { site } = useSite();
   const [tab, setTab] = useState<'active' | 'history'>('active');
-  const q = useInfiniteQuery({
-    queryKey: ['orders', 'list', tab],
-    queryFn: ({ pageParam }) => api<Paginated<OrderListItem>>('/orders', { query: { active: tab === 'active', page: pageParam, limit: 20 } }),
-    initialPageParam: 1,
-    getNextPageParam: (last) => (last.page * last.limit < last.total ? last.page + 1 : undefined),
-  });
-  const items = q.data?.pages.flatMap((p) => p.items) ?? [];
+  const q = usePaginated<OrderListItem>(['orders', 'list', tab], '/orders', { query: { active: tab === 'active' } });
+  const tabs = <Segmented value={tab} onChange={setTab} options={[{ value: 'active', label: t('active') }, { value: 'history', label: t('history') }]} />;
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ ...contained(CONTENT.page), padding: space(4), paddingBottom: 0 }}>
-        <Segmented value={tab} onChange={setTab} options={[{ value: 'active', label: t('active') }, { value: 'history', label: t('history') }]} />
-      </View>
-      {q.isPending ? (
-        <Loader />
-      ) : q.error ? (
-        <ErrorView error={q.error} onRetry={() => void q.refetch()} />
-      ) : (
+    // Saytda Faol/Tarix — sahifa sarlavhasida, ro'yxat — jadval qatorlari
+    <Screen scroll={false} title={t('tabOrders')} actions={<View style={{ width: 240 }}>{tabs}</View>}>
+      {(insets) => (
         <FlatList
-          data={items}
+          data={q.items}
           keyExtractor={(o) => o.id}
-          contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(3) }}
-          refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => void q.refetch()} />}
-          onEndReached={() => q.hasNextPage && void q.fetchNextPage()}
-          ListEmptyComponent={<Empty icon="receipt-outline" title={t('noOrders')} />}
-          renderItem={({ item: o }) => (
-            <Card onPress={() => router.push({ pathname: '/order/[id]', params: { id: o.id } })} style={{ gap: space(2) }}>
-              <Row style={{ justifyContent: 'space-between' }}>
-                <Text bold>{o.number}</Text>
-                <Text v="caption">{date(o.createdAt)}</Text>
-              </Row>
-              <Row style={{ justifyContent: 'space-between' }}>
-                <Badge label={status(o.status)} tone={STATUS_TONE[o.status]} />
-                <Text bold>{som(o.grandTotal, locale)}</Text>
-              </Row>
-              {(o.hasPendingQuote || o.unreadMessages > 0) && (
-                <Row>
-                  {o.hasPendingQuote && <Badge label={`● ${t('quoteWaiting')}`} tone="violet" />}
-                  {o.unreadMessages > 0 && (
-                    <Row gap={4}>
-                      <Ionicons name="chatbubble" size={14} color={colors.brand} />
-                      <Text v="caption" color={colors.brand}>{o.unreadMessages}</Text>
-                    </Row>
-                  )}
-                </Row>
-              )}
-            </Card>
-          )}
+          contentContainerStyle={{ ...insets.container, paddingTop: insets.top + space(site ? 6 : 4), paddingBottom: insets.bottom + space(6), gap: space(3) }}
+          refreshControl={
+            <RefreshControl refreshing={q.isRefetching && !q.isFetchingNextPage} onRefresh={() => void q.refetch()} tintColor={colors.primary} colors={[colors.primary]} progressViewOffset={insets.top} />
+          }
+          onEndReached={q.loadMore}
+          ListHeaderComponent={insets.header ?? <View style={{ marginBottom: space(1) }}>{tabs}</View>}
+          ListFooterComponent={insets.footer}
+          ListEmptyComponent={
+            q.isPending ? (
+              <SkeletonList count={4} />
+            ) : q.error ? (
+              <ErrorState error={q.error} onRetry={() => void q.refetch()} />
+            ) : (
+              <EmptyState
+                icon="receipt-outline"
+                title={tab === 'active' ? t('noActiveOrders') : t('noOrders')}
+                hint={t('noOrdersHint')}
+                action={<Button title={t('goToCatalog')} icon="grid-outline" variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
+              />
+            )
+          }
+          renderItem={({ item, index }) => <Appear index={index}>{site ? <OrderRow o={item} /> : <OrderCard o={item} />}</Appear>}
         />
       )}
-    </View>
+    </Screen>
   );
 }

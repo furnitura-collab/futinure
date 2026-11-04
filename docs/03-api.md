@@ -10,17 +10,19 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 |---|---|---|
 | POST | `/auth/otp/request` | `{ phone }` — SMS yuboradi. Limit: 1 daqiqada 1 ta, soatda 5 ta |
 | POST | `/auth/otp/verify` | `{ phone, code }` → `{ accessToken, refreshToken, user }`. Yangi raqam bo'lsa CUSTOMER yaratiladi |
+| POST | `/auth/login` | `{ phone, password }` → `{ accessToken, refreshToken, user, isNew }`. Yangi raqam — CUSTOMER shu parol bilan yaratiladi; paroli yo'q mijoz birinchi kirishda parol o'rnatadi. Paroli yo'q xodim → 401 `PASSWORD_NOT_SET` (xodim parolini super admin o'rnatadi). Xato parol → 401 `INVALID_PASSWORD`, 15 daqiqada 10 xatodan keyin 429 `LOGIN_RATE_LIMIT` |
 | POST | `/auth/refresh` | |
 | POST | `/auth/logout` | refresh tokenni bekor qiladi |
-| GET / PATCH | `/me` | profil, til, yuridik ma'lumotlar |
+| GET / PATCH | `/me` | profil, til (`uz` / `ru` / `en` — push va bildirishnomalar shu tilda), yuridik ma'lumotlar |
+| POST | `/me/password` | `{ currentPassword?, newPassword }` → 204. Parol o'rnatilgan bo'lsa `currentPassword` majburiy (xato/yo'q → 401 `INVALID_PASSWORD`). Joriy sessiyadan boshqa barcha sessiyalar yopiladi |
 | POST / DELETE | `/me/devices` | push token |
 
 ## Katalog (mijoz, login ixtiyoriy)
 | Metod | Yo'l | Izoh |
 |---|---|---|
-| GET | `/categories` | daraxt |
+| GET | `/categories` | daraxt; har tugunda `productCount` (faol mahsulotlar, ichki kategoriyalar bilan) |
 | GET | `/brands` | |
-| GET | `/products` | `?categoryId&brandId&q&inStock&sort&page&limit`. `sort`: popular, price_asc, price_desc, name, new. Qidiruv xato yozuvga chidamli (4+ harf) |
+| GET | `/products` | `?categoryId&brandId&q&inStock&sort&page&limit`. `sort`: popular, price_asc, price_desc, name, new. Qidiruv xato yozuvga chidamli (4+ harf). Kartada `variantId` (yagona variant bo'lsa, aks holda null), `minQty`, `qtyStep` — ro'yxatdan tez qo'shish uchun |
 | GET | `/products/:id` | variantlar, rasmlar, mijozning **shaxsiy narxi** (guruh/pog'ona). Qoldiq son emas, daraja: IN_STOCK / LOW / ON_ORDER / OUT_OF_STOCK |
 | GET | `/variants/by-sku/:sku` | SKU bo'yicha tez qo'shish |
 | POST | `/pricing/quote` | `{ items: [{variantId, qty}] }` → har qator narxi, og'irlik/hajm va muammolar (`issues`: qadam, minimal, qoldiq yetmaydi, tugagan, nofaol) |
@@ -54,8 +56,9 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 | Metod | Yo'l | Izoh |
 |---|---|---|
 | POST | `/orders` | Header `Idempotency-Key` (8–64 belgi, majburiy). Body: `{ deliveryType, addressId \| warehouseId, deliveryDate?, comment? }`. Tovarlar **server savatidan** olinadi (mijoz narx yubora olmaydi). Yangi → 201; shu kalit bilan takror → 200 + `Idempotent-Replayed: true`. Savatda to'sqinlik qiluvchi muammo → 409 `CART_HAS_ISSUES`. Ism kiritilmagan → 422 `PROFILE_INCOMPLETE` |
-| GET | `/orders` | `?status&active=true\|false&page&limit` |
-| GET | `/orders/:id` | tarkib, summalar (`balanceDue`), to'lovlar, tarix, `pendingQuote` (javob kutayotgan taklif, eski → yangi qatorlar bilan) |
+| GET | `/orders` | `?status&active=true\|false&page&limit`. Har kartada `preview` (birinchi 3 tovar: nom, miqdor, birlik), `balanceDue`, `amountDue` (hozir to'lanishi kerak summa, tekshirilayotgan cheklar ayirilgan; `amountDueNow` — `@mebel/shared`), `paymentTerms` |
+| GET | `/me/buy-again` | (CUSTOMER) oldin buyurtma qilingan, hozir sotuvdagi variantlar (12 ta, eng so'nggisi birinchi): `lastQty`, joriy `unitPrice`, `stockLevel`, `product` kartasi. Bekor qilingan buyurtmalar hisobga olinmaydi |
+| GET | `/orders/:id` | tarkib, summalar (`balanceDue`), to'lovlar, tarix, `amountDue`, `pendingQuote` (javob kutayotgan taklif, eski → yangi qatorlar bilan) |
 | POST | `/orders/:id/cancel` | `{ reason }` — faqat NEW/QUOTED |
 | GET | `/orders/:id/quotes` | barcha versiyalar |
 | POST | `/orders/:id/quotes/:quoteId/accept` | → CONFIRMED + tovar band qilinadi. Tovar tugab qolgan bo'lsa 409 `INSUFFICIENT_STOCK`, buyurtma QUOTED da qoladi |
@@ -139,10 +142,16 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 | GET | `/admin/customers/:id/reconciliation` | JSON |
 | POST | `/admin/customers/:id/refunds` ★ | `{ amount, method, description }` — mijoz haqdor bo'lsa pul qaytarish |
 
+### Xodimlar ★
+| Metod | Yo'l | Izoh |
+|---|---|---|
+| GET | `/admin/staff` | `[{ id, phone, fullName, role, isActive, lastLoginAt, createdAt }]` — barcha xodimlar (mijozlarsiz), faollari birinchi |
+| POST | `/admin/staff` | `{ phone, fullName, role, password }` (`createStaffSchema`; rol: MANAGER, SUPER_ADMIN, WAREHOUSE, DRIVER) → 201, xodim. Raqam band → 409 `PHONE_TAKEN` |
+| PATCH | `/admin/staff/:id` | `{ fullName?, role?, isActive?, password? }` (`updateStaffSchema`) → xodim. Parol almashsa yoki bloklansa — barcha sessiyalari yopiladi. O'zini bloklash/rolini pasaytirish → 400 `CANNOT_MODIFY_SELF`; mijoz yoki yo'q id → 404 |
+
 ### Sozlamalar ★
 | Metod | Yo'l |
 |---|---|
-| CRUD | `/admin/staff` (xodimlar, rollar) |
 | CRUD | `/admin/price-groups`, `/admin/warehouses`, `/admin/delivery-zones`, `/admin/delivery-slots`, `/admin/vehicle-types` |
 | GET / PUT | `/admin/settings` |
 | GET | `/admin/audit-logs` |

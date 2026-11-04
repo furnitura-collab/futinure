@@ -14,7 +14,9 @@ import type { AuthUser } from '../auth/decorators.js';
 import { TokenService } from '../auth/token.service.js';
 import { LedgerService } from '../ledger/ledger.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { UNPAID_CREDIT_ORDER } from './credit-orders.js';
 import { CustomerFinanceService } from './customer-finance.service.js';
+import { pageArgs, paginate } from '../common/pagination.js';
 
 /** Faqat super admin o'zgartira oladigan maydonlar */
 const SUPER_ADMIN_FIELDS = ['creditLimit', 'paymentTermDays'] as const;
@@ -46,20 +48,18 @@ export class AdminCustomersService {
     if (q.debtors) and.push({ customerProfile: { balanceCached: { gt: 0 } } });
     if (q.overdue) {
       const rows = await this.prisma.$queryRaw<{ customer_id: string }[]>`
-        SELECT DISTINCT customer_id FROM orders
-        WHERE payment_terms = 'CREDIT' AND status IN ('DELIVERED', 'COMPLETED')
-          AND grand_total > paid_total AND due_date < ${businessDate()}::date`;
+        SELECT DISTINCT customer_id FROM orders WHERE ${UNPAID_CREDIT_ORDER} AND due_date < ${businessDate()}::date`;
       and.push({ id: { in: rows.map((r) => r.customer_id) } });
     }
 
     const where = { AND: and };
-    const [rows, total] = await Promise.all([
+    return paginate(
+      q,
       this.prisma.user.findMany({
         where,
         // Qarzdorlar ro'yxatida eng katta qarz birinchi
         orderBy: q.debtors ? { customerProfile: { balanceCached: 'desc' } } : { createdAt: 'desc' },
-        skip: (q.page - 1) * q.limit,
-        take: q.limit,
+        ...pageArgs(q),
         select: {
           id: true,
           phone: true,
@@ -72,8 +72,7 @@ export class AdminCustomersService {
         },
       }),
       this.prisma.user.count({ where }),
-    ]);
-    return { items: rows, total, page: q.page, limit: q.limit };
+    );
   }
 
   async detail(customerId: string) {
@@ -197,10 +196,9 @@ export class AdminCustomersService {
       FROM customer_profiles cp
       JOIN users u ON u.id = cp.user_id
       LEFT JOIN LATERAL (
-        SELECT SUM(o.grand_total - o.paid_total)::bigint AS overdue, MIN(o.due_date) AS oldest_due
-        FROM orders o
-        WHERE o.customer_id = cp.user_id AND o.payment_terms = 'CREDIT' AND o.status IN ('DELIVERED', 'COMPLETED')
-          AND o.grand_total > o.paid_total AND o.due_date < ${today}::date
+        SELECT SUM(grand_total - paid_total)::bigint AS overdue, MIN(due_date) AS oldest_due
+        FROM orders
+        WHERE customer_id = cp.user_id AND ${UNPAID_CREDIT_ORDER} AND due_date < ${today}::date
       ) od ON true
       WHERE cp.balance_cached > 0
       ORDER BY od.overdue DESC NULLS LAST, cp.balance_cached DESC

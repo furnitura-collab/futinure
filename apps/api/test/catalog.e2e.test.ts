@@ -26,12 +26,27 @@ describe('katalog — mijoz (e2e)', () => {
     expect(plitalar.children.map((n: { slug: string }) => n.slug)).toEqual(['ldsp']);
   });
 
+  it('kategoriyada mahsulotlar soni — ichki kategoriyalar bilan, nofaol mahsulotsiz', async () => {
+    await ctx.prisma.product.update({ where: { id: c.slide.id }, data: { isActive: false } });
+    const res = await ctx.http.get('/api/v1/categories').expect(200);
+    const bySlug = (slug: string) => res.body.find((n: { slug: string }) => n.slug === slug);
+    expect(bySlug('plitalar')).toMatchObject({ productCount: 1, children: [expect.objectContaining({ slug: 'ldsp', productCount: 1 })] });
+    expect(bySlug('furnitura').productCount).toBe(1);
+  });
+
   describe('ro\'yxat', () => {
     it('mehmon chakana narxni ko\'radi, nofaol kategoriya mahsuloti yo\'q', async () => {
       const res = await ctx.http.get('/api/v1/products').expect(200);
       expect(res.body.total).toBe(3);
       const board = res.body.items.find((p: { id: string }) => p.id === c.board.id);
       expect(board).toMatchObject({ priceFrom: 395_000, basePriceFrom: 395_000, stockLevel: 'IN_STOCK', variantCount: 2 });
+    });
+
+    it('kartada tez qo\'shish uchun: yagona variant id va miqdor qoidalari', async () => {
+      const res = await ctx.http.get('/api/v1/products').expect(200);
+      const card = (id: string) => res.body.items.find((p: { id: string }) => p.id === id);
+      expect(card(c.board.id)).toMatchObject({ variantId: null, minQty: '1', qtyStep: '1' });
+      expect(card(c.hinge.id)).toMatchObject({ variantId: c.hingeV.id, minQty: '2', qtyStep: '2' });
     });
 
     it('usta guruhidagi mijoz shaxsiy narxni ko\'radi', async () => {
@@ -99,6 +114,7 @@ describe('katalog — mijoz (e2e)', () => {
         { minQty: '50', price: 375_000 },
       ]);
       expect(res.body.board).toEqual({ lengthMm: 2800, widthMm: 2070, thicknessMm: '16' });
+      expect(res.body.weightKg).toBe('45');
     });
 
     it('usta uchun shaxsiy narxdan qimmat pog\'onalar ko\'rsatilmaydi', async () => {

@@ -40,6 +40,8 @@ export interface CategoryNode {
   nameRu: string;
   slug: string;
   imageUrl: string | null;
+  /** Faol mahsulotlar soni (ichki kategoriyalar bilan) */
+  productCount: number;
   children: CategoryNode[];
 }
 
@@ -56,6 +58,21 @@ export interface ProductCard {
   basePriceFrom: number;
   stockLevel: StockLevel;
   variantCount: number;
+  /** Yagona variant bo'lsa — ro'yxatdan to'g'ridan-to'g'ri qo'shish */
+  variantId: string | null;
+  minQty: string;
+  qtyStep: string;
+}
+
+export interface BuyAgainItem {
+  variantId: string;
+  sku: string;
+  attributes: Record<string, string | number>;
+  lastQty: string;
+  lastOrderedAt: string;
+  unitPrice: number;
+  stockLevel: StockLevel;
+  product: ProductCard;
 }
 
 export interface ProductDetail {
@@ -68,9 +85,10 @@ export interface ProductDetail {
   kind: string;
   minQty: string;
   qtyStep: string;
+  weightKg: string | null;
   board: { lengthMm: number; widthMm: number; thicknessMm: string } | null;
   brand: { id: string; name: string } | null;
-  category: { id: string; nameUz: string; nameRu: string };
+  category: { id: string; nameUz: string; nameRu: string; slug: string; parentId: string | null };
   images: { id: string; url: string }[];
   variants: {
     id: string;
@@ -96,6 +114,9 @@ export interface CartLine {
   nameUz: string | null;
   nameRu: string | null;
   unit: Unit | null;
+  categoryId: string | null;
+  kind: string | null;
+  imageUrl: string | null;
   minQty: string | null;
   qtyStep: string | null;
   attributes: Record<string, string | number> | null;
@@ -141,7 +162,13 @@ export interface OrderListItem {
   deliveryType: DeliveryType;
   grandTotal: number;
   paidTotal: number;
+  balanceDue: number;
+  /** Hozir to'lanishi kerak summa (0 — to'lov kutilmaydi) */
+  amountDue: number;
+  paymentTerms: PaymentTerms | null;
   createdAt: string;
+  /** Birinchi 3 ta tovar — kartada "nima buyurtma qilingan" */
+  preview: { nameUz: string; nameRu: string; qty: string; unit: Unit }[];
   itemsCount: number;
   unreadMessages: number;
   hasPendingQuote: boolean;
@@ -185,6 +212,7 @@ export interface OrderDetail {
   grandTotal: number;
   paidTotal: number;
   balanceDue: number;
+  amountDue: number;
   paymentTerms: PaymentTerms | null;
   advanceAmount: number;
   allowedMethods: PaymentMethod[];

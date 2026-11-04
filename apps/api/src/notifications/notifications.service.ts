@@ -1,18 +1,19 @@
 import { createHash } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
-import { RT, type Locale } from '@mebel/shared';
+import { formatMoney, RT, type Locale } from '@mebel/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
-import { formatSom, render } from './messages.js';
+import { render, type Template } from './messages.js';
 import { PushSender } from './senders.js';
+import { pageArgs } from '../common/pagination.js';
 
 export interface NotifyInput {
   /** Dublikatga qarshi kalit: bir hodisa bir foydalanuvchiga faqat bir marta */
   eventId: string;
   userId: string;
   type: string;
-  template: Parameters<typeof render>[0];
+  template: Template;
   /** Pul — { som } ko'rinishida: foydalanuvchi tiliga qarab formatlanadi */
   params: Record<string, string | { som: number | bigint }>;
   payload?: Record<string, unknown>;
@@ -47,7 +48,7 @@ export class NotificationsService {
 
     const locale = user.locale as Locale;
     const params = Object.fromEntries(
-      Object.entries(input.params).map(([k, v]) => [k, typeof v === 'string' ? v : formatSom(v.som, locale)]),
+      Object.entries(input.params).map(([k, v]) => [k, typeof v === 'string' ? v : formatMoney(v.som, locale)]),
     );
     const { title, body } = render(input.template, locale, params);
     const { count } = await this.prisma.notification.createMany({
@@ -89,8 +90,7 @@ export class NotificationsService {
       this.prisma.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        ...pageArgs({ page, limit }),
         omit: { eventId: true },
       }),
       this.prisma.notification.count({ where }),

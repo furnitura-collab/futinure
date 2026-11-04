@@ -1,9 +1,10 @@
 /**
  * Demo ma'lumotlar. Qayta ishga tushirish xavfsiz (upsert).
- * Kirish: OTP_TEST_PHONES dagi raqamlar, kod 000000.
+ * Kirish: demo raqamlar, parol DEMO_PASSWORD (standart: demo1234).
  */
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { hashPassword } from '../src/auth/password.js';
 import { PrismaClient, type Unit, type ProductKind } from '../src/generated/prisma/client.js';
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
@@ -185,12 +186,16 @@ const PRODUCTS: SeedProduct[] = [
 ];
 
 async function main() {
+  // Demo hisoblar paroli; foydalanuvchi o'zi almashtirgan parol qayta yozilmaydi
+  const demoPasswordHash = await hashPassword(process.env.DEMO_PASSWORD || 'demo1234');
   for (const u of USERS) {
-    await prisma.user.upsert({
+    const user = await prisma.user.upsert({
       where: { phone: u.phone },
-      create: { ...u, ...(u.role === 'CUSTOMER' && { customerProfile: { create: { type: 'MASTER' } } }) },
+      create: { ...u, passwordHash: demoPasswordHash, ...(u.role === 'CUSTOMER' && { customerProfile: { create: { type: 'MASTER' } } }) },
       update: { fullName: u.fullName, role: u.role },
+      select: { id: true, passwordHash: true },
     });
+    if (!user.passwordHash) await prisma.user.update({ where: { id: user.id }, data: { passwordHash: demoPasswordHash } });
   }
 
   const usta = await prisma.priceGroup.upsert({ where: { name: 'Usta' }, create: { name: 'Usta' }, update: {} });

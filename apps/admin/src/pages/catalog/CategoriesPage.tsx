@@ -1,214 +1,183 @@
-import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { api } from '../../lib/api';
-import { useAuth } from '../../lib/auth';
-import { flattenCategories, slugify, useBrands, useCategories, usePriceGroups } from '../../lib/catalog';
-import { useApiMutation } from '../../lib/mutation';
-import type { Category } from '../../lib/types';
-import { Badge, Button, Card, Dialog, Field, Input, PageHeader, PageLoader, Select, Toggle } from '../../components/ui';
+import { FolderTree, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { EmptyState } from '@/components/EmptyState';
+import { PageHeader } from '@/components/PageHeader';
+import { SectionCard } from '@/components/SectionCard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { flattenCategories, useBrands, useCategories, usePriceGroups } from '@/lib/catalog';
+import { useApiMutation } from '@/lib/mutation';
+import type { Category } from '@/lib/types';
+import { CategoryDialog } from './CategoryDialog';
 
 export function CategoriesPage() {
+  const { t } = useI18n();
   const { can } = useAuth();
-  const categories = useCategories();
-  const [editing, setEditing] = useState<Category | 'new' | null>(null);
-  const remove = useApiMutation((id: string) => api(`/admin/categories/${id}`, { method: 'DELETE' }), {
-    invalidate: [['categories']],
-    success: 'O\'chirildi',
-  });
-
   return (
     <div>
-      <PageHeader
-        title="Kategoriyalar, brendlar, narx guruhlari"
-        back={
-          <Link to="/catalog" className="rounded-md p-1.5 text-stone-500 hover:bg-stone-200">
-            <ArrowLeft className="size-5" />
-          </Link>
-        }
-      />
-      <div className="grid gap-6 p-6 xl:grid-cols-3">
-        <Card
-          className="xl:col-span-2"
-          title="Kategoriyalar"
-          actions={<Button size="sm" onClick={() => setEditing('new')}><Plus className="size-4" /> Kategoriya</Button>}
-        >
-          {categories.isPending ? (
-            <PageLoader />
-          ) : (
-            <ul className="divide-y divide-stone-100">
-              {flattenCategories(categories.data ?? []).map((c) => (
-                <li key={c.id} className="flex items-center gap-3 py-2" style={{ paddingLeft: c.depth * 24 }}>
-                  <span className="flex-1 text-sm">
-                    <span className="font-medium">{c.nameUz}</span>
-                    <span className="ml-2 text-stone-400">{c.nameRu} · /{c.slug}</span>
-                  </span>
-                  {!c.isActive && <Badge tone="bg-stone-100 text-stone-600 ring-stone-200">Nofaol</Badge>}
-                  <span className="text-xs text-stone-500">{c._count.products} mahsulot</span>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(c)}><Pencil className="size-4" /></Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={c._count.products > 0 || c._count.children > 0}
-                    title={c._count.products || c._count.children ? 'Bo\'sh emas — nofaol qiling' : 'O\'chirish'}
-                    onClick={() => remove.mutate(c.id)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <div className="space-y-6">
+      <PageHeader back={{ to: '/catalog', label: t('catalog.title') }} title={t('categories.title')} description={t('categories.subtitle')} />
+      <div className="grid gap-6 xl:grid-cols-3">
+        <CategoriesCard />
+        <div className="min-w-0 space-y-6">
           <BrandsCard />
           <PriceGroupsCard editable={can('SUPER_ADMIN')} />
         </div>
       </div>
-      {editing && <CategoryDialog category={editing === 'new' ? null : editing} all={categories.data ?? []} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function CategoryDialog({ category, all, onClose }: { category: Category | null; all: Category[]; onClose: () => void }) {
-  const [nameUz, setNameUz] = useState(category?.nameUz ?? '');
-  const [nameRu, setNameRu] = useState(category?.nameRu ?? '');
-  const [slug, setSlug] = useState(category?.slug ?? '');
-  const [slugTouched, setSlugTouched] = useState(!!category);
-  const [parentId, setParentId] = useState(category?.parentId ?? '');
-  const [sortOrder, setSortOrder] = useState(category?.sortOrder ?? 0);
-  const [isActive, setIsActive] = useState(category?.isActive ?? true);
-
-  const save = useApiMutation(
-    () => {
-      const body = { nameUz: nameUz.trim(), nameRu: nameRu.trim(), slug, parentId: parentId || null, sortOrder, isActive };
-      return category ? api(`/admin/categories/${category.id}`, { method: 'PATCH', body }) : api('/admin/categories', { body });
-    },
-    { invalidate: [['categories']], success: 'Saqlandi', onSuccess: onClose },
-  );
-  // O'zini va avlodlarini ota sifatida tanlab bo'lmaydi (backend ham tekshiradi)
-  const options = flattenCategories(all).filter((c) => c.id !== category?.id);
+function CategoriesCard() {
+  const { t } = useI18n();
+  const categories = useCategories();
+  const [editing, setEditing] = useState<Category | 'new' | null>(null);
+  const [deleting, setDeleting] = useState<Category | null>(null);
+  const remove = useApiMutation((id: string) => api(`/admin/categories/${id}`, { method: 'DELETE' }), {
+    invalidate: [['categories']],
+    success: t('common.deleted'),
+    onSuccess: () => setDeleting(null),
+  });
+  const rows = flattenCategories(categories.data ?? []);
 
   return (
-    <Dialog
-      open
-      onClose={onClose}
-      title={category ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>Bekor</Button>
-          <Button loading={save.isPending} disabled={!nameUz.trim() || !nameRu.trim() || !slug} onClick={() => save.mutate(undefined)}>Saqlash</Button>
-        </>
+    <SectionCard
+      className="xl:col-span-2"
+      title={t('catalog.categories')}
+      flush
+      actions={
+        <Button size="sm" onClick={() => setEditing('new')}>
+          <Plus /> {t('categories.add')}
+        </Button>
       }
     >
-      <div className="space-y-4">
-        <Field label="Nomi (o'zbekcha)">
-          {(id) => (
-            <Input
-              id={id}
-              autoFocus
-              value={nameUz}
-              onChange={(e) => {
-                setNameUz(e.target.value);
-                if (!slugTouched) setSlug(slugify(e.target.value));
-              }}
-            />
-          )}
-        </Field>
-        <Field label="Nomi (ruscha)">{(id) => <Input id={id} value={nameRu} onChange={(e) => setNameRu(e.target.value)} />}</Field>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Slug (havola)">
-            {(id) => (
-              <Input
-                id={id}
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(slugify(e.target.value));
-                }}
-              />
-            )}
-          </Field>
-          <Field label="Tartib">{(id) => <Input id={id} type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />}</Field>
+      {categories.isPending ? (
+        <div className="space-y-2 p-5">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-9" />
+          ))}
         </div>
-        <Field label="Ota kategoriya">
-          {(id) => (
-            <Select id={id} value={parentId} onChange={(e) => setParentId(e.target.value)}>
-              <option value="">— yuqori daraja —</option>
-              {options.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </Select>
-          )}
-        </Field>
-        <Toggle checked={isActive} onChange={setIsActive} label="Faol (mijozlarga ko'rinadi)" />
-      </div>
-    </Dialog>
+      ) : rows.length === 0 ? (
+        <EmptyState icon={FolderTree} title={t('categories.empty')} />
+      ) : (
+        <ul className="divide-y">
+          {rows.map((c) => {
+            const busy = c._count.products > 0 || c._count.children > 0;
+            return (
+              <li key={c.id} className="flex items-center gap-3 py-2 pr-3 transition-colors hover:bg-muted/40" style={{ paddingLeft: 20 + c.depth * 24 }}>
+                <span className="min-w-0 flex-1 text-sm">
+                  <span className="font-medium">{c.nameUz}</span>
+                  <span className="ml-2 hidden text-muted-foreground sm:inline">
+                    {c.nameRu} · /{c.slug}
+                  </span>
+                </span>
+                {!c.isActive && <Badge>{t('common.inactive')}</Badge>}
+                <span className="hidden text-xs text-muted-foreground sm:inline">{t('categories.productsCount', { n: c._count.products })}</span>
+                <Button size="icon-sm" variant="ghost" aria-label={t('common.edit')} title={t('common.edit')} onClick={() => setEditing(c)}>
+                  <Pencil />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost-destructive"
+                  disabled={busy}
+                  aria-label={t('common.delete')}
+                  title={busy ? t('categories.notEmpty') : t('common.delete')}
+                  onClick={() => setDeleting(c)}
+                >
+                  <Trash2 />
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {editing && <CategoryDialog category={editing === 'new' ? null : editing} all={categories.data ?? []} onClose={() => setEditing(null)} />}
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title={t('common.delete')}
+        description={deleting?.nameUz}
+        confirmLabel={t('common.delete')}
+        destructive
+        loading={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
+      />
+    </SectionCard>
+  );
+}
+
+function AddForm({ placeholder, onAdd, loading }: { placeholder: string; onAdd: (name: string, reset: () => void) => void; loading: boolean }) {
+  const { t } = useI18n();
+  const [name, setName] = useState('');
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (name.trim()) onAdd(name.trim(), () => setName(''));
+  };
+  return (
+    <form className="mb-3 flex gap-2" onSubmit={submit}>
+      <Input aria-label={placeholder} placeholder={placeholder} value={name} onChange={(e) => setName(e.target.value)} />
+      <Button type="submit" size="icon" loading={loading} disabled={!name.trim()} aria-label={t('common.add')}>
+        {!loading && <Plus />}
+      </Button>
+    </form>
   );
 }
 
 function BrandsCard() {
+  const { t } = useI18n();
   const brands = useBrands();
-  const [name, setName] = useState('');
-  const add = useApiMutation(() => api('/admin/brands', { body: { name: name.trim() } }), {
-    invalidate: [['brands']],
-    onSuccess: () => setName(''),
-  });
+  const add = useApiMutation((name: string) => api('/admin/brands', { body: { name } }), { invalidate: [['brands']] });
   const remove = useApiMutation((id: string) => api(`/admin/brands/${id}`, { method: 'DELETE' }), { invalidate: [['brands']] });
   return (
-    <Card title="Brendlar">
-      <form
-        className="mb-3 flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (name.trim()) add.mutate(undefined);
-        }}
-      >
-        <Input placeholder="Yangi brend" value={name} onChange={(e) => setName(e.target.value)} />
-        <Button type="submit" loading={add.isPending} disabled={!name.trim()}><Plus className="size-4" /></Button>
-      </form>
-      <ul className="divide-y divide-stone-100 text-sm">
+    <SectionCard title={t('categories.brands')}>
+      <AddForm placeholder={t('categories.newBrand')} loading={add.isPending} onAdd={(name, reset) => add.mutate(name, { onSuccess: reset })} />
+      <ul className="divide-y text-sm">
         {brands.data?.map((b) => (
           <li key={b.id} className="flex items-center justify-between py-1.5">
-            <span>{b.name} <span className="text-xs text-stone-400">{b._count.products}</span></span>
-            <Button size="sm" variant="ghost" disabled={b._count.products > 0} onClick={() => remove.mutate(b.id)}>
-              <Trash2 className="size-4" />
+            <span>
+              {b.name} <span className="text-xs text-muted-foreground tabular">{b._count.products}</span>
+            </span>
+            <Button
+              size="icon-sm"
+              variant="ghost-destructive"
+              disabled={b._count.products > 0}
+              aria-label={t('common.delete')}
+              onClick={() => remove.mutate(b.id)}
+            >
+              <Trash2 />
             </Button>
           </li>
         ))}
       </ul>
-    </Card>
+    </SectionCard>
   );
 }
 
 function PriceGroupsCard({ editable }: { editable: boolean }) {
+  const { t } = useI18n();
   const groups = usePriceGroups();
-  const [name, setName] = useState('');
-  const add = useApiMutation(() => api('/admin/price-groups', { body: { name: name.trim() } }), {
+  const add = useApiMutation((name: string) => api('/admin/price-groups', { body: { name } }), {
     invalidate: [['price-groups']],
-    onSuccess: () => setName(''),
   });
   return (
-    <Card title="Narx guruhlari">
+    <SectionCard title={t('categories.priceGroups')}>
       {editable && (
-        <form
-          className="mb-3 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim()) add.mutate(undefined);
-          }}
-        >
-          <Input placeholder="Masalan: Diler" value={name} onChange={(e) => setName(e.target.value)} />
-          <Button type="submit" loading={add.isPending} disabled={!name.trim()}><Plus className="size-4" /></Button>
-        </form>
+        <AddForm placeholder={t('categories.groupPlaceholder')} loading={add.isPending} onAdd={(name, reset) => add.mutate(name, { onSuccess: reset })} />
       )}
-      <ul className="divide-y divide-stone-100 text-sm">
+      <ul className="divide-y text-sm">
         {groups.data?.map((g) => (
-          <li key={g.id} className="flex justify-between py-1.5">
+          <li key={g.id} className="flex justify-between gap-3 py-1.5">
             <span>{g.name}</span>
-            <span className="text-xs text-stone-500">{g._count.customers} mijoz · {g._count.prices} narx</span>
+            <span className="text-xs text-muted-foreground">{t('categories.groupStats', { customers: g._count.customers, prices: g._count.prices })}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-stone-500">Mijozni guruhga "Mijozlar" sahifasida biriktiriladi; narxlar — variant oynasida.</p>
-    </Card>
+      <p className="mt-3 text-xs text-muted-foreground">{t('categories.groupsHint')}</p>
+    </SectionCard>
   );
 }

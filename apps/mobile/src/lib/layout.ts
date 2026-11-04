@@ -1,4 +1,6 @@
+import { createContext, use } from 'react';
 import { useWindowDimensions, type ViewStyle } from 'react-native';
+import { space } from '@/theme';
 
 /** Ekran kengligi chegaralari (web va planshet) */
 export const BREAKPOINT = { wide: 768, desktop: 1024 } as const;
@@ -17,3 +19,16 @@ export const contained = (maxWidth: number): ViewStyle => ({ width: '100%', maxW
 /** Katalog kartochkasining eng kichik kengligi — shundan ustunlar soni chiqadi */
 const CARD_MIN = 200;
 export const gridColumns = (width: number) => Math.min(6, Math.max(2, Math.floor(width / CARD_MIN)));
+
+/**
+ * Mijoz sayti (web, keng ekran) — WebShell beradi. Haydovchi/xodim ekranlari, telefon va native ilovada false,
+ * shuning uchun ular o'zgarmaydi.
+ */
+export const SiteContext = createContext(false);
+
+/** site — sayt ko'rinishimi; gutter — konteyner yon bo'shlig'i (sarlavha bilan bir chiziqda) */
+export function useSite() {
+  const site = use(SiteContext);
+  const { desktop } = useLayout();
+  return { site, gutter: site ? space(desktop ? 8 : 6) : space(4) };
+}

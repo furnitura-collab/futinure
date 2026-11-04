@@ -1,12 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { Button, Input, Row, Text } from '../components/ui';
-import { api } from '../lib/api';
-import { useI18n } from '../lib/i18n';
-import { useApiMutation } from '../lib/mutation';
-import { colors, space } from '../lib/theme';
-import { contained, CONTENT } from '../lib/layout';
+import { Button, Card, Icon, Input, Row, Screen, Text } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useApiMutation } from '@/lib/mutation';
+import { space } from '@/theme';
 
 interface Result {
   sku: string;
@@ -28,8 +26,8 @@ export default function Sku() {
   const items = text
     .split('\n')
     .map((line) => line.trim().split(/\s+/))
-    .filter((p) => p.length >= 2 && p[0])
-    .map(([sku, qty]) => ({ sku: sku!, qty: qty!.replace(',', '.') }));
+    .filter((p): p is [string, string, ...string[]] => p.length >= 2 && !!p[0])
+    .map(([sku, qty]) => ({ sku, qty: qty.replace(',', '.') }));
 
   const add = useApiMutation(() => api<{ results: Result[] }>('/cart/items/bulk', { body: { items } }), {
     invalidate: [['cart']],
@@ -38,9 +36,17 @@ export default function Sku() {
   const allOk = results?.every((r) => r.status === 'ADDED');
 
   return (
-    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
+    <Screen width="form" modal title={t('quickSku')}>
+      <Card tone="primary" style={{ gap: space(1) }}>
+        <Row gap={space(2)}>
+          <Icon name="bulb-outline" size={18} tone="primary" />
+          <Text v="small" bold tone="primary">{t('skuHowTitle')}</Text>
+        </Row>
+        <Text v="small">{t('quickSkuExplain')}</Text>
+      </Card>
       <Input
-        label={t('quickSku')}
+        label={t('skuInputLabel')}
+        hint={t('quickSkuHint')}
         multiline
         autoFocus
         autoCapitalize="characters"
@@ -51,23 +57,38 @@ export default function Sku() {
           setResults(null);
         }}
         placeholder={'KR-W980-16 12\nRH-2-W980 25.5'}
-        style={{ height: 180, fontFamily: 'monospace' }}
+        style={{ minHeight: 180, fontFamily: 'monospace' }}
       />
       {results ? (
-        <View style={{ gap: space(2) }}>
-          {results.map((r, i) => (
-            <Row key={i} style={{ justifyContent: 'space-between' }}>
-              <Text style={{ fontFamily: 'monospace' }}>{r.sku}</Text>
-              <Text v="small" color={r.status === 'ADDED' ? colors.success : colors.danger}>
-                {r.status === 'ADDED' ? `✓ ${r.qty}` : errorText(r.status, r.status === 'NOT_FOUND' ? '?' : r.status)}
-              </Text>
-            </Row>
-          ))}
-          <Button title={t('tabCart')} variant={allOk ? 'primary' : 'secondary'} onPress={() => router.replace('/cart')} />
-        </View>
+        <>
+          <Card style={{ gap: space(3) }}>
+            {results.map((r, i) => {
+              const ok = r.status === 'ADDED';
+              return (
+                <Row key={i} between>
+                  <Text style={{ fontFamily: 'monospace', flex: 1 }} numberOfLines={1}>{r.sku}</Text>
+                  <Row gap={6}>
+                    <Icon name={ok ? 'checkmark-circle' : 'close-circle'} size={16} tone={ok ? 'success' : 'destructive'} />
+                    <Text v="small" tone={ok ? 'success' : 'destructive'}>
+                      {ok ? t('skuAdded', { qty: r.qty ?? '' }) : r.status === 'NOT_FOUND' ? t('skuNotFound') : errorText(r.status, r.status)}
+                    </Text>
+                  </Row>
+                </Row>
+              );
+            })}
+          </Card>
+          <Button title={t('goToCart')} icon="cart" variant={allOk ? 'primary' : 'outline'} block onPress={() => router.navigate('/cart')} />
+        </>
       ) : (
-        <Button title={t('addToCart')} icon="cart" disabled={!items.length} loading={add.isPending} onPress={() => add.mutate(undefined)} />
+        <Button
+          title={items.length ? t('skuAddN', { n: items.length }) : t('addToCart')}
+          icon="cart"
+          block
+          disabled={!items.length}
+          loading={add.isPending}
+          onPress={() => add.mutate(undefined)}
+        />
       )}
-    </ScrollView>
+    </Screen>
   );
 }

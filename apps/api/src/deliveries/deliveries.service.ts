@@ -9,6 +9,7 @@ import {
 } from '@mebel/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { AppException } from '../common/app-exception.js';
+import { dayStart } from '../common/business-day.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { AuthUser } from '../auth/decorators.js';
 import { OutboxService } from '../events/outbox.service.js';
@@ -73,9 +74,6 @@ function present({ order: o, ...d }: Row) {
     },
   };
 }
-
-/** Toshkent kunining boshi (UTC) */
-const dayStart = (isoDate: string) => new Date(`${isoDate}T00:00:00+05:00`);
 
 @Injectable()
 export class DeliveriesService {

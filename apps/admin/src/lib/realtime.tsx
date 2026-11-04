@@ -1,12 +1,11 @@
-import { createContext, use, useEffect, useState, type ReactNode } from 'react';
+import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, type Socket } from 'socket.io-client';
 import { toast } from 'sonner';
-import { RT } from '@mebel/shared';
+import { RT, type OrderStatus } from '@mebel/shared';
+import { useI18n } from '@/i18n';
 import { tokenStore } from './api';
 import { useAuth } from './auth';
-import { som } from './format';
-import type { OrderStatus } from '@mebel/shared';
 
 interface RealtimeState {
   socket: Socket | null;
@@ -41,9 +40,16 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
+  // Til almashganda socket qayta ulanmasin — matnlar ref orqali olinadi
+  const i18n = useI18n();
+  const i18nRef = useRef(i18n);
+  useEffect(() => {
+    i18nRef.current = i18n;
+  });
 
   useEffect(() => {
     if (!me) return;
+    const tr = () => i18nRef.current;
     const s = io('/rt', {
       // Har qayta ulanishda yangi token (refresh'dan keyin)
       auth: (cb) => cb({ token: tokenStore.get()?.accessToken }),
@@ -54,7 +60,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
     s.on(RT.ORDER_CREATED, (o: { number: string; grandTotal: number }) => {
       beep();
-      toast.success(`Yangi buyurtma ${o.number}`, { description: som(o.grandTotal) });
+      toast.success(tr().t('realtime.newOrder', { number: o.number }), { description: tr().money(o.grandTotal) });
       void qc.invalidateQueries({ queryKey: ['orders'] });
     });
     s.on(RT.ORDER_STATUS_CHANGED, (e: { orderId: string; number: string; to: OrderStatus }) => {
@@ -63,7 +69,8 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     });
     s.on(RT.PAYMENT_CREATED, (p: { amount: number; method: string }) => {
       beep();
-      toast.info(`${p.method === 'CASH' ? 'Haydovchi naqd oldi' : 'Yangi chek'}: ${som(p.amount)}`);
+      const amount = tr().money(p.amount);
+      toast.info(p.method === 'CASH' ? tr().t('realtime.cashCollected', { amount }) : tr().t('realtime.newReceipt', { amount }));
       void qc.invalidateQueries({ queryKey: ['payments'] });
     });
     s.on(RT.PAYMENT_UPDATED, (p: { orderId: string | null }) => {
@@ -73,7 +80,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     s.on(RT.CHAT_MESSAGE, (m: { orderId: string; orderNumber: string; sender: { role: string }; text: string | null }) => {
       void qc.invalidateQueries({ queryKey: ['chat', m.orderId] });
       void qc.invalidateQueries({ queryKey: ['orders'] });
-      if (m.sender.role === 'CUSTOMER') toast(`💬 ${m.orderNumber}`, { description: m.text ?? '📎 fayl' });
+      if (m.sender.role === 'CUSTOMER') toast(m.orderNumber, { description: m.text ?? tr().t('realtime.attachment') });
     });
     s.on(RT.DELIVERY_ASSIGNED, (e: { orderId: string }) => {
       void qc.invalidateQueries({ queryKey: ['order', e.orderId] });

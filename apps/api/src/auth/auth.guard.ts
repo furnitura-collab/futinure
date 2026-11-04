@@ -1,4 +1,4 @@
-import { type CanActivate, type ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Role } from '@mebel/shared';
@@ -29,11 +29,11 @@ export class AuthGuard implements CanActivate {
       try {
         req.user = toAuthUser(await this.jwt.verifyAsync<AccessPayload>(token));
       } catch {
-        if (!isPublic) throw unauthorized();
+        if (!isPublic) throw AppException.unauthorized();
       }
     }
     if (isPublic) return true;
-    if (!req.user) throw unauthorized();
+    if (!req.user) throw AppException.unauthorized();
 
     const roles = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES, targets);
     if (roles && !roles.includes(req.user.role)) throw AppException.forbidden();
@@ -45,8 +45,4 @@ function extractBearer(header: string | undefined): string | null {
   if (!header) return null;
   const [type, token] = header.split(' ');
   return type === 'Bearer' && token ? token : null;
-}
-
-function unauthorized() {
-  return new AppException('UNAUTHORIZED', 'Avtorizatsiya kerak', HttpStatus.UNAUTHORIZED);
 }

@@ -51,6 +51,7 @@ import {
   type VariantUpdate,
 } from '@mebel/shared';
 import { AppException } from '../common/app-exception.js';
+import type { PageQuery } from '../common/pagination.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { type AuthUser, CurrentUser, Roles } from '../auth/decorators.js';
 import { AdminCatalogService } from './admin-catalog.service.js';
@@ -271,7 +272,7 @@ export class AdminStockController {
   }
 
   @Get('variants/:id/movements')
-  movements(@Param('id', uuid) id: string, @Query(new ZodPipe(paginationSchema)) q: { page: number; limit: number }) {
+  movements(@Param('id', uuid) id: string, @Query(new ZodPipe(paginationSchema)) q: PageQuery) {
     return this.stock.movements(id, q.page, q.limit);
   }
 }

@@ -10,11 +10,13 @@ import {
 } from '@mebel/shared';
 import { Prisma } from '../generated/prisma/client.js';
 import { AppException } from '../common/app-exception.js';
+import { dayRange } from '../common/business-day.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { AuthUser } from '../auth/decorators.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { OrderInventoryService } from './order-inventory.service.js';
 import { presentQuote } from './order-quotes.service.js';
+import { pageArgs } from '../common/pagination.js';
 
 const KANBAN_STATUSES: OrderStatus[] = ['NEW', 'QUOTED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 const KANBAN_LIMIT = 50;
@@ -47,11 +49,6 @@ function card({ _count, ...o }: CardRow) {
   return { ...o, itemsCount: _count.items, unreadMessages: _count.chatMessages, balanceDue: o.grandTotal - o.paidTotal };
 }
 
-/** Toshkent kunining boshi (UTC) */
-function dayStart(isoDate: string) {
-  return new Date(`${isoDate}T00:00:00+05:00`);
-}
-
 @Injectable()
 export class AdminOrdersService {
   constructor(
@@ -66,8 +63,7 @@ export class AdminOrdersService {
       this.prisma.order.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
+        ...pageArgs(query),
         select: cardSelect,
       }),
       this.prisma.order.count({ where }),
@@ -95,8 +91,8 @@ export class AdminOrdersService {
     if (q.status) and.push({ status: q.status });
     if (q.managerId) and.push({ managerId: q.managerId === 'none' ? null : q.managerId });
     if (q.customerId) and.push({ customerId: q.customerId });
-    if (q.from) and.push({ createdAt: { gte: dayStart(q.from) } });
-    if (q.to) and.push({ createdAt: { lt: new Date(dayStart(q.to).getTime() + 86_400_000) } });
+    const createdAt = dayRange(q.from, q.to);
+    if (createdAt) and.push({ createdAt });
     if (q.q) {
       const digits = q.q.replace(/\D/g, '');
       and.push({

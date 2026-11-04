@@ -1,13 +1,12 @@
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView } from 'react-native';
-import { Button, Input, Row, Text, Toggle, useToast } from '../components/ui';
-import { api } from '../lib/api';
-import { useI18n } from '../lib/i18n';
-import { useApiMutation } from '../lib/mutation';
-import { colors, space } from '../lib/theme';
-import { contained, CONTENT } from '../lib/layout';
+import { View } from 'react-native';
+import { Button, Card, Input, Row, Screen, Text, Toggle, useToast } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { api } from '@/lib/api';
+import { useApiMutation } from '@/lib/mutation';
+import { space } from '@/theme';
 
 /** Toshkent markazi — joylashuv aniqlanmasa (menejer manzil matnidan aniqlaydi) */
 const TASHKENT = { lat: 41.311, lng: 69.279 };
@@ -57,26 +56,39 @@ export default function AddressNew() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
-      <Button
-        title={coords ? `✓ ${t('locationSet')}` : t('useMyLocation')}
-        icon="navigate-outline"
-        variant="secondary"
-        loading={locating}
-        onPress={() => void locate()}
-      />
-      {coords && (
-        <Text v="caption" color={colors.success}>
-          {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-        </Text>
-      )}
-      <Input label={t('addressText')} value={addressText} onChangeText={setAddressText} multiline />
-      <Row>
-        <Input label={t('label')} value={label} onChangeText={setLabel} style={{ width: 200 }} />
-        <Input label={t('floor')} value={floor} onChangeText={(v) => setFloor(v.replace(/\D/g, ''))} keyboardType="number-pad" style={{ width: 90 }} />
-      </Row>
-      <Toggle value={needsLoaders} onChange={setNeedsLoaders} label={t('needsLoaders')} />
-      <Button title={t('save')} disabled={addressText.trim().length < 5} loading={save.isPending} onPress={() => save.mutate(undefined)} />
-    </ScrollView>
+    <Screen
+      width="form"
+      modal
+      title={t('addAddress')}
+      footer={<Button title={t('save')} icon="checkmark" block disabled={addressText.trim().length < 5} loading={save.isPending} onPress={() => save.mutate(undefined)} />}
+    >
+      <View style={{ gap: space(2) }}>
+        <Button
+          title={coords ? t('locationSet') : t('useMyLocation')}
+          icon={coords ? 'checkmark-circle' : 'navigate-outline'}
+          variant={coords ? 'secondary' : 'outline'}
+          block
+          loading={locating}
+          onPress={() => void locate()}
+        />
+        {coords && (
+          <Text v="caption" tone="success" center>
+            {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+          </Text>
+        )}
+      </View>
+      <Card style={{ gap: space(4) }}>
+        <Input label={t('addressText')} value={addressText} onChangeText={setAddressText} multiline />
+        <Row style={{ alignItems: 'flex-start' }} gap={space(3)}>
+          <View style={{ flex: 1 }}>
+            <Input label={t('label')} value={label} onChangeText={setLabel} />
+          </View>
+          <View style={{ width: 96 }}>
+            <Input label={t('floor')} value={floor} onChangeText={(v) => setFloor(v.replace(/\D/g, ''))} keyboardType="number-pad" />
+          </View>
+        </Row>
+        <Toggle value={needsLoaders} onChange={setNeedsLoaders} label={t('needsLoaders')} />
+      </Card>
+    </Screen>
   );
 }

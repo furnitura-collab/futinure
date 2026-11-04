@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import { api, ApiError, tokenStore } from './api';
-import { ago, phone, som } from './format';
+import { ago } from './format';
+import { useI18n } from '@/i18n';
 
 function json(status: number, body: unknown) {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -75,6 +77,13 @@ describe('api client', () => {
     unsub();
   });
 
+  it('"parol noto\'g\'ri" 401 da refresh qilmaydi', async () => {
+    tokenStore.set({ accessToken: 'A1', refreshToken: 'R1' });
+    fetchMock.mockResolvedValueOnce(json(401, { error: { code: 'INVALID_PASSWORD' } }));
+    await expect(api('/me/password', { body: {} })).rejects.toMatchObject({ code: 'INVALID_PASSWORD' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('/auth/* da 401 refresh qilmaydi', async () => {
     fetchMock.mockResolvedValueOnce(json(401, { error: { code: 'OTP_INVALID' } }));
     await expect(api('/auth/otp/verify', { body: {} })).rejects.toMatchObject({ code: 'OTP_INVALID' });
@@ -82,18 +91,26 @@ describe('api client', () => {
   });
 });
 
-describe('format', () => {
-  it('som', () => {
-    expect(som(4_620_000)).toBe('4 620 000 so\'m');
-    expect(som(0)).toBe('0 so\'m');
-    expect(som(null)).toBe('—');
-  });
-  it('phone', () => expect(phone('+998901234567')).toBe('+998 90 123 45 67'));
+describe('i18n', () => {
+  const { result } = renderHook(() => useI18n());
+  const { t, money, errorText } = result.current;
+
   it('ago', () => {
     const now = Date.parse('2026-11-03T12:00:00Z');
-    expect(ago('2026-11-03T11:59:40Z', now)).toBe('hozir');
-    expect(ago('2026-11-03T11:15:00Z', now)).toBe('45 daq');
-    expect(ago('2026-11-03T07:00:00Z', now)).toBe('5 soat');
-    expect(ago('2026-11-01T12:00:00Z', now)).toBe('2 kun');
+    expect(ago('2026-11-03T11:59:40Z', t, now)).toBe('hozir');
+    expect(ago('2026-11-03T11:15:00Z', t, now)).toBe('45 daq');
+    expect(ago('2026-11-03T07:00:00Z', t, now)).toBe('5 soat');
+    expect(ago('2026-11-01T12:00:00Z', t, now)).toBe('2 kun');
+  });
+
+  it('parametrlarni qo\'yadi', () => {
+    expect(t('orders.more', { n: 3 })).toBe("Yana 3 ta — jadvalda ko'ring");
+    expect(money(4_620_000)).toBe("4 620 000 so'm");
+  });
+
+  it('API xato kodini tarjima qiladi', () => {
+    expect(errorText(new ApiError(409, 'PHONE_TAKEN', 'x'))).toBe("Bu raqam allaqachon ro'yxatdan o'tgan");
+    expect(errorText(new ApiError(401, 'INVALID_PASSWORD', 'x'))).toBe("Parol noto'g'ri");
+    expect(errorText(new ApiError(500, 'WHATEVER', 'Server xabari'))).toBe('Server xabari');
   });
 });

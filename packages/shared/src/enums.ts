@@ -7,7 +7,7 @@ export const ROLES = values('CUSTOMER', 'MANAGER', 'SUPER_ADMIN', 'WAREHOUSE', '
 export type Role = (typeof ROLES)[number];
 export const STAFF_ROLES: readonly Role[] = ['MANAGER', 'SUPER_ADMIN', 'WAREHOUSE', 'DRIVER'];
 
-export const LOCALES = values('uz', 'ru');
+export const LOCALES = values('uz', 'ru', 'en');
 export type Locale = (typeof LOCALES)[number];
 
 export const CUSTOMER_TYPES = values('INDIVIDUAL', 'MASTER', 'COMPANY');

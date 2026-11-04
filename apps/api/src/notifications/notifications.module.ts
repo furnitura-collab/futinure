@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Global, HttpCode, Module, Post, Query } from '@nestjs/common';
 import { notificationsReadSchema, paginationSchema, type NotificationsReadInput } from '@mebel/shared';
+import type { PageQuery } from '../common/pagination.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { type AuthUser, CurrentUser } from '../auth/decorators.js';
 import { ENV, type Env } from '../config/env.js';
@@ -23,7 +24,7 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Get()
-  list(@CurrentUser() u: AuthUser, @Query(new ZodPipe(paginationSchema)) q: { page: number; limit: number }) {
+  list(@CurrentUser() u: AuthUser, @Query(new ZodPipe(paginationSchema)) q: PageQuery) {
     return this.notifications.list(u.id, q.page, q.limit);
   }
 

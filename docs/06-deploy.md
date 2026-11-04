@@ -101,7 +101,10 @@ docker system prune -f                     # eski image'larni tozalash (disk to'
    ESKIZ_PASSWORD=...
    ADMIN_PHONE=+998XXXXXXXXX
    ADMIN_NAME=Ism Familiya
+   ADMIN_PASSWORD=kamida-6-belgi
    ```
+   `ADMIN_PASSWORD` faqat super adminning paroli hali yo'q bo'lsa o'rnatiladi (har restartda qayta yozilmaydi).
+   Keyin parolni admin panelda Profil → «Parolni o'zgartirish» orqali almashtiring va `.env` dan olib tashlang.
 4. Demo ma'lumotlar bilan ishlagan bo'lsa — toza bazadan boshlash (**hamma ma'lumot o'chadi**):
    ```bash
    docker compose down
@@ -109,11 +112,9 @@ docker system prune -f                     # eski image'larni tozalash (disk to'
    docker compose up -d --build
    ```
    `DEMO_MODE=false` da demo yuklanmaydi, faqat `ADMIN_PHONE` super admini yaratiladi.
-5. Admin panelga SMS kod bilan kiring → kategoriya va mahsulotlarni qo'shing.
-   Xodim qo'shish admin panelda hali yo'q — hozircha SQL bilan (rol: `MANAGER`, `WAREHOUSE`, `DRIVER`):
-   ```bash
-   docker compose exec postgres psql -U mebel mebel -c \
-     "INSERT INTO users (id, phone, full_name, role, updated_at)
-      VALUES (gen_random_uuid(), '+998901234567', 'Ism Familiya', 'MANAGER', now())"
-   ```
+5. Admin panelga `ADMIN_PHONE` + `ADMIN_PASSWORD` bilan kiring → kategoriya va mahsulotlarni qo'shing.
+   Xodimlar (`MANAGER`, `WAREHOUSE`, `DRIVER`, `SUPER_ADMIN`) — admin panelda **Xodimlar** sahifasida
+   (faqat super admin; API: `POST /api/v1/admin/staff`). Xodim parolini super admin beradi —
+   paroli yo'q xodim parol bilan kira olmaydi (`PASSWORD_NOT_SET`). Parolni tiklash va bloklash ham shu sahifada
+   (barcha sessiyalari yopiladi).
 6. Zaxira cron'i ishlayotganini va tashqi nusxa borligini tekshiring.
