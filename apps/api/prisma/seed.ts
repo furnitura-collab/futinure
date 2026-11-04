@@ -10,10 +10,10 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: proc
 
 const USERS = [
   { phone: '+998900000001', fullName: 'Super Admin', role: 'SUPER_ADMIN' },
-  { phone: '+998900000002', fullName: 'Menejer Dilnoza', role: 'MANAGER' },
-  { phone: '+998900000003', fullName: 'Omborchi Bekzod', role: 'WAREHOUSE' },
-  { phone: '+998900000004', fullName: 'Haydovchi Jasur', role: 'DRIVER' },
-  { phone: '+998900000005', fullName: 'Aziz usta', role: 'CUSTOMER' },
+  { phone: '+998900000002', fullName: 'Menejer ', role: 'MANAGER' },
+  { phone: '+998900000003', fullName: 'Omborchi ', role: 'WAREHOUSE' },
+  { phone: '+998900000004', fullName: 'Haydovchi ', role: 'DRIVER' },
+  { phone: '+998900000005', fullName: 'Usta ', role: 'CUSTOMER' },
 ] as const;
 
 interface SeedVariant {
