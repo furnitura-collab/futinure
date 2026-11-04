@@ -1,0 +1,6 @@
+# DOMAIN berilsa (masalan mebel.uz) — Let's Encrypt sertifikati avtomatik olinadi.
+# Berilmasa — :80, ya'ni IP orqali oddiy HTTP.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

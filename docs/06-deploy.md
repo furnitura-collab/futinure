@@ -1,41 +1,96 @@
-# Deploy: Koyeb + Neon + Upstash (bepul)
+# Deploy: VPS (Contabo Cloud VPS 4)
 
-| Qism | Servis | Bepul limit |
+Bitta server, hammasi Docker'da: Caddy (HTTPS) → app (API + admin + mobil web), Postgres, Redis.
+Fayllar `deploy/` papkasida.
+
+| Qism | Qayerda | Ma'lumot saqlanadi |
 |---|---|---|
-| Server (Dockerfile) | Koyeb | 1 web servis, 512 MB RAM, 1 soat so'rovsiz uxlaydi |
-| Postgres | Neon | 0.5 GB, 100 CU-soat/oy, 5 daqiqa bo'sh tursa uxlaydi |
-| Redis | Upstash | 256 MB, 500 ming buyruq/oy |
+| Caddy | `caddy` konteyner, 80/443 portlar | sertifikatlar — `caddy_data` volume |
+| API + web | `app` konteyner (repo `Dockerfile`) | yuklangan fayllar — `uploads` volume |
+| Postgres 17 | `postgres` konteyner, tashqariga ochiq emas | `pgdata` volume |
+| Redis 7 | `redis` konteyner, tashqariga ochiq emas | `redisdata` volume |
 
-Server uxlaganda bazaga so'rov ketmaydi — Neon ham uxlaydi va limit tejaladi.
+Manzillar: `/` — mobil web, `/admin/` — admin panel, `/api/v1` — API.
 
-## 1. Neon (Postgres)
-1. neon.tech → GitHub bilan kirish → **New project**, region: **Frankfurt (eu-central-1)**.
-2. **Connect** → *Connection pooling* **o'chirilgan** holdagi manzilni nusxalang
-   (`postgresql://...@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require`).
-   Pooler (`-pooler`) manzili migratsiyalar bilan ishlamaydi.
+## 1. Server buyurtma qilish
+Contabo → **Cloud VPS 4** (4 vCPU, 8 GB RAM, 100 GB SSD), region **European Union**,
+OS **Ubuntu 24.04**, kirish uchun **SSH kalit** qo'shing (yo'q bo'lsa: `ssh-keygen -t ed25519`,
+`~/.ssh/id_ed25519.pub` mazmunini kiriting). Auto Backup shart emas — o'z zaxiramiz bor (5-bo'lim).
 
-## 2. Upstash (Redis)
-1. upstash.com → **Create database**, region: **eu-central-1 (Frankfurt)**.
-2. **Connect → ioredis**dagi `rediss://default:...@...upstash.io:6379` manzilini nusxalang.
+## 2. Serverni tayyorlash (bir marta)
+```bash
+ssh root@<IP>
+curl -fsSL https://raw.githubusercontent.com/soliha10/furniture/main/deploy/setup-server.sh | sh
+```
+Skript: tizimni yangilaydi, Docker, firewall (faqat 22/80/443), fail2ban, avtomatik xavfsizlik
+yangilanishlarini o'rnatadi; SSH kalit bo'lsa parol bilan kirishni o'chiradi.
 
-## 3. Koyeb (server)
-1. koyeb.com → GitHub bilan kirish → **Create Web Service → GitHub** → `furniture` repo, branch `main`.
-2. **Builder: Dockerfile** (repo ildizidagi `Dockerfile`).
-3. **Instance: Free**, region: **Frankfurt**.
-4. **Ports:** `3000`, HTTP, path `/`. **Health check:** HTTP `/api/v1/health`.
-5. **Environment variables** (maxfiylarini *Secret* qilib qo'shing):
+Repo private bo'lsa, `curl` ishlamaydi — avval 3-bo'limdagidek klonlab, `sh deploy/setup-server.sh`.
 
-| Kalit | Qiymat |
-|---|---|
-| `PORT` | `3000` |
-| `DATABASE_URL` | Neon manzili (Secret) |
-| `REDIS_URL` | Upstash manzili (Secret) |
-| `JWT_ACCESS_SECRET` | `openssl rand -base64 48` (Secret) |
-| `OTP_PEPPER` | `openssl rand -base64 48` (Secret) |
-| `DEMO_MODE` | `true` |
-| `OTP_TEST_PHONES` | `+998900000001,+998900000002,+998900000003,+998900000004,+998900000005` |
+## 3. Ilovani ishga tushirish
+```bash
+git clone https://github.com/soliha10/furniture.git /opt/mebel-order
+cd /opt/mebel-order/deploy
+cp .env.example .env
+nano .env
+```
+Private repo uchun: GitHub → *Settings → Developer settings → Fine-grained token* (faqat shu repo, *Contents: read*),
+klonlashda parol o'rniga token kiriting.
 
-6. **Deploy**. Birinchi ishga tushishda migratsiyalar qo'llanadi va bo'sh bazaga demo ma'lumotlar yuklanadi.
-   Manzil: `https://<nom>-<akkaunt>.koyeb.app` — `/` mobil web, `/admin/` admin panel.
+`.env` da to'ldiring:
+- `POSTGRES_PASSWORD`, `JWT_ACCESS_SECRET`, `OTP_PEPPER` — har biri uchun `openssl rand -hex 32`.
+- `DOMAIN` — domen bo'lsa (masalan `mebel.uz`), bo'lmasa bo'sh qoldiring (sayt `http://<IP>` da ochiladi).
+- `ADMIN_URL` — `https://<domen>/admin/` yoki `http://<IP>/admin/` (Telegram xabarlaridagi havolalar uchun).
 
-`main`ga har push — avtomatik qayta deploy.
+```bash
+docker compose up -d --build     # birinchi build ~5–10 daqiqa
+docker compose logs -f app       # "Baza bo'sh — demo ma'lumotlar yuklanmoqda" → server ishga tushdi
+```
+Start'da migratsiyalar qo'llanadi, baza bo'sh bo'lsa demo ma'lumotlar yuklanadi.
+Tekshirish: `curl http://localhost/api/v1/health`.
+
+## 4. Domen va HTTPS
+1. Domen DNS'ida **A yozuv**: `@` (yoki `app`) → server IP.
+2. `.env` da `DOMAIN=mebel.uz`, `ADMIN_URL=https://mebel.uz/admin/`.
+3. `docker compose up -d` — Caddy Let's Encrypt sertifikatini o'zi oladi va yangilab turadi.
+
+Mobil ilovaning native build'ida `EXPO_PUBLIC_API_URL=https://<domen>` bo'lsin (push va kamera HTTPS talab qiladi).
+
+## 5. Zaxira nusxa (backup)
+`deploy/backup.sh` — Postgres dump + yuklangan fayllar `deploy/backups/` ga, 14 kundan eskilari o'chadi.
+```bash
+crontab -e
+# qo'shing:
+0 3 * * * /opt/mebel-order/deploy/backup.sh >> /var/log/mebel-backup.log 2>&1
+```
+Server buzilsa, zaxira u bilan birga yo'qoladi — shuning uchun nusxani tashqariga ham yuboring:
+`rclone config` bilan remote qo'shing (Cloudflare R2 — 10 GB bepul, yoki Contabo Object Storage),
+keyin `.env` da `BACKUP_REMOTE=r2:mebel-backups`.
+
+**Tiklash:**
+```bash
+cd /opt/mebel-order/deploy
+gunzip -c backups/db-<sana>.sql.gz | docker compose exec -T postgres psql -U mebel mebel
+docker compose exec -T app tar xzf - -C /data < backups/uploads-<sana>.tar.gz
+```
+
+## 6. Yangilash
+```bash
+cd /opt/mebel-order && git pull && cd deploy && docker compose up -d --build
+```
+Yangi migratsiyalar start'da avtomatik qo'llanadi.
+
+## Foydali buyruqlar
+```bash
+docker compose ps                          # holat
+docker compose logs -f --tail 100 app      # loglar
+docker compose restart app
+docker compose exec postgres psql -U mebel mebel
+docker system prune -f                     # eski image'larni tozalash (disk to'lsa)
+```
+
+## Haqiqiy foydalanuvchilarga ochishdan oldin
+- `.env`: `DEMO_MODE=false`, `OTP_TEST_PHONES=` (bo'sh), `SMS_PROVIDER=eskiz` + `ESKIZ_EMAIL`/`ESKIZ_PASSWORD`.
+- Demo ma'lumotlar: `apps/api/scripts/start.sh` bo'sh bazaga har doim demo yuklaydi. Toza baza bilan
+  boshlash uchun bu xatti-harakatni o'chirish kerak (hozircha sozlanmagan).
+- Zaxira cron'i ishlayotganini va tashqi nusxa borligini tekshiring.

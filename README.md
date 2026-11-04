@@ -55,7 +55,7 @@ packages/shared   enumlar, zod sxemalar, state machine, narx/miqdor hisobi
 docs/             ER, state machine, API, ekranlar
 ```
 
-## Deploy (bepul sinov serveri)
+## Deploy
 
 Bitta Docker servis hammasini beradi: `/api/v1` — API, `/admin/` — admin panel, `/` — mobil ilovaning web versiyasi.
 
@@ -68,7 +68,7 @@ docker run -p 8080:3000 -e DATABASE_URL=... -e REDIS_URL=... \
 ```
 Start'da migratsiyalar qo'llanadi, baza bo'sh bo'lsa demo ma'lumotlar yuklanadi.
 
-**Bepul server (Koyeb + Neon + Upstash):** batafsil — [docs/06-deploy.md](docs/06-deploy.md).
-Cheklovlar: 1 soat so'rovsiz servis uxlaydi (keyingi ochilish bir necha soniya), yuklangan fayllar qayta deploy'da o'chadi.
+**VPS (Contabo) — asosiy:** `deploy/` papkasi (Caddy HTTPS + app + Postgres + Redis, kunlik backup),
+batafsil — [docs/06-deploy.md](docs/06-deploy.md).
 
 `DEMO_MODE=true` — SMS yuborilmaydi, test raqamlar uchun kod `000000`. Haqiqiy foydalanuvchilar uchun o'chirib, Eskiz sozlang.
