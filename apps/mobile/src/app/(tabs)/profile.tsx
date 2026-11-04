@@ -8,6 +8,7 @@ import { phone, som } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { colors, space } from '../../lib/theme';
 import type { Balance, Notification, Paginated } from '../../lib/types';
+import { contained, CONTENT } from '../../lib/layout';
 
 export default function Profile() {
   const { me, logout } = useAuth();
@@ -21,7 +22,7 @@ export default function Profile() {
   const p = me?.customerProfile;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }}>
+    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }}>
       <View style={{ gap: 2 }}>
         <Text v="title">{me?.fullName}</Text>
         <Text muted>

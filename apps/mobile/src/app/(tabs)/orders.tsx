@@ -9,6 +9,7 @@ import { date, som } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { colors, space } from '../../lib/theme';
 import type { OrderListItem, Paginated } from '../../lib/types';
+import { contained, CONTENT } from '../../lib/layout';
 
 export default function Orders() {
   const { t, status, locale } = useI18n();
@@ -23,7 +24,7 @@ export default function Orders() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ padding: space(4), paddingBottom: 0 }}>
+      <View style={{ ...contained(CONTENT.page), padding: space(4), paddingBottom: 0 }}>
         <Segmented value={tab} onChange={setTab} options={[{ value: 'active', label: t('active') }, { value: 'history', label: t('history') }]} />
       </View>
       {q.isPending ? (
@@ -34,7 +35,7 @@ export default function Orders() {
         <FlatList
           data={items}
           keyExtractor={(o) => o.id}
-          contentContainerStyle={{ padding: space(4), gap: space(3) }}
+          contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(3) }}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => void q.refetch()} />}
           onEndReached={() => q.hasNextPage && void q.fetchNextPage()}
           ListEmptyComponent={<Empty icon="receipt-outline" title={t('noOrders')} />}

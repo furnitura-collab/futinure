@@ -12,6 +12,7 @@ import { useApiMutation } from '../../../lib/mutation';
 import { useOrderRoom } from '../../../lib/realtime';
 import { colors, radius, space } from '../../../lib/theme';
 import type { OrderDetail, Quote } from '../../../lib/types';
+import { contained, CONTENT } from '../../../lib/layout';
 
 const PAYABLE = ['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED'];
 
@@ -41,7 +42,7 @@ export default function Order() {
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: o.number }} />
       <ScrollView
-        contentContainerStyle={{ padding: space(4), gap: space(4) }}
+        contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }}
         refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => void q.refetch()} />}
       >
         <Row style={{ justifyContent: 'space-between' }}>
@@ -149,11 +150,13 @@ export default function Order() {
         )}
       </ScrollView>
 
-      <View style={{ flexDirection: 'row', gap: space(3), padding: space(4), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-        <Button title={t('chat')} icon="chatbubbles-outline" variant="secondary" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/order/[id]/chat', params: { id: o.id } })} />
-        {canPay && (
-          <Button title={t('pay')} icon="card-outline" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/pay', params: { orderId: o.id } })} />
-        )}
+      <View style={{ padding: space(4), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+        <View style={{ ...contained(CONTENT.page), flexDirection: 'row', gap: space(3) }}>
+          <Button title={t('chat')} icon="chatbubbles-outline" variant="secondary" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/order/[id]/chat', params: { id: o.id } })} />
+          {canPay && (
+            <Button title={t('pay')} icon="card-outline" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/pay', params: { orderId: o.id } })} />
+          )}
+        </View>
       </View>
     </View>
   );

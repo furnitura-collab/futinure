@@ -10,6 +10,7 @@ import { som } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { useApiMutation } from '../../lib/mutation';
 import { colors, radius, space } from '../../lib/theme';
+import { contained, CONTENT } from '../../lib/layout';
 
 interface Picked {
   uri: string;
@@ -62,7 +63,7 @@ export default function DriverDeliver() {
   if (q.isPending) return <Loader />;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
       <Text bold>{q.data?.order.number}</Text>
       <Input label={t('drvReceiver')} value={receiver} onChangeText={setReceiver} autoCapitalize="words" autoFocus />
 

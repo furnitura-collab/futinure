@@ -10,6 +10,7 @@ import { useI18n } from '../../lib/i18n';
 import { colors, radius, space } from '../../lib/theme';
 import type { CategoryNode, Paginated, ProductCard } from '../../lib/types';
 import { imageUri, LEVEL_TONE } from '../../lib/catalog';
+import { contained, CONTENT, gridColumns, useLayout } from '../../lib/layout';
 
 function useDebounced<T>(v: T, ms = 350) {
   const [d, setD] = useState(v);
@@ -39,8 +40,15 @@ export default function Catalog() {
   });
   const items = products.data?.pages.flatMap((p) => p.items) ?? [];
 
+  // Ustunlar soni ekran kengligidan: telefonda 2, kompyuterda 6 tagacha
+  const { width: windowWidth } = useLayout();
+  const [screenWidth, setScreenWidth] = useState(0);
+  const inner = Math.min(screenWidth || windowWidth, CONTENT.wide) - space(4) * 2;
+  const columns = gridColumns(inner);
+  const cardWidth = (inner - space(3) * (columns - 1)) / columns;
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} onLayout={(e) => setScreenWidth(e.nativeEvent.layout.width)}>
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -50,7 +58,7 @@ export default function Catalog() {
           ),
         }}
       />
-      <View style={{ padding: space(4), paddingBottom: space(2), gap: space(3) }}>
+      <View style={{ ...contained(CONTENT.wide), padding: space(4), paddingBottom: space(2), gap: space(3) }}>
         <Row style={{ backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: space(3) }}>
           <Ionicons name="search" size={18} color={colors.faint} />
           <TextInput
@@ -83,11 +91,13 @@ export default function Catalog() {
         <ErrorView error={products.error instanceof ApiError ? new Error(products.error.message) : products.error} onRetry={() => void products.refetch()} />
       ) : (
         <FlatList
+          // numColumns o'zgarsa FlatList qayta yaratilishi kerak
+          key={columns}
           data={items}
           keyExtractor={(p) => p.id}
-          numColumns={2}
+          numColumns={columns}
           columnWrapperStyle={{ gap: space(3) }}
-          contentContainerStyle={{ padding: space(4), paddingTop: space(1), gap: space(3) }}
+          contentContainerStyle={{ ...contained(CONTENT.wide), padding: space(4), paddingTop: space(1), gap: space(3) }}
           onEndReached={() => products.hasNextPage && !products.isFetchingNextPage && void products.fetchNextPage()}
           onEndReachedThreshold={0.5}
           refreshControl={<RefreshControl refreshing={products.isRefetching} onRefresh={() => void products.refetch()} />}
@@ -95,7 +105,7 @@ export default function Catalog() {
           renderItem={({ item: p }) => (
             <Pressable
               onPress={() => router.push({ pathname: '/product/[id]', params: { id: p.id } })}
-              style={{ flex: 1, backgroundColor: colors.card, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, maxWidth: '50%' }}
+              style={{ width: cardWidth, backgroundColor: colors.card, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}
             >
               <View style={{ aspectRatio: 1, backgroundColor: '#f5f5f4' }}>
                 {p.imageUrl ? (

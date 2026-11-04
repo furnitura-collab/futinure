@@ -8,6 +8,7 @@ import { useDriverDelivery } from '../../lib/driver';
 import { useI18n } from '../../lib/i18n';
 import { useApiMutation } from '../../lib/mutation';
 import { space } from '../../lib/theme';
+import { contained, CONTENT } from '../../lib/layout';
 
 /** Yetkazib bo'lmadi: tez sabab yoki o'z matni — tovar omborga qaytadi */
 export default function DriverFail() {
@@ -24,7 +25,7 @@ export default function DriverFail() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
       <Text v="small" bold>{t('drvReason')}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(2) }}>
         {DRIVER_FAIL_REASONS.map((r) => (

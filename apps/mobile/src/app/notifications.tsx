@@ -8,6 +8,7 @@ import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, radius, space } from '../lib/theme';
 import type { Notification, Paginated } from '../lib/types';
+import { contained, CONTENT } from '../lib/layout';
 
 export default function Notifications() {
   const { t } = useI18n();
@@ -38,7 +39,7 @@ export default function Notifications() {
       <FlatList
         data={items}
         keyExtractor={(n) => n.id}
-        contentContainerStyle={{ padding: space(4), gap: space(2) }}
+        contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(2) }}
         onEndReached={() => q.hasNextPage && void q.fetchNextPage()}
         ListEmptyComponent={<Empty icon="notifications-off-outline" title={t('noNotifications')} />}
         renderItem={({ item: n }) => (

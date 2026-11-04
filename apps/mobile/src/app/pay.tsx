@@ -13,6 +13,7 @@ import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, radius, space } from '../lib/theme';
 import type { Balance, OrderDetail, PaymentInfo } from '../lib/types';
+import { contained, CONTENT } from '../lib/layout';
 
 interface Picked {
   uri: string;
@@ -80,7 +81,7 @@ export default function Pay() {
   const bank = info.data?.bank;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
       <Text muted>{t('payHint')}</Text>
       {orderId && order.data && (
         <Text>

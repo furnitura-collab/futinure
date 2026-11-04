@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, space } from '../lib/theme';
+import { contained, CONTENT } from '../lib/layout';
 
 interface Result {
   sku: string;
@@ -37,7 +38,7 @@ export default function Sku() {
   const allOk = results?.every((r) => r.status === 'ADDED');
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
       <Input
         label={t('quickSku')}
         multiline

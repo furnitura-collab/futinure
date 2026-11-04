@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, space } from '../lib/theme';
+import { contained, CONTENT } from '../lib/layout';
 
 /** Birinchi kirishda: ism va mijoz turi (buyurtma uchun ism majburiy) */
 export default function Setup() {
@@ -35,7 +36,7 @@ export default function Setup() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ padding: space(6), gap: space(5) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ ...contained(CONTENT.form), padding: space(6), gap: space(5) }} keyboardShouldPersistTaps="handled">
         <Text v="title">{t('setupTitle')}</Text>
         <Input label={t('fullName')} value={fullName} onChangeText={setFullName} autoFocus autoComplete="name" />
         <View style={{ gap: space(2) }}>

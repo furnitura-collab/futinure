@@ -9,6 +9,7 @@ import { som } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { colors, radius, space } from '../../lib/theme';
 import type { CartLine, LineIssue } from '../../lib/types';
+import { contained, CONTENT } from '../../lib/layout';
 
 export default function CartScreen() {
   const { t, locale } = useI18n();
@@ -34,16 +35,18 @@ export default function CartScreen() {
       <FlatList
         data={c.lines}
         keyExtractor={(l) => l.variantId}
-        contentContainerStyle={{ padding: space(4), gap: space(3) }}
+        contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(3) }}
         renderItem={({ item }) => <CartRow line={item} />}
       />
-      <View style={{ padding: space(4), gap: space(3), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Text muted>{t('weight')}: {c.totalWeightKg} kg</Text>
-          <Text v="h2">{t('total')}: {som(c.itemsTotal, locale)}</Text>
-        </Row>
-        {c.hasBlockingIssues && <Text v="small" color={colors.danger}>{t('fixIssues')}</Text>}
-        <Button title={t('checkout')} disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
+      <View style={{ padding: space(4), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+        <View style={{ ...contained(CONTENT.page), gap: space(3) }}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <Text muted>{t('weight')}: {c.totalWeightKg} kg</Text>
+            <Text v="h2">{t('total')}: {som(c.itemsTotal, locale)}</Text>
+          </Row>
+          {c.hasBlockingIssues && <Text v="small" color={colors.danger}>{t('fixIssues')}</Text>}
+          <Button title={t('checkout')} disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
+        </View>
       </View>
     </View>
   );

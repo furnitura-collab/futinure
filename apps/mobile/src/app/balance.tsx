@@ -7,6 +7,7 @@ import { dateTime, som } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { colors, space } from '../lib/theme';
 import type { Balance, LedgerEntry, Paginated } from '../lib/types';
+import { contained, CONTENT } from '../lib/layout';
 
 /** Hisob-kitob: balans va daftar yozuvlari; qarz bo'lsa — to'lash */
 export default function BalanceScreen() {
@@ -26,7 +27,7 @@ export default function BalanceScreen() {
     <FlatList
       data={entries}
       keyExtractor={(e) => e.id}
-      contentContainerStyle={{ padding: space(4), gap: space(2) }}
+      contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(2) }}
       onEndReached={() => ledger.hasNextPage && void ledger.fetchNextPage()}
       ListHeaderComponent={
         b ? (

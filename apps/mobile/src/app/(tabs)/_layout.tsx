@@ -5,7 +5,8 @@ import { Ionicons, type IconName } from '../../components/ui';
 import { api } from '../../lib/api';
 import { useCart } from '../../lib/cart';
 import { useI18n } from '../../lib/i18n';
-import { colors } from '../../lib/theme';
+import { useLayout } from '../../lib/layout';
+import { colors, radius, space } from '../../lib/theme';
 import type { OrderListItem, Paginated } from '../../lib/types';
 
 const icon = (name: IconName) =>
@@ -16,6 +17,7 @@ const icon = (name: IconName) =>
 export default function TabsLayout() {
   const { t } = useI18n();
   const cart = useCart();
+  const { wide, desktop } = useLayout();
   // Javob kutayotgan taklif yoki o'qilmagan xabar bor buyurtmalar soni
   const orders = useQuery({
     queryKey: ['orders', 'active'],
@@ -26,6 +28,14 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        // Kompyuterda — chapda sidebar (ikonka + nom), planshetda — ixcham sidebar, telefonda — pastda
+        tabBarPosition: wide ? 'left' : 'bottom',
+        tabBarVariant: wide && !desktop ? 'material' : 'uikit',
+        tabBarLabelPosition: desktop ? 'beside-icon' : 'below-icon',
+        // Standart sidebar 360px — katalogga joy qolsin
+        tabBarStyle: desktop ? { minWidth: 240, width: 240 } : undefined,
+        tabBarItemStyle: desktop ? { justifyContent: 'flex-start', paddingHorizontal: space(3), borderRadius: radius.md, maxHeight: 48 } : undefined,
+        tabBarActiveBackgroundColor: desktop ? colors.brandSoft : undefined,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.muted,
         headerTitleStyle: { color: colors.text },

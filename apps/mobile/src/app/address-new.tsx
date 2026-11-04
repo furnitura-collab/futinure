@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, space } from '../lib/theme';
+import { contained, CONTENT } from '../lib/layout';
 
 /** Toshkent markazi — joylashuv aniqlanmasa (menejer manzil matnidan aniqlaydi) */
 const TASHKENT = { lat: 41.311, lng: 69.279 };
@@ -56,7 +57,7 @@ export default function AddressNew() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }} keyboardShouldPersistTaps="handled">
       <Button
         title={coords ? `✓ ${t('locationSet')}` : t('useMyLocation')}
         icon="navigate-outline"

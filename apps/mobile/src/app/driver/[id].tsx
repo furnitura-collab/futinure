@@ -7,6 +7,7 @@ import { date, dateTime, phone, som } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { useApiMutation } from '../../lib/mutation';
 import { colors, space } from '../../lib/theme';
+import { contained, CONTENT } from '../../lib/layout';
 
 /** Bitta yetkazish: manzil, mijoz, olinadigan pul, tovarlar va amallar */
 export default function DriverDeliveryScreen() {
@@ -29,7 +30,7 @@ export default function DriverDeliveryScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: o.number }} />
-      <ScrollView contentContainerStyle={{ padding: space(4), gap: space(4) }}>
+      <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(4) }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Badge label={t(`ds${d.status}`)} tone={DELIVERY_TONE[d.status]} />
           {d.scheduledDate && <Text v="small" muted>{t('drvPlanned', { date: date(d.scheduledDate) })}</Text>}
@@ -120,26 +121,34 @@ export default function DriverDeliveryScreen() {
 
 function Actions(props: { status: string; starting: boolean; onStart: () => void; onDeliver: () => void; onFail: () => void }) {
   const { t } = useI18n();
-  const bar = { padding: space(4), gap: space(2), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card };
+  // Telefonda to'liq kenglik, keng ekranda markazdagi kontent bilan bir chiziqda
+  const bar = { padding: space(4), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card };
+  const inner = { ...contained(CONTENT.page), gap: space(2) };
   if (props.status === 'READY') {
     return (
       <View style={bar}>
-        <Button title={t('drvStart')} icon="car-outline" loading={props.starting} onPress={props.onStart} />
+        <View style={inner}>
+          <Button title={t('drvStart')} icon="car-outline" loading={props.starting} onPress={props.onStart} />
+        </View>
       </View>
     );
   }
   if (props.status === 'OUT_FOR_DELIVERY') {
     return (
       <View style={bar}>
-        <Button title={t('drvDeliver')} icon="checkmark-circle-outline" onPress={props.onDeliver} />
-        <Button title={t('drvFail')} icon="close-circle-outline" variant="secondary" onPress={props.onFail} />
+        <View style={inner}>
+          <Button title={t('drvDeliver')} icon="checkmark-circle-outline" onPress={props.onDeliver} />
+          <Button title={t('drvFail')} icon="close-circle-outline" variant="secondary" onPress={props.onFail} />
+        </View>
       </View>
     );
   }
   if (props.status === 'CONFIRMED' || props.status === 'PREPARING') {
     return (
       <View style={bar}>
-        <Text muted style={{ textAlign: 'center' }}>⏳ {t('drvNotReady')}</Text>
+        <View style={inner}>
+          <Text muted style={{ textAlign: 'center' }}>⏳ {t('drvNotReady')}</Text>
+        </View>
       </View>
     );
   }

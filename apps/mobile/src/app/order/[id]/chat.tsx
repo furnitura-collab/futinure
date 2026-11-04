@@ -13,6 +13,7 @@ import { useApiMutation } from '../../../lib/mutation';
 import { useOrderRoom } from '../../../lib/realtime';
 import { colors, radius, space } from '../../../lib/theme';
 import type { ChatMessage } from '../../../lib/types';
+import { contained, CONTENT } from '../../../lib/layout';
 
 export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -63,7 +64,7 @@ export default function Chat() {
           ref={list}
           data={items}
           keyExtractor={(m) => m.id}
-          contentContainerStyle={{ padding: space(4), gap: space(2), flexGrow: 1 }}
+          contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(2), flexGrow: 1 }}
           onContentSizeChange={() => list.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -100,26 +101,28 @@ export default function Chat() {
             );
           }}
         />
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space(2), padding: space(3), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-          <Pressable onPress={() => void attach()} style={{ padding: space(2) }} accessibilityLabel="attach">
-            <Ionicons name="image-outline" size={24} color={colors.muted} />
-          </Pressable>
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder={t('messagePlaceholder')}
-            placeholderTextColor={colors.faint}
-            multiline
-            style={{ flex: 1, maxHeight: 120, minHeight: 40, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingHorizontal: space(3), paddingTop: 10, fontSize: 16, color: colors.text }}
-          />
-          <Pressable
-            onPress={() => text.trim() && send.mutate({ text: text.trim() })}
-            disabled={!text.trim() || send.isPending}
-            style={{ backgroundColor: text.trim() ? colors.brand : colors.border, borderRadius: radius.full, padding: 10 }}
-            accessibilityLabel={t('send')}
-          >
-            <Ionicons name="send" size={18} color="#fff" />
-          </Pressable>
+        <View style={{ padding: space(3), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+          <View style={{ ...contained(CONTENT.page), flexDirection: 'row', alignItems: 'flex-end', gap: space(2) }}>
+            <Pressable onPress={() => void attach()} style={{ padding: space(2) }} accessibilityLabel="attach">
+              <Ionicons name="image-outline" size={24} color={colors.muted} />
+            </Pressable>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder={t('messagePlaceholder')}
+              placeholderTextColor={colors.faint}
+              multiline
+              style={{ flex: 1, maxHeight: 120, minHeight: 40, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingHorizontal: space(3), paddingTop: 10, fontSize: 16, color: colors.text }}
+            />
+            <Pressable
+              onPress={() => text.trim() && send.mutate({ text: text.trim() })}
+              disabled={!text.trim() || send.isPending}
+              style={{ backgroundColor: text.trim() ? colors.brand : colors.border, borderRadius: radius.full, padding: 10 }}
+              accessibilityLabel={t('send')}
+            >
+              <Ionicons name="send" size={18} color="#fff" />
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -9,6 +9,7 @@ import { date, som } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { colors, radius, space } from '../../lib/theme';
 import type { DriverDelivery, DriverList } from '../../lib/types';
+import { contained, CONTENT } from '../../lib/layout';
 
 /** Haydovchi: faol yetkazishlar (sana bo'yicha) va bugun topshirilganlar */
 export default function DriverHome() {
@@ -44,7 +45,7 @@ export default function DriverHome() {
       <SectionList
         sections={sections}
         keyExtractor={(d) => d.id}
-        contentContainerStyle={{ padding: space(4), gap: space(2) }}
+        contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(2) }}
         refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => void q.refetch()} />}
         stickySectionHeadersEnabled={false}
         renderSectionHeader={({ section }) => (

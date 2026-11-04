@@ -11,6 +11,7 @@ import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, radius, space } from '../lib/theme';
 import type { Address, Warehouse } from '../lib/types';
+import { contained, CONTENT } from '../lib/layout';
 
 /** Bir martalik kalit — tarmoq uzilib qayta yuborilsa ham bitta buyurtma */
 const newKey = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
@@ -54,7 +55,7 @@ export default function Checkout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: space(4), gap: space(5) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(5) }} keyboardShouldPersistTaps="handled">
         <Segmented
           value={type}
           onChange={setType}
@@ -97,12 +98,14 @@ export default function Checkout() {
           </Row>
         </Card>
       </ScrollView>
-      <View style={{ padding: space(4), gap: space(3), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Text muted>{t('items')}: {cart.data?.count}</Text>
-          <Text v="h2">{som(cart.data?.itemsTotal ?? 0, locale)}</Text>
-        </Row>
-        <Button title={t('placeOrder')} disabled={!ready || !validDate} loading={place.isPending} onPress={() => place.mutate(undefined)} />
+      <View style={{ padding: space(4), borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+        <View style={{ ...contained(CONTENT.page), gap: space(3) }}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <Text muted>{t('items')}: {cart.data?.count}</Text>
+            <Text v="h2">{som(cart.data?.itemsTotal ?? 0, locale)}</Text>
+          </Row>
+          <Button title={t('placeOrder')} disabled={!ready || !validDate} loading={place.isPending} onPress={() => place.mutate(undefined)} />
+        </View>
       </View>
     </View>
   );

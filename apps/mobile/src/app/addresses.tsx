@@ -7,6 +7,7 @@ import { useI18n } from '../lib/i18n';
 import { useApiMutation } from '../lib/mutation';
 import { colors, radius, space } from '../lib/theme';
 import type { Address } from '../lib/types';
+import { contained, CONTENT } from '../lib/layout';
 
 export default function Addresses() {
   const { t } = useI18n();
@@ -19,7 +20,7 @@ export default function Addresses() {
       <FlatList
         data={q.data ?? []}
         keyExtractor={(a) => a.id}
-        contentContainerStyle={{ padding: space(4), gap: space(2) }}
+        contentContainerStyle={{ ...contained(CONTENT.page), padding: space(4), gap: space(2) }}
         ListEmptyComponent={<Empty icon="location-outline" title={t('addresses')} />}
         renderItem={({ item: a }) => (
           <Row style={{ backgroundColor: colors.card, borderRadius: radius.md, padding: space(3), borderWidth: 1, borderColor: colors.border, alignItems: 'flex-start' }}>
@@ -35,7 +36,7 @@ export default function Addresses() {
           </Row>
         )}
       />
-      <View style={{ padding: space(4) }}>
+      <View style={{ ...contained(CONTENT.page), padding: space(4) }}>
         <Button title={t('addAddress')} icon="add" onPress={() => router.push('/address-new')} />
       </View>
     </View>
