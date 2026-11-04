@@ -89,8 +89,31 @@ docker compose exec postgres psql -U mebel mebel
 docker system prune -f                     # eski image'larni tozalash (disk to'lsa)
 ```
 
-## Haqiqiy foydalanuvchilarga ochishdan oldin
-- `.env`: `DEMO_MODE=false`, `OTP_TEST_PHONES=` (bo'sh), `SMS_PROVIDER=eskiz` + `ESKIZ_EMAIL`/`ESKIZ_PASSWORD`.
-- Demo ma'lumotlar: `apps/api/scripts/start.sh` bo'sh bazaga har doim demo yuklaydi. Toza baza bilan
-  boshlash uchun bu xatti-harakatni o'chirish kerak (hozircha sozlanmagan).
-- Zaxira cron'i ishlayotganini va tashqi nusxa borligini tekshiring.
+## Haqiqiy foydalanuvchilar uchun (production)
+1. Domen + HTTPS (4-bo'lim) — majburiy.
+2. Eskiz.uz da akkaunt, SMS shabloni tasdiqlangan bo'lsin.
+3. `.env`:
+   ```
+   DEMO_MODE=false
+   OTP_TEST_PHONES=
+   SMS_PROVIDER=eskiz
+   ESKIZ_EMAIL=...
+   ESKIZ_PASSWORD=...
+   ADMIN_PHONE=+998XXXXXXXXX
+   ADMIN_NAME=Ism Familiya
+   ```
+4. Demo ma'lumotlar bilan ishlagan bo'lsa — toza bazadan boshlash (**hamma ma'lumot o'chadi**):
+   ```bash
+   docker compose down
+   docker volume rm deploy_pgdata deploy_uploads deploy_redisdata
+   docker compose up -d --build
+   ```
+   `DEMO_MODE=false` da demo yuklanmaydi, faqat `ADMIN_PHONE` super admini yaratiladi.
+5. Admin panelga SMS kod bilan kiring → kategoriya va mahsulotlarni qo'shing.
+   Xodim qo'shish admin panelda hali yo'q — hozircha SQL bilan (rol: `MANAGER`, `WAREHOUSE`, `DRIVER`):
+   ```bash
+   docker compose exec postgres psql -U mebel mebel -c \
+     "INSERT INTO users (id, phone, full_name, role, updated_at)
+      VALUES (gen_random_uuid(), '+998901234567', 'Ism Familiya', 'MANAGER', now())"
+   ```
+6. Zaxira cron'i ishlayotganini va tashqi nusxa borligini tekshiring.
