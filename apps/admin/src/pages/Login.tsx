@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router';
-import { normalizeUzPhone } from '@mebel/shared';
+import { normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
 import { api, ApiError, tokenStore, type Tokens } from '../lib/api';
 import { PANEL_ROLES, useAuth } from '../lib/auth';
 import type { Me } from '../lib/types';
@@ -9,8 +9,7 @@ import { Button, Field, Input } from '../components/ui';
 export function LoginPage() {
   const { me, login } = useAuth();
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -18,27 +17,13 @@ export function LoginPage() {
 
   const normalized = normalizeUzPhone(phone);
 
-  async function requestCode(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (!normalized) return setError('Telefon raqam noto\'g\'ri');
     setBusy(true);
     setError(null);
     try {
-      await api('/auth/otp/request', { body: { phone: normalized } });
-      setStep('code');
-    } catch (err) {
-      setError(err instanceof ApiError && err.code === 'OTP_RATE_LIMIT' ? 'Juda ko\'p urinish. Birozdan keyin qayta urining' : (err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verify(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await api<Tokens & { user: Me }>('/auth/otp/verify', { body: { phone: normalized, code } });
+      const res = await api<Tokens & { user: Me }>('/auth/login', { body: { phone: normalized, password } });
       if (!PANEL_ROLES.includes(res.user.role)) {
         // Mijoz yoki haydovchi — sessiyani darhol yopamiz
         await api('/auth/logout', { body: { refreshToken: res.refreshToken } }).catch(() => undefined);
@@ -48,11 +33,13 @@ export function LoginPage() {
       }
       login(res);
     } catch (err) {
-      const e2 = err as ApiError;
+      const code = err instanceof ApiError ? err.code : null;
       setError(
-        e2.code === 'OTP_INVALID'
-          ? `Kod noto'g'ri. Qolgan urinishlar: ${(e2.details as { attemptsLeft?: number })?.attemptsLeft ?? 0}`
-          : e2.message,
+        code === 'INVALID_PASSWORD'
+          ? 'Parol noto\'g\'ri'
+          : code === 'LOGIN_RATE_LIMIT'
+            ? 'Juda ko\'p urinish. Birozdan keyin qayta urining'
+            : (err as Error).message,
       );
     } finally {
       setBusy(false);
@@ -70,42 +57,22 @@ export function LoginPage() {
           </div>
         </div>
 
-        {step === 'phone' ? (
-          <form onSubmit={requestCode} className="space-y-4">
-            <Field label="Telefon raqam" error={error}>
-              {(id) => (
-                <Input id={id} autoFocus inputMode="tel" placeholder="+998 90 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              )}
-            </Field>
-            <Button type="submit" className="w-full" loading={busy} disabled={!normalized}>
-              SMS kod olish
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={verify} className="space-y-4">
-            <Field label={`Kod ${normalized} raqamiga yuborildi`} error={error}>
-              {(id) => (
-                <Input
-                  id={id}
-                  autoFocus
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  placeholder="000000"
-                  className="text-center text-lg tracking-[0.5em]"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                />
-              )}
-            </Field>
-            <Button type="submit" className="w-full" loading={busy} disabled={code.length < 4}>
-              Kirish
-            </Button>
-            <button type="button" className="w-full text-sm text-stone-500 hover:text-stone-800" onClick={() => setStep('phone')}>
-              Raqamni o'zgartirish
-            </button>
-          </form>
-        )}
+        <form onSubmit={submit} className="space-y-4">
+          <Field label="Telefon raqam">
+            {(id) => (
+              <Input id={id} autoFocus inputMode="tel" autoComplete="username" placeholder="+998 90 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            )}
+          </Field>
+          <Field label="Parol" error={error}>
+            {(id) => (
+              <Input id={id} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            )}
+          </Field>
+          <Button type="submit" className="w-full" loading={busy} disabled={!normalized || password.length < PASSWORD_MIN}>
+            Kirish
+          </Button>
+          <p className="text-center text-xs text-stone-500">Birinchi kirishda kiritilgan parol hisobingizga o'rnatiladi</p>
+        </form>
       </div>
     </div>
   );

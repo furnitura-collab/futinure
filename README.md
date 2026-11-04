@@ -25,7 +25,8 @@ Mobil ilova telefonda (Expo Go yoki dev build) ishlashi uchun `apps/mobile/.env`
 Push bildirishnomalar faqat haqiqiy qurilmada va EAS `projectId` bilan ishlaydi.
 
 ### Demo foydalanuvchilar
-SMS yuborilmaydi, kod har doim `000000`:
+Kirish — telefon + parol (`POST /auth/login`). Paroli yo'q hisobga birinchi kirishda kiritilgan parol o'rnatiladi,
+yangi raqam esa shu parol bilan mijoz sifatida ro'yxatdan o'tadi. SMS (OTP) endpointlari ham ishlaydi, ilovalar hozircha ularni ishlatmaydi.
 
 | Telefon | Rol |
 |---|---|
@@ -35,7 +36,6 @@ SMS yuborilmaydi, kod har doim `000000`:
 | +998900000004 | Haydovchi (mobil ilovada — yetkazishlar) |
 | +998900000005 | Mijoz (Usta guruhi, nasiya limiti 10 mln) |
 
-Boshqa raqamlar bilan kirilganda kod API logiga chiqadi (`SMS_PROVIDER=console`).
 Admin panelga menejer, super admin va omborchi kiradi. Haydovchi mobil ilovaga kiradi; unga yetkazishni menejer buyurtma sahifasidagi "Haydovchi" kartasidan biriktiradi.
 
 ## Testlar

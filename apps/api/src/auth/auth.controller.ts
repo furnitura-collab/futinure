@@ -2,9 +2,11 @@ import { Body, Controller, HttpCode, Ip, Post, Headers } from '@nestjs/common';
 import {
   otpRequestSchema,
   otpVerifySchema,
+  passwordLoginSchema,
   refreshSchema,
   type OtpRequest,
   type OtpVerify,
+  type PasswordLogin,
   type RefreshInput,
 } from '@mebel/shared';
 import { ZodPipe } from '../common/zod.pipe.js';
@@ -32,6 +34,12 @@ export class AuthController {
   @HttpCode(200)
   verify(@Body(new ZodPipe(otpVerifySchema)) body: OtpVerify, @Headers('user-agent') ua?: string) {
     return this.auth.verifyOtp(body.phone, body.code, ua);
+  }
+
+  @Post('login')
+  @HttpCode(200)
+  login(@Body(new ZodPipe(passwordLoginSchema)) body: PasswordLogin, @Headers('user-agent') ua?: string) {
+    return this.auth.loginWithPassword(body.phone, body.password, ua);
   }
 
   @Post('refresh')

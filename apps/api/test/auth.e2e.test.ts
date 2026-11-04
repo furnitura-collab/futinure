@@ -91,6 +91,50 @@ describe('auth (e2e)', () => {
       .expect(403);
   });
 
+  describe('parol bilan kirish', () => {
+    const PASSWORD = 'secret123';
+    const loginPw = (phone: string, password: string) => ctx.http.post('/api/v1/auth/login').send({ phone, password });
+
+    it('yangi raqam mijoz sifatida ro\'yxatdan o\'tadi, keyin shu parol bilan kiradi', async () => {
+      const res = await loginPw('90 123-45-67', PASSWORD).expect(200);
+      expect(res.body).toMatchObject({ isNew: true, user: { phone: '+998901234567', role: 'CUSTOMER' } });
+      expect(res.body.user.passwordHash).toBeUndefined();
+      expect(await ctx.prisma.customerProfile.findUnique({ where: { userId: res.body.user.id } })).not.toBeNull();
+
+      await loginPw('+998901234567', PASSWORD).expect(200);
+    });
+
+    it('noto\'g\'ri parol → 401', async () => {
+      await loginPw(PHONE, PASSWORD).expect(200);
+      const res = await loginPw(PHONE, 'wrong-pass').expect(401);
+      expect(res.body.error.code).toBe('INVALID_PASSWORD');
+    });
+
+    it('paroli yo\'q xodim birinchi kirishda parol o\'rnatadi, rol saqlanadi', async () => {
+      await ctx.prisma.user.create({ data: { phone: PHONE, role: 'MANAGER' } });
+      const res = await loginPw(PHONE, PASSWORD).expect(200);
+      expect(res.body.user.role).toBe('MANAGER');
+      await loginPw(PHONE, 'other-pass').expect(401);
+    });
+
+    it('qisqa parol → 422', async () => {
+      await loginPw(PHONE, '123').expect(422);
+    });
+
+    it('ko\'p xato urinishdan keyin bloklanadi', async () => {
+      await loginPw(PHONE, PASSWORD).expect(200);
+      for (let i = 0; i < 10; i++) await loginPw(PHONE, 'wrong-pass').expect(401);
+      const res = await loginPw(PHONE, PASSWORD).expect(429);
+      expect(res.body.error.code).toBe('LOGIN_RATE_LIMIT');
+    });
+
+    it('xesh /me javobida chiqmaydi', async () => {
+      const { body } = await loginPw(PHONE, PASSWORD).expect(200);
+      const me = await ctx.http.get('/api/v1/me').set('Authorization', `Bearer ${body.accessToken}`).expect(200);
+      expect(me.body.passwordHash).toBeUndefined();
+    });
+  });
+
   describe('refresh token', () => {
     it('rotatsiya: yangi juftlik beriladi, eskisi bekor', async () => {
       const { refreshToken } = await login(ctx, PHONE);

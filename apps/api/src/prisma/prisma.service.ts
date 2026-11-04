@@ -6,7 +6,8 @@ import { ENV, type Env } from '../config/env.js';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
   constructor(@Inject(ENV) env: Env) {
-    super({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
+    // Parol xeshi hech qachon javobga tushmasin — kerak joyda `omit: { passwordHash: false }`
+    super({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }), omit: { user: { passwordHash: true } } });
   }
 
   async onModuleDestroy() {

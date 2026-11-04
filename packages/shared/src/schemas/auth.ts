@@ -22,6 +22,14 @@ export const otpVerifySchema = z.object({
 });
 export type OtpVerify = z.infer<typeof otpVerifySchema>;
 
+export const PASSWORD_MIN = 6;
+
+export const passwordLoginSchema = z.object({
+  phone: phoneSchema,
+  password: z.string().min(PASSWORD_MIN, 'PASSWORD_TOO_SHORT').max(100),
+});
+export type PasswordLogin = z.infer<typeof passwordLoginSchema>;
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(20),
 });
