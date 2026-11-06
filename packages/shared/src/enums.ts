@@ -1,5 +1,5 @@
-// Enum qiymatlari Prisma sxemasidagi enumlar bilan bir xil bo'lishi shart.
-// apps/api dagi test buni tekshiradi (enums-sync.test.ts).
+// Enum qiymatlari bazadagi enumlar bilan bir xil bo'lishi shart.
+// Backend (apps/api-py/app/models.py) va baza bilan ham — tests/test_unit.py tekshiradi.
 
 const values = <const T extends readonly string[]>(...v: T) => v;
 

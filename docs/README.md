@@ -15,7 +15,7 @@ Mebel xomashyosi va furnitura buyurtma platformasi: mijoz ilovasi, admin panel, 
 ```
 mebel-order/
 ├─ apps/
-│  ├─ api/          NestJS backend
+│  ├─ api-py/       FastAPI backend (Python)
 │  ├─ admin/        React + Vite admin panel (+ omborchi ko'rinishi)
 │  └─ mobile/       Expo: mijoz + haydovchi
 ├─ packages/

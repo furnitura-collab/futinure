@@ -6,8 +6,6 @@ dist
 coverage
 *.log
 .DS_Store
-apps/api/src/generated
 .expo
 .next
-apps/api/uploads
 deploy/backups

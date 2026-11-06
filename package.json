@@ -6,13 +6,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev:api": "pnpm --filter @mebel/api dev",
+    "dev:api": "cd apps/api-py && uv run uvicorn app.main:app --reload --port 3000",
     "dev:admin": "pnpm --filter @mebel/admin dev",
     "dev:mobile": "pnpm --filter @mebel/mobile start",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "test:api": "cd apps/api-py && uv run pytest"
   }
 }

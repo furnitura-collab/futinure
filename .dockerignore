@@ -2,10 +2,13 @@
 **/dist
 **/.env
 **/.expo
-apps/api/uploads
-apps/api/src/generated
 .git
 docs
 *.log
 .DS_Store
 deploy/backups
+**/.venv
+**/__pycache__
+**/.ruff_cache
+apps/api-py/uploads
+apps/api-py/.test-server-*.log

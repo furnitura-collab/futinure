@@ -3,7 +3,8 @@
 Mebel xomashyosi va furnitura buyurtma platformasi. Dizayn hujjatlari: [docs/](docs/README.md).
 
 ## Talablar
-- Node.js 22+ (24 LTS tavsiya), pnpm 10+
+- Python 3.14 + [uv](https://docs.astral.sh/uv/) (backend)
+- Node.js 22+ (24 LTS tavsiya), pnpm 10+ (admin panel, mobil ilova, testlar)
 - Docker (Postgres va Redis uchun)
 
 ## Ishga tushirish
@@ -11,11 +12,11 @@ Mebel xomashyosi va furnitura buyurtma platformasi. Dizayn hujjatlari: [docs/](d
 ```bash
 pnpm install
 pnpm db:up                                   # Postgres :5433, Redis :6380
-cp apps/api/.env.example apps/api/.env
 pnpm --filter @mebel/shared build
-pnpm --filter @mebel/api db:migrate          # migratsiyalar + Prisma client
-pnpm --filter @mebel/api db:seed             # demo ma'lumotlar
-pnpm dev:api                                 # http://localhost:3000/api/v1
+cd apps/api-py && cp .env.example .env && uv sync
+uv run alembic upgrade head                  # migratsiyalar
+uv run python -m app.scripts.seed            # demo ma'lumotlar
+cd ../.. && pnpm dev:api                     # http://localhost:3000/api/v1 (FastAPI, docs: /api/v1/docs)
 pnpm dev:admin                               # http://localhost:3001 (admin panel)
 pnpm dev:mobile                              # Expo: i — iOS simulator, a — Android, w — web
 ```
@@ -41,14 +42,16 @@ Admin panelga menejer, super admin va omborchi kiradi. Haydovchi mobil ilovaga k
 ## Testlar
 
 ```bash
-pnpm test        # shared unit + API unit/e2e (mebel_test bazasi avtomatik yaratiladi)
+pnpm test:api    # backend: pytest (252 ta test; mebel_test bazasi avtomatik yaratiladi)
+pnpm test        # shared va admin unit testlari
 pnpm typecheck
+cd apps/api-py && uv run ruff check app tests
 ```
 
 ## Tuzilma
 
 ```
-apps/api          NestJS 12 + Prisma 7 (ESM)
+apps/api-py       Backend: FastAPI + SQLAlchemy 2 (async) + Alembic + python-socketio + pytest — docs/11-python-backend.md
 apps/admin        React 19 + Vite + TanStack Query + Tailwind (xodimlar paneli)
 apps/mobile       Expo SDK 58 + expo-router (mijoz ilovasi, uz/ru)
 packages/shared   enumlar, zod sxemalar, state machine, narx/miqdor hisobi
@@ -70,5 +73,8 @@ Start'da migratsiyalar qo'llanadi, baza bo'sh bo'lsa demo ma'lumotlar yuklanadi.
 
 **VPS (Contabo) — asosiy:** `deploy/` papkasi (Caddy HTTPS + app + Postgres + Redis, kunlik backup),
 batafsil — [docs/06-deploy.md](docs/06-deploy.md).
+
+**Bepul (sinov):** Render + Supabase (baza va fayllar) + Upstash, Android APK — EAS Build,
+batafsil — [docs/10-free-deploy.md](docs/10-free-deploy.md).
 
 `DEMO_MODE=true` — SMS yuborilmaydi, test raqamlar uchun kod `000000`. Haqiqiy foydalanuvchilar uchun o'chirib, Eskiz sozlang.
