@@ -1,0 +1,31 @@
+# Render Blueprint — docs/10-free-deploy.md, 3-bo'lim. sync: false qiymatlarni Render ochishda o'zi so'raydi
+services:
+  - type: web
+    name: mebel-order
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      - key: OTP_TEST_PHONES
+        value: "+998900000001,+998900000002,+998900000003"
+      - key: ADMIN_URL
+        value: https://mebel-order.onrender.com/admin/
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: OTP_PEPPER
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
