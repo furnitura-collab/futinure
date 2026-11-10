@@ -8,7 +8,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile --filter @mebel/admin... --filter @mebel/mobile...
 RUN pnpm --filter @mebel/shared build
 RUN cd apps/admin && ADMIN_BASE=/admin/ pnpm exec vite build --outDir /web/admin
-RUN cd apps/mobile && EXPO_PUBLIC_API_URL=same-origin pnpm exec expo export --platform web --output-dir /web/app
+RUN cd apps/mobile && EXPO_PUBLIC_API_URL=same-origin pnpm exec expo export --platform web --output-dir /web/app --max-workers 2
 
 # 2) API
 FROM python:3.14-slim
