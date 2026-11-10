@@ -3,7 +3,12 @@
  * Bir vaqtda kelgan bir nechta 401 — bitta refresh so'rovi (single-flight).
  */
 
-export const API_BASE = '/api/v1';
+/** API serveri. Bo'sh — bitta origin (dev proxy yoki API web'ni o'zi beradi); Vercel'da — Render manzili */
+export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+export const API_BASE = `${API_URL}/api/v1`;
+
+/** API qaytargan nisbiy fayl yo'li (/uploads/...) — API serveridan */
+export const fileUrl = (url: string) => (url.startsWith('/') ? `${API_URL}${url}` : url);
 const STORAGE_KEY = 'mebel.admin.tokens';
 
 export interface Tokens {

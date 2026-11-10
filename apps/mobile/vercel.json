@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter @mebel/mobile...",
+  "buildCommand": "pnpm --filter @mebel/shared build && pnpm exec expo export --platform web --output-dir dist",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

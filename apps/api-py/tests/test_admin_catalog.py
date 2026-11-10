@@ -111,6 +111,16 @@ async def test_board_without_dimensions_422(ctx: Ctx, c: SimpleNamespace, manage
     assert res.status_code == 422
 
 
+async def test_patch_keeps_unsent_fields(ctx: Ctx, c: SimpleNamespace, manager, admin):
+    """PATCH faqat yuborilgan maydonni o'zgartiradi — kind, isActive, lowStockThreshold joyida qoladi"""
+    res = await ctx.http.patch(f"/api/v1/admin/products/{c.board.id}", headers=manager, json={"nameUz": "Yangi nom"})
+    assert res.status_code == 200
+    assert_matches(res.json(), {"nameUz": "Yangi nom", "kind": "BOARD"})
+    res = await ctx.http.patch(f"/api/v1/admin/variants/{c.white.id}", headers=manager, json={"basePrice": 400_000})
+    assert res.status_code == 200
+    assert res.json()["lowStockThreshold"] == "10"
+
+
 async def test_duplicate_sku_409(ctx: Ctx, c: SimpleNamespace, manager, admin):
     res = await ctx.http.post(
         f"/api/v1/admin/products/{c.board.id}/variants", headers=manager, json={"sku": "KR-W980-16", "basePrice": 1}

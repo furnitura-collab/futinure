@@ -62,11 +62,6 @@ Floor = znumber(-2, 50, integer=True)
 Lat = znumber(37, 46)
 Lng = znumber(55, 74)
 
-# Zod 4: .partial() ichidagi .default() ham qo'llanadi — PATCH'da yuborilmagan
-# label/floor/needsLoaders/comment standart qiymatga qaytadi (NestJS bilan bir xil)
-DEFAULTS = {"label": None, "floor": None, "needs_loaders": False, "comment": None}
-
-
 class AddressInput(Schema):
     label: trimmed(0, 60) | None = None  # type: ignore[valid-type]
     address_text: trimmed(5, 500)  # type: ignore[valid-type]
@@ -87,8 +82,8 @@ class AddressUpdate(Schema):
     comment: trimmed(0, 500) | None = None  # type: ignore[valid-type]
 
     def values(self) -> dict[str, Any]:
-        out = {k: getattr(self, k) for k in self.model_fields_set}
-        return {**DEFAULTS, **out}
+        """PATCH: faqat yuborilgan maydonlar o'zgaradi"""
+        return {k: getattr(self, k) for k in self.model_fields_set}
 
 
 @router.get("/addresses")
@@ -109,9 +104,14 @@ async def create(u: Customer, body: AddressInput, db: Db):
 
 @router.patch("/addresses/{id}")
 async def update_address(u: Customer, id: UuidPath, body: AddressUpdate, db: Db):
-    async with transaction(db):
-        res = await db.execute(update(Address).where(Address.id == id, Address.user_id == u.id).values(**body.values()))
-    if not res.rowcount:  # type: ignore[attr-defined]
+    mine = (Address.id == id, Address.user_id == u.id)
+    if values := body.values():
+        async with transaction(db):
+            res = await db.execute(update(Address).where(*mine).values(**values))
+        found = bool(res.rowcount)  # type: ignore[attr-defined]
+    else:
+        found = bool(await db.scalar(select(Address.id).where(*mine)))
+    if not found:
         raise AppError.not_found("Manzil")
     a = await db.scalar(select(Address).where(Address.id == id).execution_options(populate_existing=True))
     if not a:

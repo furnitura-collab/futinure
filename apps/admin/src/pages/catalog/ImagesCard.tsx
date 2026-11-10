@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { SectionCard } from '@/components/SectionCard';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
-import { api } from '@/lib/api';
+import { api, fileUrl } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
 import type { AdminProduct } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -62,7 +62,7 @@ export function ImagesCard({ product }: { product: AdminProduct }) {
           {product.images.map((img, i) => (
             <div key={img.id} className="group relative overflow-hidden rounded-lg">
               <img
-                src={img.url}
+                src={fileUrl(img.url)}
                 alt=""
                 className={cn('aspect-square w-full rounded-lg object-cover ring-1 transition-transform duration-200 group-hover:scale-[1.03]', i === 0 ? 'ring-2 ring-primary' : 'ring-border')}
               />

@@ -1,9 +1,8 @@
 """
 Katalog sxemalari — packages/shared/src/schemas/catalog.ts nusxasi.
 
-Diqqat: Zod 4'da `.partial()` sxemadagi default'larni ham qo'llaydi (yuborilmagan maydon default qiymatni oladi).
-PATCH sxemalari (CategoryUpdate, ProductUpdate, VariantUpdate, brand/narx guruhi) shu xatti-harakatni takrorlaydi:
-`data()` — yuborilgan maydonlar + default'i bor barcha maydonlar.
+PATCH sxemalari (CategoryUpdate, ProductUpdate, VariantUpdate, brand/narx guruhi): `data()` — faqat yuborilgan
+maydonlar. Yuborilmagan maydon o'zgarmaydi (Zod 4 `.partial()` kabi default'ga qaytmaydi).
 """
 
 import re
@@ -101,12 +100,15 @@ Url500 = _str_max(500)
 
 
 class PartialSchema(Schema):
-    """Zod `.partial()` (v4): yuborilmagan maydon — default'i bo'lsa default, bo'lmasa umuman yo'q"""
+    """Yaratish: yuborilgan maydonlar + default'lar. PATCH (PATCH = True): faqat yuborilgan maydonlar"""
 
     # Default'i yo'q maydonlar (faqat yuborilganda olinadi)
     NO_DEFAULT: ClassVar[frozenset[str]] = frozenset()
+    PATCH: ClassVar[bool] = False
 
     def data(self) -> dict[str, Any]:
+        if self.PATCH:
+            return {k: getattr(self, k) for k in self.model_fields_set}
         return {k: getattr(self, k) for k in type(self).model_fields if k not in self.NO_DEFAULT or k in self.model_fields_set}
 
 
@@ -146,7 +148,7 @@ class CategoryInput(PartialSchema):
 
 
 class CategoryUpdate(CategoryInput):
-    NO_DEFAULT: ClassVar[frozenset[str]] = frozenset({"name_uz", "name_ru", "slug"})
+    PATCH: ClassVar[bool] = True
     name_uz: Name = None  # type: ignore[assignment]
     name_ru: Name = None  # type: ignore[assignment]
     slug: Slug = None  # type: ignore[assignment]
@@ -158,7 +160,7 @@ class BrandInput(PartialSchema):
 
 
 class BrandUpdate(BrandInput):
-    NO_DEFAULT: ClassVar[frozenset[str]] = frozenset({"name"})
+    PATCH: ClassVar[bool] = True
     name: trimmed(1, 100) = None  # type: ignore[valid-type,assignment]
 
 
@@ -168,7 +170,7 @@ class PriceGroupInput(PartialSchema):
 
 
 class PriceGroupUpdate(PriceGroupInput):
-    NO_DEFAULT: ClassVar[frozenset[str]] = frozenset({"name"})
+    PATCH: ClassVar[bool] = True
     name: trimmed(1, 60) = None  # type: ignore[valid-type,assignment]
 
 
@@ -196,9 +198,7 @@ class ProductInput(PartialSchema):
 
 
 class ProductUpdate(ProductInput):
-    NO_DEFAULT: ClassVar[frozenset[str]] = frozenset(
-        {"category_id", "name_uz", "name_ru", "description_uz", "description_ru", "unit"}
-    )
+    PATCH: ClassVar[bool] = True
     category_id: Uuid = None  # type: ignore[assignment]
     name_uz: Name = None  # type: ignore[assignment]
     name_ru: Name = None  # type: ignore[assignment]
@@ -245,7 +245,7 @@ class VariantInput(PartialSchema):
 
 
 class VariantUpdate(VariantInput):
-    NO_DEFAULT: ClassVar[frozenset[str]] = frozenset({"sku", "base_price"})
+    PATCH: ClassVar[bool] = True
     sku: Sku = None  # type: ignore[assignment]
     base_price: Money = None  # type: ignore[assignment]
 

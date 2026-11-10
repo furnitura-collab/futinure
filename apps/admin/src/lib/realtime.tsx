@@ -4,7 +4,7 @@ import { io, type Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { RT, type OrderStatus } from '@mebel/shared';
 import { useI18n } from '@/i18n';
-import { tokenStore } from './api';
+import { API_URL, tokenStore } from './api';
 import { useAuth } from './auth';
 
 interface RealtimeState {
@@ -50,7 +50,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!me) return;
     const tr = () => i18nRef.current;
-    const s = io('/rt', {
+    const s = io(`${API_URL}/rt`, {
       // Har qayta ulanishda yangi token (refresh'dan keyin)
       auth: (cb) => cb({ token: tokenStore.get()?.accessToken }),
       transports: ['websocket'],

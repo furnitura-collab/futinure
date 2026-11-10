@@ -102,10 +102,9 @@ Ma'lum farqlar:
 - Juda kam holat: so'rovda ham noto'g'ri UUID, ham noto'g'ri body bo'lsa — Nest 400, Python 422.
 - Alembic `--autogenerate` hozircha indeks/FK nomlari bo'yicha "shovqin" beradi — yangi migratsiyalarni qo'lda yozing.
 
-**NestJS'dan o'tgan xato (ataylab bir xil qoldirilgan):** Zod 4'da `.partial()` `.default()` qiymatlarini
-qo'llaydi — `PATCH /admin/products/:id`, `/admin/variants/:id`, kategoriya, brend, narx guruhi va `PATCH /addresses/:id`
-yuborilmagan maydonlarni standart qiymatga qaytaradi (masalan faqat `nameUz` yuborilsa `kind` GOODS'ga qaytadi).
-Tuzatish kerak (Python'da `PartialSchema.data()` va `customers`/`addresses` sxemalarida).
+**NestJS'dan o'tgan xato (tuzatilgan):** Zod 4'da `.partial()` `.default()` qiymatlarini qo'llardi — PATCH
+yuborilmagan maydonlarni standart qiymatga qaytarardi. Endi `PATCH /admin/products|variants|categories|brands|price-groups/:id`
+va `PATCH /addresses/:id` faqat yuborilgan maydonlarni o'zgartiradi (`PartialSchema.PATCH`, `AddressUpdate.values()`).
 
 ## Bosqichlar
 

@@ -160,6 +160,10 @@ async def test_address_create_and_update(ctx: Ctx, auth: dict[str, str]):
     upd = await ctx.http.patch(f"/api/v1/addresses/{res.json()['id']}", headers=auth, json={"floor": 3})
     assert upd.status_code == 200
     assert upd.json()["floor"] == 3
+    # Yuborilmagan maydonlar o'zgarmaydi
+    upd = await ctx.http.patch(f"/api/v1/addresses/{res.json()['id']}", headers=auth, json={"needsLoaders": True})
+    assert_matches(upd.json(), {"label": "Sex", "floor": 3, "needsLoaders": True})
+    assert (await ctx.http.patch(f"/api/v1/addresses/{res.json()['id']}", headers=auth, json={})).status_code == 200
 
 
 async def test_address_outside_uzbekistan_422(ctx: Ctx, auth: dict[str, str]):

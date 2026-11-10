@@ -1,4 +1,4 @@
-# Bepul deploy (sinov bosqichi): Render + Supabase + Upstash, APK — Telegram orqali
+# Bepul deploy (sinov bosqichi): Render + Supabase + Upstash (+ Vercel), APK — Telegram orqali
 
 Bozorda sinab ko'rish uchun. Hammasi bepul tariflarda; mijozlar ko'paygach `06-deploy.md` (VPS) ga o'tiladi.
 
@@ -9,6 +9,7 @@ Bozorda sinab ko'rish uchun. Hammasi bepul tariflarda; mijozlar ko'paygach `06-d
 | Fayllar (rasmlar, cheklar) | Supabase Storage | 1 GB; Render diski vaqtinchalik, shuning uchun shart |
 | Redis | Upstash | bepul tarif |
 | Android ilova | EAS Build → APK | oyiga bir necha bepul build |
+| Admin va mobil web (ixtiyoriy) | Vercel — 7-bo'lim | tez ochiladi; API baribir Render'da |
 
 Manzillar: `https://<nom>.onrender.com/` — mobil web, `/admin/` — admin panel, `/api/v1` — API.
 
@@ -88,6 +89,22 @@ aks holda telefon eski ilova ustiga o'rnatmaydi.
 Eslatmalar:
 - Push bildirishnomalar APK'da hozircha ishlamaydi (Firebase/FCM sozlanmagan) — ilova buni jimgina o'tkazib yuboradi.
 - APK API'ga ulanishi uchun Render uyg'oq bo'lishi kerak (5-bo'lim).
+
+## 7. Frontend — Vercel (ixtiyoriy)
+API Vercel'da ishlamaydi (Socket.IO, fon vazifalari doim ishlab turishi kerak) — u Render'da qoladi.
+Vercel'ga faqat statik admin panel va mobil web qo'yiladi; ular API'ga `VITE_API_URL` / `EXPO_PUBLIC_API_URL`
+orqali to'g'ridan-to'g'ri ulanadi (API'da CORS ochiq). Build sozlamalari `apps/admin/vercel.json` va `apps/mobile/vercel.json` da.
+
+Ikkita loyiha: vercel.com → **Add New → Project** → repo → **Root Directory**:
+
+| Loyiha | Root Directory | Environment Variables |
+|---|---|---|
+| `mebel-admin` | `apps/admin` | `VITE_API_URL=https://mebel-order.onrender.com`, `ENABLE_EXPERIMENTAL_COREPACK=1` |
+| `mebel-app` | `apps/mobile` | `EXPO_PUBLIC_API_URL=https://mebel-order.onrender.com`, `ENABLE_EXPERIMENTAL_COREPACK=1` |
+
+Framework Preset — **Other**, qolgan maydonlar bo'sh (vercel.json'dan olinadi). Deploy'dan keyin Render'da
+`ADMIN_URL=https://mebel-admin.vercel.app/` qiling (Telegram xabaridagi havola). Env o'zgarsa — **Redeploy**
+(qiymatlar build paytida kodga yoziladi).
 
 ## VPS'ga ko'chish
 Supabase'dan baza: `pg_dump "<DATABASE_URL>" > dump.sql`, VPS'da tiklanadi. Fayllar Supabase Storage'da qoladi —

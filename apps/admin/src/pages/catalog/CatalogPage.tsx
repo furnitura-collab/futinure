@@ -10,7 +10,7 @@ import { SwitchField } from '@/components/SwitchField';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
-import { api, apiDownload } from '@/lib/api';
+import { api, apiDownload, fileUrl } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { flattenCategories, useBrands, useCategories } from '@/lib/catalog';
 import { useDebounced } from '@/lib/hooks';
@@ -72,7 +72,7 @@ export function CatalogPage() {
       hideBelow: 'sm',
       cell: (p) =>
         p.images[0] ? (
-          <img src={p.images[0].url} alt="" loading="lazy" className="size-10 rounded-md object-cover ring-1 ring-border" />
+          <img src={fileUrl(p.images[0].url)} alt="" loading="lazy" className="size-10 rounded-md object-cover ring-1 ring-border" />
         ) : (
           <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
             <ImageOff className="size-4" />
