@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 import app.modules as modules_pkg
 from app import db
 from app.config import get_settings
-from app.core import errors, timing
+from app.core import cache, errors, timing
 from app.core import redis as redis_mod
 from app.services import realtime
 from app.services.storage import storage
@@ -75,6 +75,7 @@ def create_app() -> FastAPI:
     )
     errors.install(app)
     timing.install(app)
+    cache.install(app)
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"], expose_headers=["*"])
 
     for m in mods:
