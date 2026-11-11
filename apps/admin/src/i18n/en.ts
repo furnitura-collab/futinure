@@ -84,7 +84,6 @@ export const en: Dictionary = {
     logout: 'Sign out',
   },
   auth: {
-    title: 'Welcome back',
     subtitle: 'Sign in to the staff panel',
     phone: 'Phone number',
     password: 'Password',
@@ -93,7 +92,6 @@ export const en: Dictionary = {
     staffOnly: 'This panel is for staff. Customers use the mobile app',
     showPassword: 'Show password',
     hidePassword: 'Hide password',
-    tagline: 'Furniture material orders — all in one place',
   },
   errors: {
     generic: 'Something went wrong',

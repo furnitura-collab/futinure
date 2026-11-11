@@ -3,11 +3,12 @@ import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { formatUzPhoneInput, normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
-import { Button, Card, Icon, Input, Row, Screen, Text } from '@/components/ui';
+import { Button, Card, Input, Screen, Text } from '@/components/ui';
 import { AuthSplit, BrandIntro, useAuthSplit } from '@/components/web/AuthSplit';
 import { useI18n } from '@/i18n';
 import { api, ApiError, type Tokens } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import type { Me } from '@/lib/types';
 import { space } from '@/theme';
 
 export default function Login() {
@@ -27,7 +28,7 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await login(await api<Tokens>('/auth/login', { body: { phone: normalized, password } }));
+      await login(await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password } }));
     } catch (e) {
       setError(e instanceof ApiError ? errorText(e.code, e.message) : t('error'));
       setBusy(false);
@@ -64,15 +65,11 @@ export default function Login() {
         onSubmitEditing={() => void submit()}
       />
       <Button title={t('login')} onPress={() => void submit()} loading={busy} disabled={!ready} />
-      <Row gap={space(2)} style={{ alignItems: 'flex-start' }}>
-        <Icon name="information-circle-outline" size={18} tone="info" />
-        <Text v="small" muted style={{ flex: 1 }}>{t('passwordHint')}</Text>
-      </Row>
     </Card>
   );
   const language = (
-    <View style={{ alignSelf: 'flex-end', width: 180 }}>
-      <LanguageSwitch short />
+    <View style={{ alignSelf: 'flex-end' }}>
+      <LanguageSwitch />
     </View>
   );
 

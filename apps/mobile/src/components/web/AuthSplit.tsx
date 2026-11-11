@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { LogoMark } from '@/components/LogoMark';
-import { Background, Icon, Row, Text } from '@/components/ui';
+import { Background, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { useLayout } from '@/lib/layout';
 import { font, space, useTheme } from '@/theme';
@@ -13,7 +13,7 @@ export function useAuthSplit() {
   return Platform.OS === 'web' && wide;
 }
 
-/** Brend, qisqa tavsif va afzalliklar — telefonda markazda, saytda rangli panelda (onBrand) */
+/** Brend va bir qatorli tavsif — telefonda markazda, saytda rangli panelda (onBrand) */
 export function BrandIntro({ onBrand }: { onBrand?: boolean }) {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -26,14 +26,6 @@ export function BrandIntro({ onBrand }: { onBrand?: boolean }) {
         <Text muted={!onBrand} color={fg} center={!onBrand} style={onBrand && { fontSize: font.lg, lineHeight: 24, opacity: 0.9 }}>
           {t('loginSubtitle')}
         </Text>
-      </View>
-      <View style={{ gap: space(onBrand ? 3 : 2), alignSelf: 'stretch', paddingHorizontal: onBrand ? 0 : space(2) }}>
-        {(['loginBenefit1', 'loginBenefit2', 'loginBenefit3'] as const).map((k) => (
-          <Row key={k} gap={space(2)}>
-            <Icon name="checkmark-circle" size={18} tone={onBrand ? undefined : 'success'} color={fg} />
-            <Text v={onBrand ? 'body' : 'small'} color={fg} style={{ flex: 1 }}>{t(k)}</Text>
-          </Row>
-        ))}
       </View>
     </View>
   );

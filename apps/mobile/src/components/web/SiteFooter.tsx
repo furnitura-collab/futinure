@@ -1,9 +1,10 @@
 import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { LogoMark } from '@/components/LogoMark';
 import { PressableScale } from '@/components/ui/Pressable';
 import { Text } from '@/components/ui/Text';
-import { LANGUAGES, useI18n, type I18nKey } from '@/i18n';
+import { useI18n, type I18nKey } from '@/i18n';
 import { space, useTheme } from '@/theme';
 
 interface FooterColumn {
@@ -71,7 +72,7 @@ export function SiteFooter() {
         }}
       >
         <Text v="caption">{t('copyright', { year: new Date().getFullYear() })}</Text>
-        <LanguageLinks />
+        <LanguageSwitch />
       </View>
     </View>
   );
@@ -83,30 +84,5 @@ function FooterLink({ label, onPress }: { label: string; onPress: () => void }) 
     <PressableScale onPress={onPress} accessibilityRole="link" scale={1} hoverStyle={{ opacity: 0.7 }} style={{ alignSelf: 'flex-start' }}>
       <Text v="small" color={colors.foreground}>{label}</Text>
     </PressableScale>
-  );
-}
-
-/** Ixcham til tanlash: har til o'z nomi bilan, joriysi ajratilgan */
-function LanguageLinks() {
-  const { t, locale, setLocale } = useI18n();
-  const { colors } = useTheme();
-  return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={t('language')} style={{ flexDirection: 'row', alignItems: 'center', gap: space(4) }}>
-      {LANGUAGES.map((l) => {
-        const active = l.value === locale;
-        return (
-          <PressableScale
-            key={l.value}
-            onPress={() => setLocale(l.value)}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: active }}
-            scale={1}
-            hoverStyle={active ? undefined : { opacity: 0.7 }}
-          >
-            <Text v="caption" bold={active} color={active ? colors.foreground : colors.mutedForeground}>{l.label}</Text>
-          </PressableScale>
-        );
-      })}
-    </View>
   );
 }

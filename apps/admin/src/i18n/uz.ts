@@ -83,7 +83,6 @@ export const uz = {
     logout: 'Chiqish',
   },
   auth: {
-    title: 'Xush kelibsiz',
     subtitle: 'Xodimlar paneliga kiring',
     phone: 'Telefon raqam',
     password: 'Parol',
@@ -92,7 +91,6 @@ export const uz = {
     staffOnly: 'Bu panel xodimlar uchun. Mijozlar mobil ilovadan foydalanadi',
     showPassword: "Parolni ko'rsatish",
     hidePassword: "Parolni yashirish",
-    tagline: "Mebel xomashyosi buyurtmalari — bir joyda",
   },
   errors: {
     generic: 'Xatolik yuz berdi',

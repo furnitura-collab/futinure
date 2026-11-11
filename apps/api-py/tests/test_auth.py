@@ -110,6 +110,14 @@ async def test_password_new_number_registers_then_logs_in(ctx: Ctx):
     assert (await login_pw(ctx, "+998901234567", PASSWORD)).status_code == 200
 
 
+async def test_login_returns_me_same_as_me_endpoint(ctx: Ctx):
+    """Ilova kirgach alohida /me so'ramaydi — javobdagi "me" /me bilan bir xil"""
+    assert (await login_pw(ctx, PHONE, PASSWORD)).status_code == 200
+    body = (await login_pw(ctx, PHONE, PASSWORD)).json()
+    me = await ctx.http.get("/api/v1/me", headers=bearer(body["accessToken"]))
+    assert body["me"] == me.json()
+
+
 async def test_password_wrong_401(ctx: Ctx):
     assert (await login_pw(ctx, PHONE, PASSWORD)).status_code == 200
     res = await login_pw(ctx, PHONE, "wrong-pass")

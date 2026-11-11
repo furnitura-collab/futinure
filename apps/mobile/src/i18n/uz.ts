@@ -22,7 +22,6 @@ export const uz = {
   showPassword: "Parolni ko'rsatish",
   login: 'Kirish',
   invalidPhone: "Telefon raqam noto'g'ri",
-  passwordHint: "Yangi raqam bo'lsa, hisob avtomatik ochiladi — shu parol bilan keyin kirasiz",
   // tanishuv
   setupTitle: 'Tanishib olaylik',
   setupSubtitle: 'Buyurtmalarni rasmiylashtirish uchun ismingiz kerak',
@@ -31,9 +30,6 @@ export const uz = {
   companyName: 'Firma nomi',
   inn: 'STIR (9 raqam)',
   passwordFieldHint: 'Kamida {n} ta belgi',
-  loginBenefit1: 'Sizga ajratilgan narxlar va chegirmalar',
-  loginBenefit2: "Buyurtma qayerdaligini bosqichma-bosqich ko'rasiz",
-  loginBenefit3: 'Menejer bilan to\'g\'ridan-to\'g\'ri chat',
   // tablar
   tabHome: 'Bosh sahifa',
   tabCatalog: 'Katalog',

@@ -10,7 +10,8 @@ export const PANEL_ROLES: readonly Role[] = ['MANAGER', 'SUPER_ADMIN', 'WAREHOUS
 interface AuthState {
   me: Me | null;
   loading: boolean;
-  login: (t: Tokens) => void;
+  /** Kirish javobi: tokenlar va profil (alohida /me so'rovisiz) */
+  login: (session: Tokens & { me: Me }) => void;
   logout: () => Promise<void>;
   can: (...roles: Role[]) => boolean;
 }
@@ -39,9 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const login = useCallback(
-    (t: Tokens) => {
-      tokenStore.set(t);
-      void qc.invalidateQueries({ queryKey: ['me'] });
+    ({ me: profile, accessToken, refreshToken }: Tokens & { me: Me }) => {
+      qc.setQueryData(['me'], profile);
+      tokenStore.set({ accessToken, refreshToken });
     },
     [qc],
   );

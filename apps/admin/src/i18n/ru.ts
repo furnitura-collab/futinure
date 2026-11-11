@@ -84,7 +84,6 @@ export const ru: Dictionary = {
     logout: 'Выйти',
   },
   auth: {
-    title: 'Добро пожаловать',
     subtitle: 'Вход в панель сотрудников',
     phone: 'Номер телефона',
     password: 'Пароль',
@@ -93,7 +92,6 @@ export const ru: Dictionary = {
     staffOnly: 'Панель только для сотрудников. Клиенты пользуются мобильным приложением',
     showPassword: 'Показать пароль',
     hidePassword: 'Скрыть пароль',
-    tagline: 'Заказы мебельного сырья — в одном месте',
   },
   errors: {
     generic: 'Произошла ошибка',

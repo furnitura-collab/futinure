@@ -4,8 +4,6 @@ from fastapi import Path
 from pydantic import Field, StringConstraints
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from app.auth import tokens
 from app.auth.deps import CurrentUser
@@ -16,6 +14,7 @@ from app.core.schemas import Password, Schema, trimmed
 from app.db import Db, transaction
 from app.models import CustomerProfile, DeviceToken, User, new_id, utcnow
 from app.modules.auth.router import invalid_password
+from app.modules.me.service import get_me
 
 router = api_router("/me", tags=["me"])
 
@@ -36,33 +35,6 @@ class ChangePassword(Schema):
 class DeviceTokenInput(Schema):
     token: Annotated[str, Field(min_length=10, max_length=300)]
     platform: Literal["ios", "android", "web"]
-
-
-async def get_me(db: AsyncSession, user_id: str) -> dict:
-    user = await db.scalar(
-        select(User).options(joinedload(User.customer_profile).joinedload(CustomerProfile.price_group)).where(User.id == user_id)
-    )
-    if not user:
-        raise AppError.not_found("Foydalanuvchi")
-    p = user.customer_profile
-    return {
-        "id": user.id,
-        "phone": user.phone,
-        "fullName": user.full_name,
-        "role": user.role,
-        "locale": user.locale,
-        "customerProfile": p
-        and {
-            "type": p.type,
-            "companyName": p.company_name,
-            "inn": p.inn,
-            "creditLimit": p.credit_limit,
-            "paymentTermDays": p.payment_term_days,
-            "allowedPaymentMethods": p.allowed_payment_methods,
-            "balanceCached": p.balance_cached,
-            "priceGroup": p.price_group and {"id": p.price_group.id, "name": p.price_group.name},
-        },
-    }
 
 
 @router.get("")

@@ -32,8 +32,8 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await api<Tokens & { user: Me }>('/auth/login', { body: { phone: normalized, password } });
-      if (!PANEL_ROLES.includes(res.user.role)) {
+      const res = await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password } });
+      if (!PANEL_ROLES.includes(res.me.role)) {
         // Mijoz yoki haydovchi — sessiyani darhol yopamiz
         await api('/auth/logout', { body: { refreshToken: res.refreshToken } }).catch(() => undefined);
         tokenStore.set(null);
@@ -56,14 +56,10 @@ export function LoginPage() {
       </div>
       <div className="glass w-full max-w-sm animate-fade-up rounded-2xl border p-6 shadow-xl shadow-black/5 sm:p-8">
         <div className="mb-6 flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-11" />
-          <div>
-            <p className="text-sm font-semibold">Mebel Order</p>
-            <p className="text-xs text-muted-foreground">{t('auth.tagline')}</p>
-          </div>
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-10" />
+          <p className="font-semibold">Mebel Order</p>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('auth.title')}</h1>
-        <p className="mt-1 mb-6 text-sm text-muted-foreground">{t('auth.subtitle')}</p>
+        <h1 className="mb-6 text-xl font-semibold tracking-tight">{t('auth.subtitle')}</h1>
 
         <form onSubmit={submit} className="grid gap-4" noValidate>
           <FormField label={t('auth.phone')}>

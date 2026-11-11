@@ -8,7 +8,8 @@ interface AuthState {
   /** Tokenlar xotiradan yuklanmoqda (ilova endi ochildi) */
   booting: boolean;
   me: Me | null;
-  login: (t: Tokens) => Promise<void>;
+  /** Kirish javobi: tokenlar va profil (alohida /me so'rovisiz) */
+  login: (session: Tokens & { me: Me }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -47,9 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [me, locale, qc]);
 
   const login = useCallback(
-    async (t: Tokens) => {
-      await tokens.set(t);
-      await qc.invalidateQueries({ queryKey: ['me'] });
+    async ({ me: profile, ...t }: Tokens & { me: Me }) => {
+      qc.setQueryData(['me'], profile);
+      await tokens.set({ accessToken: t.accessToken, refreshToken: t.refreshToken });
     },
     [qc],
   );

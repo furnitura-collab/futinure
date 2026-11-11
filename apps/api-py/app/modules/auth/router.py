@@ -12,6 +12,7 @@ from app.core.redis import redis
 from app.core.schemas import Password, Phone, Schema
 from app.db import Db, transaction
 from app.models import CustomerProfile, User, utcnow
+from app.modules.me.service import get_me
 
 router = api_router("/auth", tags=["auth"])
 
@@ -101,9 +102,9 @@ async def login(body: PasswordLogin, db: Db, user_agent: Annotated[str | None, H
             existing.last_login_at = utcnow()
         user = existing
     elif await verify_password(body.password, existing.password_hash):
-        async with transaction(db):
-            existing.last_login_at = utcnow()
-        await redis().delete(fail_key)
+        existing.last_login_at = utcnow()
+        if fails:
+            await redis().delete(fail_key)
         user = existing
     else:
         async with redis().pipeline(transaction=True) as pipe:
@@ -125,12 +126,18 @@ async def logout(body: RefreshInput, db: Db):
 
 
 async def _session(db: Db, user: User, user_agent: str | None):
+    """
+    Tokenlar va to'liq profil ("me") — ilova kirgach alohida /me so'ramaydi.
+    Kutilayotgan o'zgarishlar (last_login_at) token bilan bitta tranzaksiyada saqlanadi.
+    """
     if not user.is_active:
         raise AppError.forbidden("Hisob bloklangan")
-    pair = await tokens.issue(db, user.id, user.role, user_agent)
+    async with transaction(db):
+        pair = await tokens.issue(db, user.id, user.role, user_agent)
     return {
         **pair,
         "user": {"id": user.id, "phone": user.phone, "fullName": user.full_name, "role": user.role, "locale": user.locale},
+        "me": await get_me(db, user.id),
         "isNew": user.full_name is None,
     }
 

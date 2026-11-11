@@ -1,6 +1,7 @@
 import { router, useGlobalSearchParams, usePathname, type Href } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { View, type TextInput } from 'react-native';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { LogoMark } from '@/components/LogoMark';
 import { Avatar, CountBadge, Icon, IconButton, Input, PressableScale, Text, type IconName } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
@@ -155,6 +156,12 @@ export function WebHeader() {
             </PressableScale>
           ) : (
             <IconButton icon="barcode-outline" label={t('quickSku')} size={40} onPress={() => router.push('/sku')} />
+          )}
+
+          {full && (
+            <View style={{ marginHorizontal: space(1) }}>
+              <LanguageSwitch />
+            </View>
           )}
 
           <View>
