@@ -2,7 +2,7 @@ import { router, useGlobalSearchParams, usePathname, type Href } from 'expo-rout
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { View, type TextInput } from 'react-native';
 import { LogoMark } from '@/components/LogoMark';
-import { Avatar, CountBadge, GlassView, Icon, IconButton, Input, PressableScale, Text, type IconName } from '@/components/ui';
+import { Avatar, CountBadge, Icon, IconButton, Input, PressableScale, Text, type IconName } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/lib/cart';
@@ -71,7 +71,8 @@ export function WebHeader() {
   const count = cart.data?.count ?? 0;
 
   return (
-    <GlassView bordered={false} intensity={60} style={{ height: HEADER_HEIGHT, borderBottomWidth: 1, borderBottomColor: colors.glassBorder, zIndex: 10 }}>
+    // Kontent sarlavha ostidan o'tmaydi (WebShell'da alohida blok) — blur (backdrop-filter) har kadrda behuda hisoblanardi
+    <View role="banner" style={{ height: HEADER_HEIGHT, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border, zIndex: 10 }}>
       <View style={[contained(CONTENT.wide), { flex: 1, flexDirection: 'row', alignItems: 'center', gap: desktop ? space(3) : space(2), paddingHorizontal: gutter }]}>
         <PressableScale onPress={() => router.navigate('/')} accessibilityRole="link" accessibilityLabel={t('appName')} scale={0.97} style={{ flexDirection: 'row', alignItems: 'center', gap: space(2), marginRight: space(2) }}>
           <LogoMark size={36} />
@@ -181,13 +182,20 @@ export function WebHeader() {
               backgroundColor: path === '/cart' ? colors.primary : colors.primarySoft,
             }}
           >
-            <Icon name="cart-outline" size={20} color={path === '/cart' ? colors.primaryForeground : colors.accentForeground} />
+            {/* Belgi ikonka burchagida — yonidagi summa bilan to'qnashmasin */}
+            <View style={{ marginRight: count > 0 ? space(2) : 0 }}>
+              <Icon name="cart-outline" size={20} color={path === '/cart' ? colors.primaryForeground : colors.accentForeground} />
+              {count > 0 && (
+                <View pointerEvents="none" style={{ position: 'absolute', top: -9, right: -14 }}>
+                  <CountBadge count={count} />
+                </View>
+              )}
+            </View>
             {desktop && (
               <Text v="small" bold numberOfLines={1} color={path === '/cart' ? colors.primaryForeground : colors.accentForeground}>
                 {count ? money(cart.data?.itemsTotal ?? 0) : t('tabCart')}
               </Text>
             )}
-            {count > 0 && <CountBadge count={count} />}
           </PressableScale>
 
           <PressableScale
@@ -201,6 +209,6 @@ export function WebHeader() {
           </PressableScale>
         </View>
       </View>
-    </GlassView>
+    </View>
   );
 }
