@@ -42,9 +42,22 @@ const CUSTOMER_STATUS: Record<Locale, Partial<Record<OrderStatus, string>>> = {
 const LOCALE_KEY = 'mebel.locale';
 const isLocale = (v: unknown): v is Locale => LOCALES.includes(v as Locale);
 
+/** Mijozlar O'zbekistonda: rus tilli qurilmada — ruscha, qolganida (inglizcha ham) — o'zbekcha */
 function deviceLocale(): Locale {
-  const code = getLocales()[0]?.languageCode;
-  return isLocale(code) ? code : 'uz';
+  return getLocales()[0]?.languageCode === 'ru' ? 'ru' : 'uz';
+}
+
+/**
+ * Ko'plik shakllari: matnda "|" bilan ajratiladi, tartibi — shu ro'yxat (CLDR).
+ * Masalan en: "{n} product|{n} products", ru: "{n} товар|{n} товара|{n} товаров"
+ */
+const PLURAL_FORMS: Record<Locale, Intl.LDMLPluralRule[]> = { uz: ['other'], ru: ['one', 'few', 'many'], en: ['one', 'other'] };
+
+function plural(text: string, n: unknown, locale: Locale): string {
+  if (typeof n !== 'number' || !text.includes('|')) return text;
+  const forms = text.split('|');
+  const i = PLURAL_FORMS[locale].indexOf(new Intl.PluralRules(locale).select(n));
+  return forms[i] ?? forms[forms.length - 1]!;
 }
 
 type Params = Record<string, string | number>;
@@ -89,7 +102,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return {
       locale,
       setLocale,
-      t: (key, params) => dict[key].replace(/\{(\w+)\}/g, (_, k: string) => String(params?.[k] ?? '')),
+      t: (key, params) => plural(dict[key], params?.n, locale).replace(/\{(\w+)\}/g, (_, k: string) => String(params?.[k] ?? '')),
       money: (amount) => formatMoney(amount, locale),
       status: (s) => CUSTOMER_STATUS[locale][s] ?? label('orderStatus', s, locale),
       unit: (u) => (LABELS.unit[locale] as Record<string, string>)[u] ?? u,

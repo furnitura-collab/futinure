@@ -27,7 +27,7 @@ export function Gallery({ images, categoryId, kind, square }: { images: { id: st
         </ScrollView>
       ) : (
         <View style={{ height: square ? width : 220 }}>
-          <CategoryArt categoryId={categoryId} kind={kind} iconSize={square ? 96 : 56} />
+          <CategoryArt categoryId={categoryId} kind={kind} iconSize={square ? 64 : 48} />
         </View>
       )}
       {images.length > 1 && (

@@ -6,6 +6,7 @@ import { ActiveOrdersRail } from '@/components/home/ActiveOrdersRail';
 import { BuyAgainRail } from '@/components/home/BuyAgainRail';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
 import { HomeHeader } from '@/components/home/HomeHeader';
+import { PopularProducts } from '@/components/home/PopularProducts';
 import { QuickOrderCard } from '@/components/home/QuickOrderCard';
 import { SearchEntry } from '@/components/home/SearchEntry';
 import { Appear, Screen } from '@/components/ui';
@@ -23,7 +24,7 @@ export default function Home() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all(['orders', 'buy-again', 'categories', 'balance', 'notifications'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+    await Promise.all(['orders', 'buy-again', 'categories', 'products', 'balance', 'notifications'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
     setRefreshing(false);
   };
 
@@ -50,7 +51,8 @@ export default function Home() {
       )}
       <ActiveOrdersRail />
       <BuyAgainRail />
-      <CategoryGrid columns={site ? 6 : wide ? 3 : 2} />
+      <CategoryGrid columns={site ? 4 : wide ? 3 : 2} />
+      <PopularProducts columns={site ? 5 : wide ? 3 : 2} />
       <QuickOrderCard />
     </Screen>
   );

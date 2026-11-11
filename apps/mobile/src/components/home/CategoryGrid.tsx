@@ -16,7 +16,7 @@ export function CategoryGrid({ columns }: { columns: number }) {
 
   return (
     <View style={{ gap: space(3) }}>
-      <SectionHeader title={t('categories')} action={t('allProducts')} onAction={() => router.navigate({ pathname: '/catalog', params: { categoryId: '' } })} />
+      <SectionHeader title={t('categories')} />
       <Grid columns={columns}>
         {(q.data ?? Array.from({ length: 4 }, () => null)).map((c, i) =>
           c ? (

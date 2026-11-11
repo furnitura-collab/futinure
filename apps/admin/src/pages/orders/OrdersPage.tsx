@@ -134,7 +134,7 @@ function Board({ query }: { query: ReturnType<typeof useKanban> }) {
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
   return (
-    <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <div className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:-mx-8 lg:scroll-px-8 lg:px-8">
       {query.isPending
         ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-96 w-72 shrink-0 rounded-xl" />)
         : query.data.map((col) => (

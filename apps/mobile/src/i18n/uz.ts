@@ -63,6 +63,7 @@ export const uz = {
   addLastQty: "Savatga qo'shish: {qty}",
   categories: 'Kategoriyalar',
   allProducts: 'Barcha tovarlar',
+  popularProducts: "Ko'p sotilganlar",
   productsCount: '{n} ta tovar',
   quickSkuExplain: "Kod va miqdorni ro'yxat qilib yozing — hammasi birdan savatga tushadi. Ustalar uchun eng tez yo'l.",
   quickSkuOpen: 'Kod bilan yozish',

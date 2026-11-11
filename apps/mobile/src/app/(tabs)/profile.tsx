@@ -53,7 +53,6 @@ export default function Profile() {
       <ListGroup title={t('account')}>
         <ListItem icon="notifications-outline" title={t('notifications')} right={<CountBadge count={unread} />} onPress={() => router.push('/notifications')} />
         <ListItem icon="location-outline" title={t('addresses')} onPress={() => router.push('/addresses')} />
-        <ListItem icon="document-text-outline" title={t('paymentsHistory')} onPress={() => router.push('/balance')} />
       </ListGroup>
     </Appear>
   );

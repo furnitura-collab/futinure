@@ -37,10 +37,13 @@ export function ProductCard({ p, width, onQuickAdd }: { p: Product; width: numbe
       style={[s.card, { width, flex: 1 }]}
     >
       <View style={s.image}>
-        <ProductThumb imageUrl={p.imageUrl} categoryId={p.categoryId} kind={p.kind} iconSize={Math.max(28, Math.min(48, width / 5))} />
-        <View style={s.badge}>
-          <Badge label={level(p.stockLevel)} tone={LEVEL_TONE[p.stockLevel]} dot />
-        </View>
+        <ProductThumb imageUrl={p.imageUrl} categoryId={p.categoryId} kind={p.kind} iconSize={Math.max(24, Math.min(36, width / 6))} />
+        {/* "Bor" — odatiy holat, belgisiz; faqat kam/tugagan/buyurtmaga ko'rsatiladi */}
+        {p.stockLevel !== 'IN_STOCK' && (
+          <View style={s.badge}>
+            <Badge label={level(p.stockLevel)} tone={LEVEL_TONE[p.stockLevel]} dot />
+          </View>
+        )}
         {inCart && (
           <View style={s.inCart}>
             <Badge label={`${inCart.qty} ${unit(p.unit)}`} tone="primary" icon="cart" />
@@ -53,7 +56,7 @@ export function ProductCard({ p, width, onQuickAdd }: { p: Product; width: numbe
       </View>
       <View style={s.body}>
         <Text v="small" bold numberOfLines={2} style={{ minHeight: 36 }}>{name(p)}</Text>
-        <Text v="caption" numberOfLines={1}>{p.brand?.name ?? ' '}</Text>
+        <Text v="caption" numberOfLines={1} style={s.brand}>{p.brand?.name}</Text>
         <View style={{ marginTop: space(1) }}>
           <Text bold numberOfLines={1} adjustsFontSizeToFit>{p.variantCount > 1 ? t('priceFrom', { price }) : price}</Text>
           <Text v="caption" numberOfLines={1}>
@@ -80,4 +83,6 @@ const useStyles = makeStyles((t) => ({
   inCart: { position: 'absolute', bottom: space(2), left: space(2) },
   add: { position: 'absolute', bottom: space(2), right: space(2), borderRadius: radius.full, ...t.shadow },
   body: { padding: space(3), paddingTop: space(2), gap: 2 },
+  // Brendsiz kartochkada ham narx qatori boshqalari bilan bir chiziqda
+  brand: { minHeight: 18 },
 }));

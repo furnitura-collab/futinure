@@ -7,10 +7,10 @@ import { useSite } from '@/lib/layout';
 import { useUnreadCount } from '@/lib/notifications';
 import { space } from '@/theme';
 
-/** Salomlashish: ism, firma/mijoz turi va bildirishnomalar (saytda qo'ng'iroqcha sarlavhada) */
+/** Salomlashish: ism, firma va bildirishnomalar (saytda qo'ng'iroqcha sarlavhada) */
 export function HomeHeader() {
   const { me } = useAuth();
-  const { t, customerType } = useI18n();
+  const { t } = useI18n();
   const { site } = useSite();
   const unread = useUnreadCount();
   const p = me?.customerProfile;
@@ -20,7 +20,7 @@ export function HomeHeader() {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text v={site ? 'display' : 'title'} accessibilityRole={site ? 'header' : undefined} numberOfLines={1}>{t('hello', { name: first })}</Text>
-        <Text muted numberOfLines={1}>{[p?.companyName, p && customerType(p.type)].filter(Boolean).join(' · ')}</Text>
+        {!!p?.companyName && <Text muted numberOfLines={1}>{p.companyName}</Text>}
       </View>
       {!site && (
         <View>
