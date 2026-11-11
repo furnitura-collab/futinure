@@ -1,5 +1,6 @@
 import base64
 import uuid
+from datetime import date, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 from typing import Any
@@ -34,6 +35,9 @@ async def s(ctx: Ctx) -> SimpleNamespace:
 
 # ───── yordamchilar ─────
 
+# Buyurtma sanasi bugundan 60 kungacha bo'lishi kerak — qat'iy sana vaqt o'tib eskiradi
+DELIVERY_DATE = date.today() + timedelta(days=1)
+
 
 async def go(s: SimpleNamespace, id: str, body: dict[str, Any], auth: dict[str, str] | None = None) -> httpx.Response:
     return await s.ctx.http.post(f"/api/v1/admin/orders/{id}/transition", headers=auth or s.manager, json=body)
@@ -46,7 +50,7 @@ async def order(s: SimpleNamespace, terms: dict[str, Any] | None = None, deliver
     res = await ctx.http.put(f"/api/v1/cart/items/{s.c.white.id}", headers=s.customer.auth, json={"qty": 2})
     assert res.status_code == 200, res.text
     body = (
-        {"deliveryType": delivery_type, "addressId": s.address_id, "deliveryDate": "2026-11-10"}
+        {"deliveryType": delivery_type, "addressId": s.address_id, "deliveryDate": DELIVERY_DATE.isoformat()}
         if delivery_type == "DELIVERY"
         else {"deliveryType": delivery_type, "warehouseId": s.warehouse_id}
     )
@@ -95,7 +99,7 @@ async def test_manager_assigns_date_from_order_visible_in_detail(s: SimpleNamesp
         {
             "driverId": s.driver.user.id,
             "status": "ASSIGNED",
-            "scheduledDate": "2026-11-10T00:00:00.000Z",
+            "scheduledDate": f"{DELIVERY_DATE.isoformat()}T00:00:00.000Z",
             "driver": {"id": s.driver.user.id},
         },
     )

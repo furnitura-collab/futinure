@@ -6,6 +6,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
+from app.core.timing import track_engine
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
@@ -20,6 +21,7 @@ def engine() -> AsyncEngine:
             pool_pre_ping=True,
             connect_args={"statement_cache_size": 0},
         )
+        track_engine(_engine)
         _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False, autoflush=True)
     return _engine
 
