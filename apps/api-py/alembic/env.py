@@ -1,4 +1,4 @@
-"""Alembic: DATABASE_URL env'dan (ilova bilan bir xil). Modellar — app/models.py."""
+"""Alembic: DATABASE_URL env'dan (ilova bilan bir xil). Modellar — app/models/."""
 
 import asyncio
 
