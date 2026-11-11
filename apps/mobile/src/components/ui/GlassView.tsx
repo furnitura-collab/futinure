@@ -12,14 +12,15 @@ interface GlassViewProps {
 }
 
 /**
- * Shisha yuza: iOS va webda haqiqiy blur, Androidda blur sekin/ishonchsiz —
- * deyarli to'liq rangli fon bilan almashtiriladi.
+ * Shisha yuza: iOS'da haqiqiy blur. Androidda blur sekin/ishonchsiz, webda esa backdrop-filter
+ * aylantirishda har kadrda qayta hisoblanadi (telefon brauzerida sezilarli) va ostidagi yorqin
+ * tugmalarni dog' qilib ko'rsatadi — ikkalasida deyarli to'liq rangli fon.
  */
 export function GlassView({ children, style, intensity = 50, bordered = true }: GlassViewProps) {
   const { colors, scheme } = useTheme();
   const border = bordered ? { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.glassBorder } : null;
 
-  if (Platform.OS === 'android') {
+  if (Platform.OS !== 'ios') {
     return <View style={[{ backgroundColor: colors.glassSolid }, border, style]}>{children}</View>;
   }
   return (

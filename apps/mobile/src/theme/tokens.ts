@@ -85,7 +85,7 @@ const light: ThemeColors = {
   border: '#e7e5e4',
   input: '#d6d3d1',
   ring: 'rgba(180, 83, 9, 0.45)',
-  glass: 'rgba(255, 255, 255, 0.72)',
+  glass: 'rgba(255, 255, 255, 0.82)',
   glassBorder: 'rgba(214, 211, 209, 0.6)',
   glassSolid: 'rgba(255, 255, 255, 0.94)',
   placeholder: '#968e87',
@@ -130,7 +130,8 @@ const dark: ThemeColors = {
   border: '#292524',
   input: '#44403c',
   ring: 'rgba(245, 158, 11, 0.5)',
-  glass: 'rgba(28, 25, 23, 0.66)',
+  // Shaffofroq bo'lsa ostidagi to'q sariq tugmalar panel orqali dog' bo'lib ko'rinadi
+  glass: 'rgba(28, 25, 23, 0.84)',
   glassBorder: 'rgba(255, 255, 255, 0.08)',
   glassSolid: 'rgba(28, 25, 23, 0.96)',
   placeholder: '#78716c',

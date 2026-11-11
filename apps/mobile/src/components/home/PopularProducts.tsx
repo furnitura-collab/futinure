@@ -8,7 +8,7 @@ import { SectionHeader, Skeleton } from '@/components/ui';
 import { Grid } from '@/components/web/Grid';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
-import { useLayout } from '@/lib/layout';
+import { CONTENT, useLayout, useSite } from '@/lib/layout';
 import type { ProductCard as Product } from '@/lib/types';
 import { radius, space } from '@/theme';
 
@@ -16,13 +16,16 @@ import { radius, space } from '@/theme';
 export function PopularProducts({ columns }: { columns: number }) {
   const { t } = useI18n();
   const { width } = useLayout();
+  const { gutter } = useSite();
   const [quick, setQuick] = useState<Product | null>(null);
   const q = useQuery({
     queryKey: ['products', 'popular', columns],
     queryFn: () => api<{ items: Product[] }>('/products', { query: { sort: 'popular', limit: columns * 2 } }),
   });
   if (q.isSuccess && !q.data.items.length) return null;
-  const cardWidth = Math.min(width, 1200) / columns;
+  // Grid hujayrasi kengligi: konteyner − yon bo'shliqlar − ustunlar orasidagi oraliq
+  const inner = Math.min(width, CONTENT.wide) - gutter * 2;
+  const cardWidth = (inner - space(3) * (columns - 1)) / columns;
 
   return (
     <View style={{ gap: space(3) }}>
