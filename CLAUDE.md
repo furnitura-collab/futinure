@@ -14,6 +14,14 @@
 - Baza uzoqda (har so'rov yuzlab ms) — so'rovlar sonini kamaytir; ochiq katalog Redis keshida (`app/core/cache.py`),
   admin o'zgarishi keshni avtomatik yangilaydi. Har javobda `Server-Timing` (SQL soni va vaqti) bor.
 
+## Mobil ilova yangilanishi (APK)
+- APK o'rnatilgan paytdagi holat. **JS/UI o'zgarishi** (ekranlar, matn, stil) — EAS Update bilan, qayta o'rnatishsiz:
+  `cd apps/mobile && pnpm ota "qisqa izoh"` (kanal `preview`, muhit `preview`). Telefonda ilova 1–2 marta to'liq yopib ochilganda yangilanadi.
+- **Native o'zgarish** (yangi native kutubxona, ruxsat, `app.json` plugin, Expo SDK) — yangi APK:
+  `app.json` da `version` (runtimeVersion = appVersion) va `android.versionCode` oshiriladi, keyin
+  `npx eas-cli@latest build -p android --profile preview`. Versiya oshsa eski APK'lar yangi OTA'ni olmaydi — shuning uchun faqat shunda oshiriladi.
+- `EXPO_PUBLIC_API_URL` — EAS muhitlarida (preview, production); `eas update` `eas.json` dagi `env`ni o'qimaydi.
+
 ## UI qoidalari
 - **Ikonka yoki matn — ikkalasi birga emas.**
   - Ikonka ma'no anglatsa (savat, qo'ng'iroqcha, qidiruv, yopish) — faqat ikonka; nomi `accessibilityLabel` / `aria-label`
