@@ -46,7 +46,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"mobile: unit testlar shared/api da\""
+    "test": "echo \"mobile: unit testlar shared/api da\"",
+    "eas-build-post-install": "pnpm --filter @mebel/shared build"
   },
   "private": true
 }
