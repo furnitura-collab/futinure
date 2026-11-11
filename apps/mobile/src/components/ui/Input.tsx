@@ -1,22 +1,30 @@
 import { useState, type ComponentRef, type ReactNode, type Ref } from 'react';
-import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, Pressable, TextInput, View, type TextInputProps, type TextStyle } from 'react-native';
 import { useI18n } from '@/i18n';
 import { font, makeStyles, radius, space, useTheme } from '@/theme';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
+
+/**
+ * Brauzerning o'z fokus chizig'i (outline: auto) maydon ichida ikkinchi ramka chizadi — o'rniga maydon atrofidagi ring.
+ * react-native-web "none"ni qo'llaydi, RN tiplarida esa yo'q.
+ */
+const NO_OUTLINE = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
 
 export interface InputProps extends TextInputProps {
   label?: string;
   error?: string | null;
   hint?: string;
   icon?: IconName;
+  /** Tahrirlanmaydigan boshlanish, masalan "+998" */
+  prefix?: string;
   right?: ReactNode;
   /** Parol maydoni: ko'rsatish/yashirish tugmasi bilan */
   password?: boolean;
   ref?: Ref<ComponentRef<typeof TextInput>>;
 }
 
-export function Input({ label, error, hint, icon, right, password, style, multiline, onFocus, onBlur, ref, ...rest }: InputProps) {
+export function Input({ label, error, hint, icon, prefix, right, password, style, multiline, onFocus, onBlur, ref, ...rest }: InputProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const s = useStyles();
@@ -29,6 +37,7 @@ export function Input({ label, error, hint, icon, right, password, style, multil
       {label ? <Text v="small" bold>{label}</Text> : null}
       <View style={[s.field, multiline && s.multiline, { borderColor }, focused && { boxShadow: `0 0 0 3px ${error ? colors.destructiveSoft : colors.ring}` }]}>
         {icon ? <Icon name={icon} size={18} muted /> : null}
+        {prefix ? <Text style={s.prefix}>{prefix}</Text> : null}
         <TextInput
           ref={ref}
           placeholderTextColor={colors.placeholder}
@@ -43,7 +52,7 @@ export function Input({ label, error, hint, icon, right, password, style, multil
             setFocused(false);
             onBlur?.(e);
           }}
-          style={[s.input, multiline && s.inputMultiline, style]}
+          style={[s.input, NO_OUTLINE, multiline && s.inputMultiline, style]}
         />
         {password ? (
           <Pressable onPress={() => setHidden((h) => !h)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('showPassword')}>
@@ -79,8 +88,7 @@ const useStyles = makeStyles((t) => ({
     minHeight: 46,
     fontSize: font.base + 1,
     color: t.colors.foreground,
-    // Webda brauzerning o'z fokus chizig'i — o'rniga ring ishlatamiz
-    outlineWidth: 0,
   },
+  prefix: { fontSize: font.base + 1, color: t.colors.foreground },
   inputMultiline: { minHeight: 88, textAlignVertical: 'top', paddingTop: space(1) },
 }));

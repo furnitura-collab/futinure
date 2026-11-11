@@ -90,6 +90,8 @@ export const uz = {
     submit: 'Kirish',
     invalidPhone: "Telefon raqam noto'g'ri",
     staffOnly: 'Bu panel xodimlar uchun. Mijozlar mobil ilovadan foydalanadi',
+    showPassword: "Parolni ko'rsatish",
+    hidePassword: "Parolni yashirish",
     tagline: "Mebel xomashyosi buyurtmalari — bir joyda",
   },
   errors: {

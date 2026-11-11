@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyPercent, computeOrderTotals, lineTotal, resolveUnitPrice } from './pricing.js';
 import { fromMilli, toMilli, validateQty } from './quantity.js';
-import { normalizeUzPhone } from './phone.js';
+import { formatUzPhoneInput, normalizeUzPhone } from './phone.js';
 
 describe('quantity', () => {
   it('toMilli / fromMilli', () => {
@@ -95,4 +95,25 @@ describe('phone', () => {
   it.each(['12345', '+7 900 123 45 67', '012345678'])('rad etiladi: %s', (input) =>
     expect(normalizeUzPhone(input)).toBeNull(),
   );
+});
+
+describe('formatUzPhoneInput', () => {
+  it.each([
+    ['', ''],
+    ['9', '9'],
+    ['901', '90 1'],
+    ['90123456', '90 123 45 6'],
+    ['901234567', '90 123 45 67'],
+    ['9012345678', '90 123 45 67'],
+    ['+998 90 123 45 67', '90 123 45 67'],
+    ['90-123-45-67', '90 123 45 67'],
+  ])('%s → %s', (input, out) => expect(formatUzPhoneInput(input)).toBe(out));
+
+  it("+998 ni qo'lda yozish: belgilar birma-bir kelganda ham mamlakat kodi tushib qoladi", () => {
+    let value = '';
+    for (const ch of '+998901234567') value = formatUzPhoneInput(value + ch);
+    expect(value).toBe('90 123 45 67');
+  });
+
+  it('natija normalizeUzPhone bilan mos', () => expect(normalizeUzPhone(formatUzPhoneInput('901234567'))).toBe('+998901234567'));
 });

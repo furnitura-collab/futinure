@@ -1,7 +1,7 @@
-import { LockKeyhole, Phone } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole, Phone } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router';
-import { normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
+import { formatUzPhoneInput, normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
 import { Callout } from '@/components/Callout';
 import { FormField } from '@/components/FormField';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -18,6 +18,7 @@ export function LoginPage() {
   const { me, login } = useAuth();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -69,15 +70,18 @@ export function LoginPage() {
             {(f) => (
               <div className="relative">
                 <Phone className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                {/* "+998" o'zgarmaydi — faqat 9 raqam yoziladi va "90 123 45 67" ko'rinishida guruhlanadi */}
+                <span className="pointer-events-none absolute top-1/2 left-9 -translate-y-1/2 text-base">+998</span>
                 <Input
                   {...f}
-                  className="pl-9"
+                  className="h-11 pl-[4.75rem] text-base md:text-base"
                   autoFocus
+                  type="tel"
                   inputMode="tel"
-                  autoComplete="username"
-                  placeholder="+998 90 123 45 67"
+                  autoComplete="tel-national"
+                  placeholder="90 123 45 67"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatUzPhoneInput(e.target.value))}
                 />
               </div>
             )}
@@ -88,12 +92,23 @@ export function LoginPage() {
                 <LockKeyhole className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   {...f}
-                  className="pl-9"
-                  type="password"
+                  className="h-11 pr-11 pl-9 text-base md:text-base"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1/2 right-1 size-9 -translate-y-1/2 text-muted-foreground"
+                  aria-label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </Button>
               </div>
             )}
           </FormField>

@@ -91,6 +91,8 @@ export const en: Dictionary = {
     submit: 'Sign in',
     invalidPhone: 'Invalid phone number',
     staffOnly: 'This panel is for staff. Customers use the mobile app',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
     tagline: 'Furniture material orders — all in one place',
   },
   errors: {

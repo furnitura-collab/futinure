@@ -91,6 +91,8 @@ export const ru: Dictionary = {
     submit: 'Войти',
     invalidPhone: 'Неверный номер телефона',
     staffOnly: 'Панель только для сотрудников. Клиенты пользуются мобильным приложением',
+    showPassword: 'Показать пароль',
+    hidePassword: 'Скрыть пароль',
     tagline: 'Заказы мебельного сырья — в одном месте',
   },
   errors: {

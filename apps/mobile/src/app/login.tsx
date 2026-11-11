@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
+import { formatUzPhoneInput, normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { Button, Card, Icon, Input, Row, Screen, Text } from '@/components/ui';
 import { AuthSplit, BrandIntro, useAuthSplit } from '@/components/web/AuthSplit';
@@ -14,7 +14,7 @@ export default function Login() {
   const { t, errorText } = useI18n();
   const split = useAuthSplit();
   const { login } = useAuth();
-  const [phone, setPhone] = useState('+998 ');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,7 +37,19 @@ export default function Login() {
   const form = (
     <Card style={{ gap: space(4), padding: space(6) }}>
       <Text v="h2">{t('loginWelcome')}</Text>
-      <Input label={t('phone')} icon="call-outline" value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" autoFocus />
+      <Input
+        label={t('phone')}
+        icon="call-outline"
+        prefix="+998"
+        placeholder="90 123 45 67"
+        value={phone}
+        onChangeText={(v) => setPhone(formatUzPhoneInput(v))}
+        keyboardType="phone-pad"
+        autoComplete="tel-national"
+        textContentType="telephoneNumber"
+        autoFocus
+        onSubmitEditing={() => void submit()}
+      />
       <Input
         label={t('password')}
         icon="lock-closed-outline"
