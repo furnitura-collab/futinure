@@ -25,7 +25,8 @@ async def test_only_own_orders(ctx: Ctx, c, auth, pickup):
     assert (await ctx.http.get("/api/v1/orders", headers=other)).json()["total"] == 0
 
     lst = await get_ok(ctx, auth, "/api/v1/orders")
-    assert_matches(lst["items"][0], {"number": o["number"], "itemsCount": 2, "hasPendingQuote": False})
+    assert_matches(lst["items"][0], {"number": o["number"], "itemsCount": 2})
+    assert "hasPendingQuote" not in lst["items"][0]
 
 
 async def test_list_card_preview_and_amount_due(ctx: Ctx, c, customer, auth, pickup):
@@ -39,12 +40,11 @@ async def test_list_card_preview_and_amount_due(ctx: Ctx, c, customer, auth, pic
     # Kelishilmagan buyurtmada to'lov so'ralmaydi
     assert_matches(item, {"balanceDue": TOTAL, "amountDue": 0})
 
-    await ctx.db.execute(
-        update(Order).where(Order.id == o["id"]).values(status="CONFIRMED", payment_terms="ADVANCE", advance_amount=1_000_000)
-    )
+    # Shartlar saqlangan yangi buyurtma (oldindan to'lov) — avans so'raladi
+    await ctx.db.execute(update(Order).where(Order.id == o["id"]).values(payment_terms="ADVANCE", advance_amount=1_000_000))
     await ctx.db.commit()
     item = (await get_ok(ctx, auth, "/api/v1/orders"))["items"][0]
-    assert_matches(item, {"paymentTerms": "ADVANCE", "amountDue": 1_000_000})
+    assert_matches(item, {"status": "NEW", "paymentTerms": "ADVANCE", "amountDue": 1_000_000})
 
     # Tekshirilayotgan chek summasi qayta so'ralmaydi
     await ctx.add(
@@ -92,10 +92,10 @@ async def test_cancel_without_reason_422_twice_409(ctx: Ctx, c, auth, pickup):
     assert res.json()["error"]["code"] == "TRANSITION_NO_SUCH_TRANSITION"
 
 
-async def test_customer_cannot_cancel_confirmed_403(ctx: Ctx, c, auth, pickup):
+async def test_customer_cannot_cancel_preparing_403(ctx: Ctx, c, auth, pickup):
     await fill_cart(ctx, c, auth)
     o = await create_ok(ctx, auth, pickup)
-    await ctx.db.execute(update(Order).where(Order.id == o["id"]).values(status="CONFIRMED"))
+    await ctx.db.execute(update(Order).where(Order.id == o["id"]).values(status="PREPARING"))
     await ctx.db.commit()
     res = await cancel(ctx, auth, o["id"], "Kerak emas")
     assert res.status_code == 403

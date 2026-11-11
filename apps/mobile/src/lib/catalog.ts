@@ -11,8 +11,6 @@ export const LEVEL_TONE: Record<StockLevel, Tone> = {
 
 export const STATUS_TONE: Record<OrderStatus, Tone> = {
   NEW: 'info',
-  QUOTED: 'violet',
-  CONFIRMED: 'warning',
   PREPARING: 'primary',
   READY: 'success',
   OUT_FOR_DELIVERY: 'info',

@@ -133,7 +133,6 @@ VEHICLES = [
 SETTINGS: dict[str, Any] = {
     "payment.card": {"number": "8600 0000 0000 0000", "holder": "MEBEL ORDER MCHJ"},
     "payment.bank": {"name": "Kapitalbank", "account": "20208000000000000001", "mfo": "01158", "inn": "300000000"},
-    "quote.ttl_hours": 24,
     "cutting.price_per_meter": 3_000,
     "cutting.edging_price_per_meter": 2_500,
 }

@@ -1,10 +1,5 @@
-"""
-Buyurtmalar.
-Fon vazifasi (testda o'chiq): har daqiqada muddati o'tgan takliflarni yopadi (quote-expiry.scheduler.ts).
-"""
+"""Buyurtmalar: mijoz yo'llari va admin (ro'yxat, kanban, shartlar, status o'tishlari)"""
 
-import asyncio
-import logging
 from typing import Annotated
 
 from fastapi import Depends, Header
@@ -12,10 +7,10 @@ from fastapi import Depends, Header
 from app.auth.deps import AuthUser, Staff, require_roles
 from app.core.errors import AppError
 from app.core.http import DumpedJSON, api_router
-from app.core.params import UuidPath, uuid_path
+from app.core.params import UuidPath
 from app.db import Db
 from app.modules.catalog.schemas import query_model
-from app.modules.orders import admin, quotes, service, workflow
+from app.modules.orders import acceptance, admin, service, workflow
 from app.modules.orders.schemas import (
     IDEMPOTENCY_KEY_RE,
     AdminOrderListQuery,
@@ -23,22 +18,18 @@ from app.modules.orders.schemas import (
     CancelOrderInput,
     CreateOrderInput,
     OrderListQuery,
-    QuoteInput,
-    RejectQuoteInput,
+    SetTermsInput,
     TransitionInput,
     body_of,
     create_order_rule,
-    quote_rule,
+    set_terms_rule,
     transition_rule,
 )
-
-log = logging.getLogger("QuoteExpiryScheduler")
 
 router = api_router(tags=["orders"])
 
 Customer = Annotated[AuthUser, Depends(require_roles("CUSTOMER"))]
 Operator = Annotated[AuthUser, Depends(require_roles("MANAGER", "SUPER_ADMIN", "WAREHOUSE", "DRIVER"))]
-QuoteId = Annotated[str, Depends(uuid_path("quoteId"))]
 
 
 # ───────────── Mijoz ─────────────
@@ -78,25 +69,6 @@ async def cancel(u: Customer, id: UuidPath, body: Annotated[CancelOrderInput, De
     return await service.cancel(db, u, id, body.reason)
 
 
-@router.get("/orders/{id}/quotes")
-async def quote_history(u: Customer, id: UuidPath, db: Db):
-    return await service.quote_history(db, u.id, id)
-
-
-@router.post("/orders/{id}/quotes/{quoteId}/accept")
-async def accept(u: Customer, id: UuidPath, quote_id: QuoteId, db: Db):
-    await quotes.accept(db, u, id, quote_id)
-    return await service.detail(db, u.id, id)
-
-
-@router.post("/orders/{id}/quotes/{quoteId}/reject")
-async def reject(
-    u: Customer, id: UuidPath, quote_id: QuoteId, body: Annotated[RejectQuoteInput, Depends(body_of(RejectQuoteInput))], db: Db
-):
-    await quotes.reject(db, u, id, quote_id, body.comment)
-    return await service.detail(db, u.id, id)
-
-
 # ───────────── Admin ─────────────
 
 
@@ -125,10 +97,13 @@ async def admin_assign(u: Staff, id: UuidPath, body: Annotated[AssignOrderInput,
     return await admin.assign(db, id, body.manager_id, u)
 
 
-@router.post("/admin/orders/{id}/quotes", status_code=201)
-async def admin_quote(u: Staff, id: UuidPath, body: Annotated[QuoteInput, Depends(body_of(QuoteInput, quote_rule))], db: Db):
-    result = await quotes.create(db, id, body, u)
-    return {**result, "order": await admin.detail(db, id, u)}
+@router.put("/admin/orders/{id}/terms")
+async def admin_terms(
+    u: Staff, id: UuidPath, body: Annotated[SetTermsInput, Depends(body_of(SetTermsInput, set_terms_rule))], db: Db
+):
+    """Yangi buyurtmaga shartlar (status o'zgarmaydi) — oldindan to'lovda mijoz avansni shundan keyin to'laydi"""
+    await acceptance.save_terms(db, id, body, u)
+    return await admin.detail(db, id, u)
 
 
 @router.post("/admin/orders/{id}/transition")
@@ -141,26 +116,3 @@ async def admin_transition(
     """
     await workflow.run_transition(db, id, body, u)
     return await admin.detail(db, id, u)
-
-
-# ───────────── Fon vazifasi: muddati o'tgan takliflar ─────────────
-
-INTERVAL_S = 60
-
-
-async def quote_expiry_loop() -> None:
-    """
-    Har daqiqada muddati o'tgan takliflarni yopadi (QUOTED → NEW).
-    Bir nechta API nusxasi ishlasa ham xavfsiz: har taklif qulf ostida, faqat bir marta yopiladi.
-    """
-    while True:
-        await asyncio.sleep(INTERVAL_S)
-        try:
-            n = await quotes.expire_due()
-            if n:
-                log.info("%s ta taklif muddati o'tdi", n)
-        except Exception:
-            log.exception("Takliflarni yopishda xato")
-
-
-background_tasks = [quote_expiry_loop]

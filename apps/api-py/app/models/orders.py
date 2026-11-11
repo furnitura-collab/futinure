@@ -16,7 +16,6 @@ from app.models.base import (
     ORDER_STATUS,
     PAYMENT_METHOD,
     PAYMENT_TERMS,
-    QUOTE_STATUS,
     UNIT,
     Base,
     Tz,
@@ -93,9 +92,6 @@ class Order(Base):
     total_volume_m3: Mapped[Decimal] = qty("total_volume_m3", default=Decimal(0), precision=(12, 4))
     customer_comment: Mapped[str | None] = mapped_column("customer_comment", Text)
     idempotency_key: Mapped[str] = mapped_column("idempotency_key", Text)
-    current_quote_id: Mapped[str | None] = mapped_column(
-        "current_quote_id", Uuid, ForeignKey("order_quotes.id", use_alter=True), unique=True
-    )
     cancel_reason: Mapped[str | None] = mapped_column("cancel_reason", Text)
     cancelled_by: Mapped[str | None] = mapped_column("cancelled_by", Uuid)
     confirmed_at: Mapped[datetime | None] = mapped_column("confirmed_at", Tz)
@@ -108,12 +104,8 @@ class Order(Base):
     customer: Mapped[User] = relationship(foreign_keys=[customer_id], lazy="raise")
     manager: Mapped[User | None] = relationship(foreign_keys=[manager_id], lazy="raise")
     pickup_warehouse: Mapped[Warehouse | None] = relationship(lazy="raise")
-    current_quote: Mapped[OrderQuote | None] = relationship(foreign_keys=[current_quote_id], lazy="raise", post_update=True)
     items: Mapped[list[OrderItem]] = relationship(
         back_populates="order", lazy="raise", order_by="OrderItem.created_at", foreign_keys="OrderItem.order_id"
-    )
-    quotes: Mapped[list[OrderQuote]] = relationship(
-        back_populates="order", lazy="raise", foreign_keys="OrderQuote.order_id", order_by="OrderQuote.version"
     )
     status_history: Mapped[list[OrderStatusHistory]] = relationship(
         back_populates="order", lazy="raise", order_by="OrderStatusHistory.created_at"
@@ -143,28 +135,6 @@ class OrderItem(Base):
 
     order: Mapped[Order] = relationship(back_populates="items", lazy="raise", foreign_keys=[order_id])
     variant: Mapped[ProductVariant] = relationship(lazy="raise")
-
-
-class OrderQuote(Base):
-    __tablename__ = "order_quotes"
-
-    id: Mapped[str] = pk()
-    order_id: Mapped[str] = fk("orders.id", ondelete="CASCADE", name="order_id")
-    version: Mapped[int] = mapped_column(Integer)
-    created_by: Mapped[str] = mapped_column("created_by", Uuid)
-    changes: Mapped[Any] = mapped_column(JSONB)
-    totals: Mapped[Any] = mapped_column(JSONB)
-    payment_terms: Mapped[str] = mapped_column("payment_terms", PAYMENT_TERMS)
-    advance_amount: Mapped[int] = mapped_column("advance_amount", BigInteger, default=0)
-    allowed_methods: Mapped[list[str]] = mapped_column("allowed_methods", ARRAY(PAYMENT_METHOD))
-    manager_note: Mapped[str | None] = mapped_column("manager_note", Text)
-    status: Mapped[str] = mapped_column(QUOTE_STATUS, default="PENDING")
-    customer_comment: Mapped[str | None] = mapped_column("customer_comment", Text)
-    responded_at: Mapped[datetime | None] = mapped_column("responded_at", Tz)
-    expires_at: Mapped[datetime] = mapped_column("expires_at", Tz)
-    created_at: Mapped[datetime] = created_at()
-
-    order: Mapped[Order] = relationship(back_populates="quotes", lazy="raise", foreign_keys=[order_id])
 
 
 class OrderStatusHistory(Base):

@@ -27,7 +27,7 @@ async def go(s: SimpleNamespace, id: str, body: dict[str, Any], auth: dict[str, 
 
 
 async def order(s: SimpleNamespace, terms: dict[str, Any] | None = None, delivery_type: str = "DELIVERY") -> str:
-    """2 ta oq LDSP (2 × 395 000), yetkazish, menejer tasdiqlagan"""
+    """2 ta oq LDSP (2 × 395 000), yetkazish, menejer qabul qilgan (PREPARING)"""
     terms = terms or {"paymentTerms": "ON_DELIVERY"}
     ctx = s.ctx
     res = await ctx.http.put(f"/api/v1/cart/items/{s.c.white.id}", headers=s.customer.auth, json={"qty": 2})
@@ -40,7 +40,7 @@ async def order(s: SimpleNamespace, terms: dict[str, Any] | None = None, deliver
     res = await ctx.http.post("/api/v1/orders", headers={**s.customer.auth, "Idempotency-Key": str(uuid.uuid4())}, json=body)
     assert res.status_code == 201, res.text
     id = res.json()["id"]
-    res = await go(s, id, {"to": "CONFIRMED", "terms": {"allowedMethods": ["CASH"], "deliveryFee": 50_000, **terms}})
+    res = await go(s, id, {"to": "PREPARING", "terms": {"allowedMethods": ["CASH"], "deliveryFee": 50_000, **terms}})
     assert res.status_code == 200, res.text
     return id
 
@@ -50,7 +50,6 @@ async def assign(s: SimpleNamespace, id: str, body: dict[str, Any]) -> httpx.Res
 
 
 async def ready(s: SimpleNamespace, id: str) -> None:
-    assert (await go(s, id, {"to": "PREPARING"})).status_code == 200
     assert (await go(s, id, {"to": "READY"})).status_code == 200
 
 

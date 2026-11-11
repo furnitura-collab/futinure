@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.notifications.event_chat import _chat_message, _chat_read
 from app.modules.notifications.event_common import EntityNotFound, OutboxEnvelope
-from app.modules.notifications.event_orders import _delivery_assigned, _order_created, _order_quote_created, _order_status_changed
+from app.modules.notifications.event_orders import _delivery_assigned, _order_created, _order_status_changed, _order_terms_set
 from app.modules.notifications.event_payments import _payment_confirmed, _payment_created, _payment_rejected
 
 __all__ = ["HANDLERS", "handle", "OutboxEnvelope", "EntityNotFound"]
@@ -19,7 +19,7 @@ __all__ = ["HANDLERS", "handle", "OutboxEnvelope", "EntityNotFound"]
 HANDLERS: dict[str, Callable[[AsyncSession, OutboxEnvelope], Awaitable[None]]] = {
     "order.created": _order_created,
     "order.status_changed": _order_status_changed,
-    "order.quote_created": _order_quote_created,
+    "order.terms_set": _order_terms_set,
     "payment.created": _payment_created,
     "payment.confirmed": _payment_confirmed,
     "payment.rejected": _payment_rejected,

@@ -20,7 +20,7 @@ NS = "/rt"
 # Hodisa nomlari — @mebel/shared RT bilan bir xil
 ORDER_CREATED = "order.created"
 ORDER_STATUS_CHANGED = "order.status_changed"
-ORDER_QUOTE_CREATED = "order.quote_created"
+ORDER_TERMS_SET = "order.terms_set"
 PAYMENT_CREATED = "payment.created"
 PAYMENT_UPDATED = "payment.updated"
 CHAT_MESSAGE = "chat.message"

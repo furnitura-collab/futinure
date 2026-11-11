@@ -20,11 +20,8 @@ const MGR: readonly Role[] = ['MANAGER', 'SUPER_ADMIN'];
 const SYSTEM: readonly Role[] = [];
 
 export const ORDER_TRANSITIONS: readonly Transition[] = [
-  { from: 'NEW', to: 'CONFIRMED', roles: MGR },
-  { from: 'NEW', to: 'QUOTED', roles: MGR },
-  { from: 'QUOTED', to: 'CONFIRMED', roles: ['CUSTOMER'] },
-  { from: 'QUOTED', to: 'NEW', roles: ['CUSTOMER'], requiresComment: true },
-  { from: 'CONFIRMED', to: 'PREPARING', roles: [...MGR, 'WAREHOUSE'] },
+  // Menejer qabul qiladi: shartlar belgilanadi, avans/nasiya tekshiriladi, tovar rezervlanadi
+  { from: 'NEW', to: 'PREPARING', roles: MGR },
   { from: 'PREPARING', to: 'READY', roles: [...MGR, 'WAREHOUSE'] },
   { from: 'READY', to: 'OUT_FOR_DELIVERY', roles: [...MGR, 'DRIVER'], deliveryType: 'DELIVERY' },
   { from: 'READY', to: 'DELIVERED', roles: [...MGR, 'WAREHOUSE'], deliveryType: 'PICKUP' },
@@ -33,8 +30,6 @@ export const ORDER_TRANSITIONS: readonly Transition[] = [
   { from: 'DELIVERED', to: 'COMPLETED', roles: SYSTEM },
 
   { from: 'NEW', to: 'CANCELLED', roles: ['CUSTOMER', ...MGR], requiresComment: true },
-  { from: 'QUOTED', to: 'CANCELLED', roles: ['CUSTOMER', ...MGR], requiresComment: true },
-  { from: 'CONFIRMED', to: 'CANCELLED', roles: MGR, requiresComment: true },
   // PREPARING'dan menejer faqat raspilsiz buyurtmani bekor qila oladi (API'da tekshiriladi)
   { from: 'PREPARING', to: 'CANCELLED', roles: MGR, requiresComment: true },
   { from: 'READY', to: 'CANCELLED', roles: ['SUPER_ADMIN'], requiresComment: true },
@@ -43,10 +38,10 @@ export const ORDER_TRANSITIONS: readonly Transition[] = [
 export const TERMINAL_STATUSES: readonly OrderStatus[] = ['COMPLETED', 'CANCELLED'];
 
 /** Mijoz o'z buyurtmasini qaysi statuslarda bekor qila oladi */
-export const CUSTOMER_CANCELLABLE: readonly OrderStatus[] = ['NEW', 'QUOTED'];
+export const CUSTOMER_CANCELLABLE: readonly OrderStatus[] = ['NEW'];
 
 /** Shu statuslarda tovar rezervda turadi */
-export const RESERVED_STATUSES: readonly OrderStatus[] = ['CONFIRMED', 'PREPARING', 'READY'];
+export const RESERVED_STATUSES: readonly OrderStatus[] = ['PREPARING', 'READY'];
 
 export type TransitionCheck =
   | { ok: true; transition: Transition }

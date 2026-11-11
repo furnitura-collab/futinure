@@ -16,8 +16,13 @@ from app.services.audit import audit
 from app.services.ledger import post_ledger
 from app.services.outbox import add_event
 
-# Shu statuslarda buyurtmaga to'lov qabul qilinadi (taklif kelishilgandan keyin)
-PAYABLE = ("CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY", "DELIVERED", "COMPLETED")
+# Shu statuslarda buyurtmaga to'lov qabul qilinadi; yangi buyurtmada — menejer shartlarni belgilagach (avans)
+PAYABLE = ("NEW", "PREPARING", "READY", "OUT_FOR_DELIVERY", "DELIVERED", "COMPLETED")
+
+
+def payable(order: Any) -> bool:
+    return order.status in PAYABLE and order.payment_terms is not None
+
 
 METHOD_LABEL = {
     "CASH": "naqd",

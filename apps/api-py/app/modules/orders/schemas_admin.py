@@ -5,7 +5,7 @@ from typing import Annotated, Any, TypedDict
 
 from pydantic import AfterValidator, BeforeValidator, Field, StrictBool, StrictInt
 
-from app.core.schemas import Money, PositiveQty, Qty, Schema, Uuid, custom_error, trimmed
+from app.core.schemas import Money, Schema, Uuid, custom_error, trimmed
 from app.modules.orders.schemas_common import (
     PAYMENT_METHODS,
     IsoDate,
@@ -86,49 +86,16 @@ class OrderTermsInput(_TermsFields):
     pass
 
 
-class ItemChange(Schema):
-    item_id: Uuid
-    # qty=0 — qatorni olib tashlash
-    qty: Qty
-    unit_price: Money | None = None
+class SetTermsInput(Schema):
+    """Yangi buyurtmaga shartlarni saqlash (status o'zgarmaydi)"""
 
-
-class Replacement(Schema):
-    item_id: Uuid
-    variant_id: Uuid
-    qty: PositiveQty
-    unit_price: Money | None = None
-
-
-class Addition(Schema):
-    variant_id: Uuid
-    qty: PositiveQty
-    unit_price: Money | None = None
-
-
-class QuoteInput(_TermsFields):
-    # Mavjud qatorni o'zgartirish. qty=0 — qatorni olib tashlash
-    item_changes: zlist(ItemChange, 0, 200) = []  # type: ignore[valid-type]
-    # Yo'q tovar o'rniga analog
-    replacements: zlist(Replacement, 0, 200) = []  # type: ignore[valid-type]
-    # Yangi tovar qo'shish (masalan, plitaga mos kromka)
-    additions: zlist(Addition, 0, 200) = []  # type: ignore[valid-type]
-    note: trimmed(0, 1000) | None = None  # type: ignore[valid-type]
-    expires_in_hours: Annotated[StrictInt, Field(ge=1, le=168)] | None = None
+    terms: OrderTermsInput
     expected_version: StrictInt | None = None
 
 
-def _item_ids(v: dict[str, Any], key: str) -> list[Any]:
-    rows = v.get(key)
-    return [r.get("itemId") for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
-
-
-def quote_rule(v: dict[str, Any]) -> list[Issue]:
-    out = terms_rule(v)
-    ids = _item_ids(v, "itemChanges") + _item_ids(v, "replacements")
-    if len(set(map(str, ids))) != len(ids):
-        out.append(_issue("itemChanges", "ITEM_CHANGED_TWICE"))
-    return out
+def set_terms_rule(v: dict[str, Any]) -> list[Issue]:
+    terms = v.get("terms")
+    return terms_rule(terms, "terms.") if isinstance(terms, dict) else []
 
 
 class TransitionInput(Schema):
@@ -136,7 +103,7 @@ class TransitionInput(Schema):
     comment: trimmed(0, 1000) | None = None  # type: ignore[valid-type]
     # Mijoz/menejer ko'rgan versiya. Boshqa birov orada o'zgartirgan bo'lsa — 409
     expected_version: StrictInt | None = None
-    # NEW → CONFIRMED uchun majburiy
+    # NEW → PREPARING: shartlar hali saqlanmagan bo'lsa majburiy
     terms: OrderTermsInput | None = None
     # Kredit limitidan oshsa ham davom etish (izoh majburiy)
     override_credit_limit: StrictBool = False

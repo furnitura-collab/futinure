@@ -1,14 +1,11 @@
-/** Lug'at bo'limi: buyurtmalar, taklif, to'lov */
+/** Lug'at bo'limi: buyurtmalar, to'lov */
 export const orders = {
   // buyurtmalar
   noActiveOrders: "Faol buyurtma yo'q",
   moreItems: 'va yana {n} ta',
-  pillQuote: "Taklif keldi — ko'ring",
   pillPay: "To'lov kutilmoqda: {amount}",
-  sayNEW: 'Menejer narx va qoldiqni tekshirmoqda — tez orada taklif yuboradi.',
-  sayQUOTED: "Menejer taklif yubordi — ko'rib chiqing va tasdiqlang.",
-  sayCONFIRMED: "Kelishildi. Tez orada omborda yig'ishni boshlaymiz.",
-  sayCONFIRMED_PAY: "Kelishildi. {amount} to'langandan so'ng tayyorlashni boshlaymiz.",
+  sayNEW: 'Menejer narx va qoldiqni tekshirmoqda.',
+  sayNEW_PAY: "{amount} to'langandan so'ng tayyorlashni boshlaymiz.",
   sayPREPARING: "Buyurtmangiz omborda yig'ilmoqda.",
   sayREADY: 'Buyurtma tayyor.',
   sayREADY_PICKUP: 'Tayyor! Omborga kelib olib ketishingiz mumkin.',
@@ -19,7 +16,6 @@ export const orders = {
   sayCANCELLED: 'Buyurtma bekor qilingan.',
   trackTitle: 'Buyurtma qayerda',
   stagePlaced: 'Qabul qilindi',
-  stageAgreed: 'Narx kelishildi',
   stagePreparing: 'Tayyorlanmoqda',
   stageOnTheWay: "Yo'lda",
   stageReadyPickup: 'Olib ketishga tayyor',
@@ -55,19 +51,7 @@ export const orders = {
   cancelReason: 'Sabab',
   chat: 'Menejer bilan chat',
   chatShort: 'Chat',
-  // taklif
-  quoteTitle: 'Menejer taklifi',
-  quoteValidUntil: '{time} gacha amal qiladi',
-  accept: 'Qabul qilaman',
-  reject: 'Rad etaman',
-  rejectReason: "Nima to'g'ri kelmadi?",
-  changed: "O'zgardi",
-  removed: 'Olib tashlandi',
-  replaced: 'Analog',
-  added: "Qo'shildi",
   terms: "To'lov sharti",
-  methods: "To'lov usullari",
-  deliveryDate: 'Yetkazish sanasi',
   // to'lov
   payTitle: "To'lov haqida xabar",
   payHint: "Kartaga o'tkazing va chek rasmini yuklang. Menejer tekshirib tasdiqlaydi.",

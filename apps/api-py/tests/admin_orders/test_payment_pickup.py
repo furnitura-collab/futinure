@@ -10,29 +10,32 @@ from app.models import (
 from tests.admin_orders.helpers import Env, expect, terms
 from tests.support import Ctx, assert_matches
 
-# ───────────────────────── To'lov tekshiruvlari (CONFIRMED → PREPARING) ─────────────────────────
+# ───────────────────────── To'lov tekshiruvlari (NEW → PREPARING) ─────────────────────────
 
 
-async def test_advance_unpaid_409_manager_cannot_override_super_admin_with_comment(env: Env):
+async def test_advance_unpaid_409_manager_cannot_override_super_admin_with_comment(ctx: Ctx, env: Env):
     o = await env.place_order([(env.c.white.id, 12)])
-    confirm = {"to": "CONFIRMED", "terms": terms(paymentTerms="ADVANCE", advanceAmount=1_000_000)}
-    expect(await env.go(o["id"], env.manager, confirm), 200)
-
-    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 409)
+    accept = {"to": "PREPARING", "terms": terms(paymentTerms="ADVANCE", advanceAmount=1_000_000)}
+    res = expect(await env.go(o["id"], env.manager, accept), 409)
     assert_matches(res.json()["error"], {"code": "ADVANCE_NOT_PAID", "details": {"required": 1_000_000, "paid": 0}})
-    override = {"to": "PREPARING", "overrideAdvance": True, "comment": "Ishonchli mijoz"}
+    # Rad etilgan o'tish shartlarni ham saqlamaydi
+    assert (await ctx.get(Order, o["id"])).payment_terms is None
+
+    override = {**accept, "overrideAdvance": True, "comment": "Ishonchli mijoz"}
     expect(await env.go(o["id"], env.manager, override), 409)
-    expect(await env.go(o["id"], env.admin, {"to": "PREPARING", "overrideAdvance": True}), 409)
+    expect(await env.go(o["id"], env.admin, {**accept, "overrideAdvance": True}), 409)
     expect(await env.go(o["id"], env.admin, override), 200)
 
 
-async def test_advance_paid_passes(ctx: Ctx, env: Env):
+async def test_advance_paid_passes_with_saved_terms(ctx: Ctx, env: Env):
     o = await env.place_order([(env.c.white.id, 12)])
-    confirm = {"to": "CONFIRMED", "terms": terms(paymentTerms="ADVANCE", advanceAmount=1_000_000)}
-    expect(await env.go(o["id"], env.manager, confirm), 200)
+    expect(await env.set_terms(o["id"], env.manager, {"terms": terms(paymentTerms="ADVANCE", advanceAmount=1_000_000)}), 200)
     await ctx.db.execute(update(Order).where(Order.id == o["id"]).values(paid_total=1_000_000))
     await ctx.db.commit()
-    expect(await env.go(o["id"], env.warehouse, {"to": "PREPARING"}), 200)
+    # Omborchi yangi buyurtmani qabul qila olmaydi
+    expect(await env.go(o["id"], env.warehouse, {"to": "PREPARING"}), 403)
+    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 200)
+    assert_matches(res.json(), {"status": "PREPARING", "paymentTerms": "ADVANCE", "advanceAmount": 1_000_000})
 
 
 async def test_credit_over_limit_requires_comment_override(ctx: Ctx, env: Env):
@@ -41,7 +44,7 @@ async def test_credit_over_limit_requires_comment_override(ctx: Ctx, env: Env):
     )
     await ctx.db.commit()
     o = await env.place_order([(env.c.white.id, 12)])
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms(paymentTerms="CREDIT")}), 200)
+    expect(await env.set_terms(o["id"], env.manager, {"terms": terms(paymentTerms="CREDIT")}), 200)
 
     detail = expect(await ctx.http.get(f"/api/v1/admin/orders/{o['id']}", headers=env.manager), 200)
     assert_matches(detail.json()["creditCheck"], {"creditLimit": 1_000_000, "exposureAfter": 4_620_000, "exceeds": True})
@@ -58,8 +61,7 @@ async def test_credit_over_limit_requires_comment_override(ctx: Ctx, env: Env):
 async def ready_pickup(env: Env, **payment_terms: Any) -> dict[str, Any]:
     c = env.c
     o = await env.place_order([(c.white.id, 12), (c.hinge_v.id, 4)])
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms(**payment_terms)}), 200)
-    expect(await env.go(o["id"], env.warehouse, {"to": "PREPARING"}), 200)
+    expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms(**payment_terms)}), 200)
     expect(await env.go(o["id"], env.warehouse, {"to": "READY"}), 200)
     return o
 
@@ -103,7 +105,7 @@ async def test_credit_pickup_auto_completed_with_due_date(ctx: Ctx, env: Env):
 
 async def test_fully_prepaid_completed_on_handover(ctx: Ctx, env: Env):
     o = await env.place_order([(env.c.hinge_v.id, 2)])
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms(paymentTerms="PREPAID")}), 200)
+    expect(await env.set_terms(o["id"], env.manager, {"terms": terms(paymentTerms="PREPAID")}), 200)
     await ctx.db.execute(update(Order).where(Order.id == o["id"]).values(paid_total=28_000))
     await ctx.db.commit()
     expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 200)

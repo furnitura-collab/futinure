@@ -9,7 +9,7 @@ import type { OrderDetail } from '@/lib/types';
 import { space } from '@/theme';
 
 /** Buyurtma "yuragi": holat, bir jumlada keyingi qadam va (kerak bo'lsa) asosiy harakat */
-export function OrderHeaderCard({ o, onReviewQuote }: { o: OrderDetail; onReviewQuote: () => void }) {
+export function OrderHeaderCard({ o }: { o: OrderDetail }) {
   const { t, status, money } = useI18n();
   const action = orderAction(o);
   return (
@@ -22,7 +22,6 @@ export function OrderHeaderCard({ o, onReviewQuote }: { o: OrderDetail; onReview
         <Text v="h2">{t(statusSentenceKey(o.status, o.deliveryType, o.amountDue), { amount: money(o.amountDue) })}</Text>
         {o.deliveryDate && o.status !== 'CANCELLED' ? <Text v="small" muted>{t('plannedDate', { date: formatDate(o.deliveryDate) })}</Text> : null}
       </View>
-      {action === 'quote' && <Button title={t('reviewQuote')} onPress={onReviewQuote} />}
       {action === 'pay' && (
         <Button title={t('payAmount', { amount: money(o.amountDue) })} onPress={() => router.push({ pathname: '/pay', params: { orderId: o.id } })} />
       )}

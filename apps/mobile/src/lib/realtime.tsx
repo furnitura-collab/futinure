@@ -33,7 +33,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       if (me.role === 'DRIVER') void qc.invalidateQueries({ queryKey: ['driver'] });
     };
     s.on(RT.ORDER_STATUS_CHANGED, orderChanged);
-    s.on(RT.ORDER_QUOTE_CREATED, orderChanged);
+    s.on(RT.ORDER_TERMS_SET, orderChanged);
     s.on(RT.PAYMENT_UPDATED, (p: { orderId: string | null }) => {
       if (p.orderId) orderChanged({ orderId: p.orderId });
       void qc.invalidateQueries({ queryKey: ['balance'] });

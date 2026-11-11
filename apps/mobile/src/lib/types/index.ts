@@ -34,7 +34,7 @@ export interface Notification {
   type: string;
   title: string;
   body: string;
-  payload: { orderId?: string; quoteId?: string; paymentId?: string };
+  payload: { orderId?: string; paymentId?: string };
   readAt: string | null;
   createdAt: string;
 }

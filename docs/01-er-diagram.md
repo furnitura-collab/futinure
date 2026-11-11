@@ -36,7 +36,6 @@ erDiagram
     warehouses ||--o{ orders : "pickup"
     orders ||--o{ order_items : ""
     product_variants ||--o{ order_items : ""
-    orders ||--o{ order_quotes : ""
     orders ||--o{ order_status_history : ""
     orders ||--o{ cutting_lists : ""
     cutting_lists ||--o{ cutting_parts : ""
@@ -181,9 +180,8 @@ Narx tanlash qoidasi (bitta joyda, `PricingService`): mijoz guruhi narxi, pog'on
 | total_weight_kg, total_volume_m3 | numeric | |
 | customer_comment | text | |
 | idempotency_key | varchar | UNIQUE(customer_id, idempotency_key) |
-| current_quote_id | FK null | |
 | cancel_reason, cancelled_by | | |
-| confirmed_at, delivered_at, completed_at, cancelled_at | timestamptz | |
+| confirmed_at (qabul qilingan), delivered_at, completed_at, cancelled_at | timestamptz | |
 
 **order_items** — narx va nom SNAPSHOT
 | maydon | izoh |
@@ -195,19 +193,6 @@ Narx tanlash qoidasi (bitta joyda, `PricingService`): mijoz guruhi narxi, pog'on
 | unit_price, line_total | snapshot |
 | replaced_item_id | analog bo'lsa, asl qatorga havola |
 | status | `ACTIVE`, `REMOVED` (o'chirilgan qator tarix uchun saqlanadi) |
-
-**order_quotes** (taklif versiyalari)
-| maydon | izoh |
-|---|---|
-| order_id, version | UNIQUE pair |
-| created_by | menejer |
-| changes | jsonb: qator o'zgarishlari (eski → yangi), analoglar, xizmat narxi, yetkazish narxi va sanasi |
-| totals | jsonb: yangi summalar |
-| payment_terms, advance_amount, allowed_methods | taklif qilingan shartlar |
-| manager_note | |
-| status | `PENDING`, `ACCEPTED`, `REJECTED`, `SUPERSEDED`, `EXPIRED` |
-| customer_comment, responded_at | |
-| expires_at | narx shu sanagacha amal qiladi |
 
 **order_status_history**: `id, order_id, from_status, to_status, actor_id, comment, created_at`.
 

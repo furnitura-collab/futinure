@@ -4,7 +4,7 @@ Buyurtma statusini o'zgartirishning YAGONA joyi
 
     from app.modules.orders.state_machine import transition, UNSET
 
-    new_version = await transition(db, order, "CONFIRMED", actor, comment=..., data={"manager_id": actor.id})
+    new_version = await transition(db, order, "PREPARING", actor, comment=..., data={"manager_id": actor.id})
 
 Faqat umumiy qism: qoida tekshiruvi, optimistic lock, tarix, audit, outbox.
 O'tishga xos yon ta'sirlar (rezerv, ledger) chaqiruvchi tomonidan o'sha tranzaksiyada qilinadi.
@@ -53,6 +53,21 @@ def opt(value: Any) -> Any:
     return UNSET if value is None else value
 
 
+def ensure_allowed(order: TransitionTarget, to: str, actor: AuthUser | None, comment: str | None) -> None:
+    """Qoida tekshiruvi (kim, qayerdan, qayerga). Yon ta'sirli tekshiruvlardan oldin ham chaqiriladi — ruxsat yo'q bo'lsa 403"""
+    check = check_transition(
+        from_status=order.status,
+        to=to,
+        role=actor.role if actor else None,
+        delivery_type=order.delivery_type,
+        comment=comment,
+    )
+    if not check.ok:
+        reason = str(check.reason)
+        status = 403 if reason == "FORBIDDEN_ROLE" else 409
+        raise AppError(f"TRANSITION_{reason}", REASON_MESSAGES[reason], status, {"from": order.status, "to": to})
+
+
 async def transition(
     db: AsyncSession,
     order: TransitionTarget,
@@ -68,21 +83,12 @@ async def transition(
     Qaytaradi: yangi versiya. Xato: TRANSITION_* (403/409), ORDER_CONFLICT (409).
     """
     text_comment = None if comment is UNSET else comment
-    check = check_transition(
-        from_status=order.status,
-        to=to,
-        role=actor.role if actor else None,
-        delivery_type=order.delivery_type,
-        comment=text_comment,
-    )
-    if not check.ok:
-        reason = str(check.reason)
-        status = 403 if reason == "FORBIDDEN_ROLE" else 409
-        raise AppError(f"TRANSITION_{reason}", REASON_MESSAGES[reason], status, {"from": order.status, "to": to})
+    ensure_allowed(order, to, actor, text_comment)
 
     now = utcnow()
     timestamps: dict[str, Any] = {}
-    if to == "CONFIRMED":
+    # Menejer qabul qilgan vaqt (yig'ishga berilganda)
+    if to == "PREPARING" and order.status == "NEW":
         timestamps["confirmed_at"] = now
     if to == "DELIVERED":
         timestamps["delivered_at"] = now

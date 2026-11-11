@@ -58,13 +58,10 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 | POST | `/orders` | Header `Idempotency-Key` (8–64 belgi, majburiy). Body: `{ deliveryType, addressId \| warehouseId, deliveryDate?, comment? }`. Tovarlar **server savatidan** olinadi (mijoz narx yubora olmaydi). Yangi → 201; shu kalit bilan takror → 200 + `Idempotent-Replayed: true`. Savatda to'sqinlik qiluvchi muammo → 409 `CART_HAS_ISSUES`. Ism kiritilmagan → 422 `PROFILE_INCOMPLETE` |
 | GET | `/orders` | `?status&active=true\|false&page&limit`. Har kartada `preview` (birinchi 3 tovar: nom, miqdor, birlik), `balanceDue`, `amountDue` (hozir to'lanishi kerak summa, tekshirilayotgan cheklar ayirilgan; `amountDueNow` — `@mebel/shared`), `paymentTerms` |
 | GET | `/me/buy-again` | (CUSTOMER) oldin buyurtma qilingan, hozir sotuvdagi variantlar (12 ta, eng so'nggisi birinchi): `lastQty`, joriy `unitPrice`, `stockLevel`, `product` kartasi. Bekor qilingan buyurtmalar hisobga olinmaydi |
-| GET | `/orders/:id` | tarkib, summalar (`balanceDue`), to'lovlar, tarix, `amountDue`, `pendingQuote` (javob kutayotgan taklif, eski → yangi qatorlar bilan) |
-| POST | `/orders/:id/cancel` | `{ reason }` — faqat NEW/QUOTED |
-| GET | `/orders/:id/quotes` | barcha versiyalar |
-| POST | `/orders/:id/quotes/:quoteId/accept` | → CONFIRMED + tovar band qilinadi. Tovar tugab qolgan bo'lsa 409 `INSUFFICIENT_STOCK`, buyurtma QUOTED da qoladi |
-| POST | `/orders/:id/quotes/:quoteId/reject` | `{ comment }` |
+| GET | `/orders/:id` | tarkib, summalar (`balanceDue`), to'lovlar, tarix, `amountDue` (yangi buyurtmada — shartlar saqlangandan keyin avans) |
+| POST | `/orders/:id/cancel` | `{ reason }` — faqat NEW |
 | POST | `/uploads/receipts` | multipart `file` (JPG/PNG/WEBP/PDF, 10 MB) → `{ id }`. Yopiq saqlanadi |
-| POST | `/orders/:id/payments` | `{ amount, method: CARD_TRANSFER\|BANK_TRANSFER, receiptUploadId, comment? }` → PENDING. Faqat CONFIRMED dan keyin, kelishilgan usul bilan, qoldiqdan (kutilayotganlar hisobga olinib) oshmasin. Bir vaqtda ko'pi bilan 5 ta kutilayotgan |
+| POST | `/orders/:id/payments` | `{ amount, method: CARD_TRANSFER\|BANK_TRANSFER, receiptUploadId, comment? }` → PENDING. Shartlar belgilangandan keyin (yangi buyurtmada ham — avans), kelishilgan usul bilan, qoldiqdan (kutilayotganlar hisobga olinib) oshmasin. Bir vaqtda ko'pi bilan 5 ta kutilayotgan |
 | GET | `/payments/:id/receipt` | chek fayli — egasi yoki menejer |
 | GET | `/orders/:id/messages` | `?before=<messageId>&limit` → `{ items (eskidan yangiga), hasMore }`. Mijoz va menejer bir xil yo'ldan |
 | POST | `/orders/:id/messages` | `{ text?, attachmentUploadId? }` (fayl avval `/uploads/chat` ga) |
@@ -98,10 +95,10 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 | GET | `/admin/orders` | `?status&managerId=<id>\|none&customerId&q&from&to&page&limit`. `q` — raqam, ism, firma yoki telefon |
 | GET | `/admin/orders/kanban` | faol statuslar bo'yicha ustunlar: `[{ status, total, items }]`, eng uzoq kutayotgan birinchi |
 | GET | `/admin/orders/managers` | biriktirish uchun menejerlar |
-| GET | `/admin/orders/:id` | to'liq + har qatorda qoldiq holati (`stock.shortage`), `creditCheck`, `availableTransitions`, takliflar, tarix (kim qilgan) |
-| PATCH | `/admin/orders/:id/assign` | `{ managerId \| null }`. Versiyani oshirmaydi — mijozdagi taklif eskirmaydi |
-| POST | `/admin/orders/:id/quotes` | `{ paymentTerms, advanceAmount, allowedMethods, deliveryFee, discountTotal, deliveryDate?, itemChanges[{itemId, qty, unitPrice?}], replacements[{itemId, variantId, qty, unitPrice?}], additions[{variantId, qty, unitPrice?}], note?, expiresInHours?, expectedVersion? }` → `{ quote, warnings, order }`. NEW → QUOTED; QUOTED bo'lsa eski taklif SUPERSEDED |
-| POST | `/admin/orders/:id/transition` | `{ to, comment?, expectedVersion?, terms? (NEW→CONFIRMED uchun), overrideCreditLimit?, overrideAdvance?, receiverName? (olib ketishda) }`. Omborchi va haydovchi ham ishlatadi — ruxsatni state machine tekshiradi |
+| GET | `/admin/orders/:id` | to'liq + har qatorda qoldiq holati (`stock.shortage`), `creditCheck`, `availableTransitions`, `canSetTerms`, tarix (kim qilgan) |
+| PATCH | `/admin/orders/:id/assign` | `{ managerId \| null }`. Versiyani oshirmaydi |
+| PUT | `/admin/orders/:id/terms` | `{ terms: { paymentTerms, advanceAmount, allowedMethods, deliveryFee, discountTotal, deliveryDate?, vehicleType? }, expectedVersion? }` — faqat NEW (`TERMS_ONLY_NEW`); status o'zgarmaydi. Oldindan to'lovda mijozga "X so'm to'lang" xabari |
+| POST | `/admin/orders/:id/transition` | `{ to, comment?, expectedVersion?, terms? (NEW→PREPARING: saqlanmagan bo'lsa majburiy), overrideCreditLimit?, overrideAdvance?, receiverName? (olib ketishda) }`. Omborchi va haydovchi ham ishlatadi — ruxsatni state machine tekshiradi |
 | GET | `/admin/orders/:id/documents/:type.pdf` | `invoice` (schyot), `waybill` (nakladnoy), `cutting-card` — 2-bosqich |
 
 ### To'lovlar
@@ -166,7 +163,7 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 ## Omborchi (`/warehouse/*`, rol: WAREHOUSE)
 | Metod | Yo'l | Izoh |
 |---|---|---|
-| GET | `/warehouse/tasks` | CONFIRMED/PREPARING buyurtmalar, picking list |
+| GET | `/warehouse/tasks` | PREPARING buyurtmalar, picking list |
 | POST | `/warehouse/orders/:id/start` | → PREPARING |
 | POST | `/warehouse/cutting-lists/:id/done` | |
 | POST | `/warehouse/orders/:id/ready` | → READY |
@@ -179,7 +176,7 @@ Haydovchi faqat o'ziga biriktirilgan buyurtmani ko'radi va o'zgartiradi (boshqas
 
 | Metod | Yo'l | Izoh |
 |---|---|---|
-| GET | `/driver/deliveries` | `{ today, active[], done[] }`: faol (CONFIRMED…OUT_FOR_DELIVERY, reja sanasi bo'yicha) va bugun topshirilganlar |
+| GET | `/driver/deliveries` | `{ today, active[], done[] }`: faol (PREPARING…OUT_FOR_DELIVERY, reja sanasi bo'yicha) va bugun topshirilganlar |
 | GET | `/driver/deliveries/:orderId` | + tovarlar ro'yxati |
 | POST | `/driver/deliveries/:orderId/start` | `{ expectedVersion? }` READY → OUT_FOR_DELIVERY, delivery `IN_TRANSIT` |
 | POST | `/driver/uploads/proof` | multipart `file` — topshirish surati (yopiq fayl) |
@@ -191,7 +188,7 @@ Menejer:
 | Metod | Yo'l | Izoh |
 |---|---|---|
 | GET | `/admin/drivers` | faol haydovchilar + faol yetkazishlar soni |
-| PUT | `/admin/orders/:id/delivery` | `{ driverId \| null, scheduledDate?, slot?, vehicleType? }` — faqat CONFIRMED/PREPARING/READY da (`DELIVERY_LOCKED`). Haydovchiga push + `delivery.assigned` real-time |
+| PUT | `/admin/orders/:id/delivery` | `{ driverId \| null, scheduledDate?, slot?, vehicleType? }` — faqat PREPARING/READY da (`DELIVERY_LOCKED`). Haydovchiga push + `delivery.assigned` real-time |
 | GET | `/admin/orders/:id/delivery/proof` | topshirish surati (xodimlar, o'sha haydovchi) |
 
 ## WebSocket (Socket.IO, namespace `/rt`)
@@ -203,7 +200,7 @@ Ko'p server nusxasi uchun Redis adapter. Event nomlari: `@mebel/shared` → `RT`
 |---|---|---|
 | `order.created` | staff | buyurtma kartochkasi (ovozli signal) |
 | `order.status_changed` | staff, mijoz, order | `{ orderId, number, from, to, version }` |
-| `order.quote_created` | mijoz, order | `{ orderId, quoteId }` |
+| `order.terms_set` | xodimlar, mijoz, order | `{ orderId, number, version }` |
 | `payment.created` | staff | to'lov (chek tekshiruv navbati) |
 | `payment.updated` | mijoz, staff, order | `{ id, status, amount, orderId, rejectReason }` |
 | `chat.message` | order; mijoz xabari — staff, menejer xabari — mijoz | xabar + `orderNumber` |
@@ -212,9 +209,9 @@ Ko'p server nusxasi uchun Redis adapter. Event nomlari: `@mebel/shared` → `RT`
 
 **Yetkazish kafolati:** hodisalar o'zgarish bilan bir tranzaksiyada `outbox_events` ga yoziladi, dispatcher (500 ms) tarqatadi. Xato bo'lsa — eksponensial qayta urinish (8 marta). Bildirishnoma `(event_id, user_id)` bo'yicha bir marta.
 
-**Mijozga push** (Expo): taklif, tasdiq, tayyorlanmoqda, tayyor / olib ketishga tayyor, yo'lda, topshirildi, bekor qilindi, taklif muddati o'tdi, to'lov qabul qilindi/rad etildi, menejer xabari, nasiya eslatmasi (2 kun oldin, muddat kuni, keyin har 3 kunda). Matn foydalanuvchi tilida (uz/ru).
+**Mijozga push** (Expo): to'lov kutilmoqda (oldindan to'lov shartlari), qabul qilindi, tayyor / olib ketishga tayyor, yo'lda, topshirildi, bekor qilindi, to'lov qabul qilindi/rad etildi, menejer xabari, nasiya eslatmasi (2 kun oldin, muddat kuni, keyin har 3 kunda). Matn foydalanuvchi tilida (uz/ru).
 
-**Telegram (xodimlar guruhi):** yangi buyurtma, yangi chek, mijoz taklifni qabul/rad qildi, mijoz bekor qildi.
+**Telegram (xodimlar guruhi):** yangi buyurtma, yangi chek, mijoz bekor qildi.
 
 ## Tashqi integratsiyalar
 - SMS: Eskiz.uz (adapter interfeysi orqali, almashtirish oson)

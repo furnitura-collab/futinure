@@ -2,25 +2,23 @@ import { businessDate } from './dates.js';
 import type { Locale, OrderStatus, PaymentTerms } from './enums.js';
 
 /**
- * Mijozga ko'rinadigan 5 bosqich. Ichki statuslar (9 ta) mijoz uchun ortiqcha —
+ * Mijozga ko'rinadigan 4 bosqich. Ichki statuslar (7 ta) mijoz uchun ortiqcha —
  * Uber Eats / Amazon kabi qisqa va tushunarli kuzatuv.
  */
-export const CUSTOMER_STAGES = ['PLACED', 'AGREED', 'PREPARING', 'ON_THE_WAY', 'HANDED_OVER'] as const;
+export const CUSTOMER_STAGES = ['PLACED', 'PREPARING', 'ON_THE_WAY', 'HANDED_OVER'] as const;
 export type CustomerStage = (typeof CUSTOMER_STAGES)[number];
 
 const STAGE_OF: Record<OrderStatus, number> = {
   NEW: 0,
-  QUOTED: 0,
-  CONFIRMED: 1,
-  PREPARING: 2,
-  READY: 3,
-  OUT_FOR_DELIVERY: 3,
-  DELIVERED: 4,
-  COMPLETED: 4,
+  PREPARING: 1,
+  READY: 2,
+  OUT_FOR_DELIVERY: 2,
+  DELIVERED: 3,
+  COMPLETED: 3,
   CANCELLED: -1,
 };
 
-/** Joriy bosqich indeksi (0–4); bekor qilingan buyurtma — -1 */
+/** Joriy bosqich indeksi (0–3); bekor qilingan buyurtma — -1 */
 export function customerStage(status: OrderStatus): number {
   return STAGE_OF[status];
 }
@@ -44,11 +42,11 @@ const AT_HANDOVER: readonly OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY', ...AFT
 
 /**
  * Mijoz HOZIR to'lashi kerak bo'lgan summa (0 — hozircha to'lov kutilmaydi).
- * Qoidalar API'dagi PREPARING oldi tekshiruvi bilan bir xil: PREPAID — hammasi, ADVANCE — avans,
- * topshirishda — tayyor bo'lganda, nasiya — muddati kelganda.
+ * Shartlar belgilanmaguncha (yangi buyurtma) to'lov yo'q. Qoidalar API'dagi PREPARING oldi tekshiruvi bilan
+ * bir xil: PREPAID — hammasi, ADVANCE — avans, topshirishda — tayyor bo'lganda, nasiya — muddati kelganda.
  */
 export function amountDueNow(o: AmountDueInput): number {
-  if (!o.paymentTerms || o.status === 'CANCELLED' || customerStage(o.status) < 1) return 0;
+  if (!o.paymentTerms || o.status === 'CANCELLED') return 0;
   const balance = o.grandTotal - o.paidTotal;
   let required: number;
   switch (o.paymentTerms) {

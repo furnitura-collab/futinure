@@ -13,7 +13,7 @@ from app.db import transaction
 from app.models import CustomerProfile, Payment, Upload
 from app.modules.orders.lock import lock_order
 from app.modules.payments.schemas import MAX_PENDING_PAYMENTS, CustomerPaymentInput, PageParams
-from app.modules.payments.service_common import PAYABLE, _exceeds, _load, _pending_sum, payment_json
+from app.modules.payments.service_common import _exceeds, _load, _pending_sum, payable, payment_json
 from app.services.outbox import add_event
 from app.services.storage import RECEIPT_PURPOSE
 
@@ -26,7 +26,7 @@ async def report_for_order(db: AsyncSession, customer: AuthUser, order_id: str, 
         order = await lock_order(db, order_id)
         if order.customer_id != customer.id:
             raise AppError.not_found("Buyurtma")
-        if order.status not in PAYABLE:
+        if not payable(order):
             raise AppError(
                 "ORDER_NOT_PAYABLE",
                 "To'lov menejer shartlarni tasdiqlagandan keyin qilinadi",

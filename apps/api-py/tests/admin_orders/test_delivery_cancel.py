@@ -19,9 +19,8 @@ async def assign_driver(env: Env, order_id: str) -> None:
 async def test_delivery_out_failed_returned_resent_delivered(env: Env):
     c = env.c
     o = await env.place_order([(c.white.id, 12)], delivery=True)
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms(deliveryFee=80_000)}), 200)
+    expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms(deliveryFee=80_000)}), 200)
     await assign_driver(env, o["id"])
-    expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 200)
     expect(await env.go(o["id"], env.manager, {"to": "READY"}), 200)
     # Yetkazishda omborchi topshira olmaydi
     wrong = expect(await env.go(o["id"], env.warehouse, {"to": "DELIVERED", "receiverName": "Aziz"}), 409)
@@ -43,9 +42,8 @@ async def test_delivery_out_failed_returned_resent_delivered(env: Env):
 async def test_on_order_item_not_shipped_until_received(ctx: Ctx, env: Env):
     c = env.c
     o = await env.place_order([(c.slide_v.id, 2)], delivery=True)
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms()}), 200)
+    expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms()}), 200)
     await assign_driver(env, o["id"])
-    expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 200)
     expect(await env.go(o["id"], env.manager, {"to": "READY"}), 200)
     res = expect(await env.go(o["id"], env.driver, {"to": "OUT_FOR_DELIVERY"}), 409)
     assert_matches(
@@ -62,10 +60,10 @@ async def test_on_order_item_not_shipped_until_received(ctx: Ctx, env: Env):
 # ───────────────────────── Bekor qilish ─────────────────────────
 
 
-async def test_cancel_confirmed_releases_reserve(ctx: Ctx, env: Env):
+async def test_cancel_preparing_releases_reserve(ctx: Ctx, env: Env):
     c = env.c
     o = await env.place_order([(c.white.id, 12)])
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms()}), 200)
+    expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms()}), 200)
     expect(await env.go(o["id"], env.manager, {"to": "CANCELLED"}), 409)  # sabab kerak
     expect(await env.go(o["id"], env.manager, {"to": "CANCELLED", "comment": "Mijoz rad etdi"}), 200)
     assert await env.reserved(c.white.id) == "0"
@@ -76,8 +74,7 @@ async def test_cancel_confirmed_releases_reserve(ctx: Ctx, env: Env):
 async def test_only_super_admin_cancels_ready(env: Env):
     c = env.c
     o = await env.place_order([(c.white.id, 12)])
-    expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms()}), 200)
-    expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 200)
+    expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms()}), 200)
     expect(await env.go(o["id"], env.manager, {"to": "READY"}), 200)
     expect(await env.go(o["id"], env.manager, {"to": "CANCELLED", "comment": "x x x"}), 403)
     expect(await env.go(o["id"], env.admin, {"to": "CANCELLED", "comment": "Mijoz voz kechdi"}), 200)

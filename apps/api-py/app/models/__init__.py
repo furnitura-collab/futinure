@@ -22,7 +22,6 @@ from app.models.base import (
     PAYMENT_TERMS,
     PRICE_CHANGE_SOURCE,
     PRODUCT_KIND,
-    QUOTE_STATUS,
     ROLE,
     STOCK_MOVEMENT_TYPE,
     UNIT,
@@ -51,7 +50,7 @@ from app.models.catalog import (
     Warehouse,
 )
 from app.models.deliveries import Delivery, DeliverySlot, DeliveryZone, VehicleType
-from app.models.orders import CartItem, CuttingList, CuttingPart, Favorite, Order, OrderItem, OrderQuote, OrderStatusHistory
+from app.models.orders import CartItem, CuttingList, CuttingPart, Favorite, Order, OrderItem, OrderStatusHistory
 from app.models.payments import LedgerEntry, Payment
 from app.models.system import AuditLog, ChatMessage, Notification, OutboxEvent, Setting, Upload
 from app.models.users import Address, CustomerProfile, DeviceToken, OtpCode, PriceGroup, RefreshSession, User
@@ -71,7 +70,6 @@ __all__ = [
     "PAYMENT_TERMS",
     "PAYMENT_METHOD",
     "PAYMENT_STATUS",
-    "QUOTE_STATUS",
     "LEDGER_TYPE",
     "STOCK_MOVEMENT_TYPE",
     "ORDER_ITEM_STATUS",
@@ -108,7 +106,6 @@ __all__ = [
     "Favorite",
     "Order",
     "OrderItem",
-    "OrderQuote",
     "OrderStatusHistory",
     "CuttingList",
     "CuttingPart",

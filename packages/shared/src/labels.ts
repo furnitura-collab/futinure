@@ -8,7 +8,6 @@ import type {
   PaymentMethod,
   PaymentStatus,
   PaymentTerms,
-  QuoteStatus,
   Role,
   Unit,
 } from './enums.js';
@@ -20,8 +19,6 @@ export const LABELS = {
   orderStatus: {
     uz: {
       NEW: 'Yangi',
-      QUOTED: 'Taklif yuborildi',
-      CONFIRMED: 'Kelishildi',
       PREPARING: "Yig'ilmoqda",
       READY: 'Tayyor',
       OUT_FOR_DELIVERY: "Yo'lda",
@@ -31,8 +28,6 @@ export const LABELS = {
     },
     ru: {
       NEW: 'Новый',
-      QUOTED: 'Предложение отправлено',
-      CONFIRMED: 'Согласован',
       PREPARING: 'Собирается',
       READY: 'Готов',
       OUT_FOR_DELIVERY: 'В пути',
@@ -42,8 +37,6 @@ export const LABELS = {
     },
     en: {
       NEW: 'New',
-      QUOTED: 'Quote sent',
-      CONFIRMED: 'Confirmed',
       PREPARING: 'Preparing',
       READY: 'Ready',
       OUT_FOR_DELIVERY: 'Out for delivery',
@@ -77,11 +70,6 @@ export const LABELS = {
     en: { PENDING: 'Under review', CONFIRMED: 'Confirmed', REJECTED: 'Rejected' },
   } satisfies Labels<PaymentStatus>,
 
-  quoteStatus: {
-    uz: { PENDING: 'Javob kutilmoqda', ACCEPTED: 'Qabul qilindi', REJECTED: 'Rad etildi', SUPERSEDED: 'Yangisi bilan almashdi', EXPIRED: "Muddati o'tdi" },
-    ru: { PENDING: 'Ожидает ответа', ACCEPTED: 'Принято', REJECTED: 'Отклонено', SUPERSEDED: 'Заменено новым', EXPIRED: 'Срок истёк' },
-    en: { PENDING: 'Awaiting reply', ACCEPTED: 'Accepted', REJECTED: 'Rejected', SUPERSEDED: 'Superseded', EXPIRED: 'Expired' },
-  } satisfies Labels<QuoteStatus>,
 
   stockLevel: {
     uz: { IN_STOCK: 'Bor', LOW: 'Kam qoldi', ON_ORDER: 'Buyurtmaga', OUT_OF_STOCK: 'Tugagan' },
@@ -136,8 +124,6 @@ export const API_ERRORS: Record<Locale, Record<string, string>> = {
     PASSWORD_NOT_SET: "Parol o'rnatilmagan — administratorga murojaat qiling",
     PHONE_TAKEN: "Bu raqam allaqachon ro'yxatdan o'tgan",
     CANNOT_MODIFY_SELF: "O'z hisobingizni o'chira yoki rolini tushira olmaysiz",
-    QUOTE_EXPIRED: "Taklif muddati o'tgan — menejer yangisini yuboradi",
-    QUOTE_NOT_ACTIVE: 'Bu taklif endi amal qilmaydi',
     INSUFFICIENT_STOCK: "Omborda yetarli tovar yo'q",
     AMOUNT_EXCEEDS_DUE: 'Summa qoldiqdan katta',
     METHOD_NOT_ALLOWED: "Bu to'lov usuli kelishilmagan",
@@ -162,8 +148,6 @@ export const API_ERRORS: Record<Locale, Record<string, string>> = {
     PASSWORD_NOT_SET: 'Пароль не установлен — обратитесь к администратору',
     PHONE_TAKEN: 'Этот номер уже зарегистрирован',
     CANNOT_MODIFY_SELF: 'Нельзя отключить свой аккаунт или понизить свою роль',
-    QUOTE_EXPIRED: 'Срок предложения истёк — менеджер пришлёт новое',
-    QUOTE_NOT_ACTIVE: 'Это предложение больше не действует',
     INSUFFICIENT_STOCK: 'Недостаточно товара на складе',
     AMOUNT_EXCEEDS_DUE: 'Сумма больше остатка',
     METHOD_NOT_ALLOWED: 'Этот способ оплаты не согласован',
@@ -188,8 +172,6 @@ export const API_ERRORS: Record<Locale, Record<string, string>> = {
     PASSWORD_NOT_SET: 'No password set — please contact your administrator',
     PHONE_TAKEN: 'This phone number is already registered',
     CANNOT_MODIFY_SELF: 'You cannot deactivate or demote your own account',
-    QUOTE_EXPIRED: 'The quote has expired — the manager will send a new one',
-    QUOTE_NOT_ACTIVE: 'This quote is no longer valid',
     INSUFFICIENT_STOCK: 'Not enough stock in the warehouse',
     AMOUNT_EXCEEDS_DUE: 'Amount exceeds the balance due',
     METHOD_NOT_ALLOWED: 'This payment method was not agreed',

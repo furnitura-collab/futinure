@@ -17,9 +17,7 @@ interface Action {
   onPress: () => void;
 }
 
-const openOrder = (id: string) => router.push({ pathname: '/order/[id]', params: { id } });
-
-/** "Sizdan kutilmoqda" — taklif, to'lov, yangi xabar. Hech narsa bo'lmasa — umuman ko'rinmaydi */
+/** "Sizdan kutilmoqda" — to'lov, yangi xabar. Hech narsa bo'lmasa — umuman ko'rinmaydi */
 export function ActionCards() {
   const { t, money } = useI18n();
   const { colors } = useTheme();
@@ -38,9 +36,7 @@ export function ActionCards() {
     });
   }
   for (const o of orders.data?.items ?? []) {
-    if (o.hasPendingQuote) {
-      actions.push({ key: `q${o.id}`, tone: 'violet', title: t('actQuoteTitle', { number: o.number }), text: t('actQuoteText'), button: t('reviewQuote'), onPress: () => openOrder(o.id) });
-    } else if (o.amountDue > 0) {
+    if (o.amountDue > 0) {
       actions.push({
         key: `p${o.id}`,
         tone: 'warning',

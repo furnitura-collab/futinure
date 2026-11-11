@@ -12,8 +12,9 @@ import re
 from collections.abc import Sequence
 from pathlib import Path
 
-from alembic import op
 from sqlalchemy import text
+
+from alembic import op
 
 revision: str = "0001_baseline"
 down_revision: str | None = None

@@ -24,8 +24,6 @@ export type Availability = (typeof AVAILABILITIES)[number];
 
 export const ORDER_STATUSES = values(
   'NEW',
-  'QUOTED',
-  'CONFIRMED',
   'PREPARING',
   'READY',
   'OUT_FOR_DELIVERY',
@@ -46,9 +44,6 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const PAYMENT_STATUSES = values('PENDING', 'CONFIRMED', 'REJECTED');
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
-
-export const QUOTE_STATUSES = values('PENDING', 'ACCEPTED', 'REJECTED', 'SUPERSEDED', 'EXPIRED');
-export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
 
 export const LEDGER_TYPES = values('DEBIT', 'CREDIT', 'ADJUSTMENT', 'REFUND');
 export type LedgerType = (typeof LEDGER_TYPES)[number];

@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
-import type { DeliveryStatus, OrderStatus, PaymentStatus, QuoteStatus, StockLevel } from '@mebel/shared';
+import type { DeliveryStatus, OrderStatus, PaymentStatus, StockLevel } from '@mebel/shared';
 import { useI18n } from '@/i18n';
 import { Badge } from '@/components/ui/badge';
 import type { Tone } from './tone';
 
 const ORDER_TONE: Record<OrderStatus, Tone> = {
   NEW: 'info',
-  QUOTED: 'violet',
-  CONFIRMED: 'primary',
   PREPARING: 'warning',
   READY: 'teal',
   OUT_FOR_DELIVERY: 'info',
@@ -18,14 +16,12 @@ const ORDER_TONE: Record<OrderStatus, Tone> = {
 
 const PAYMENT_TONE: Record<PaymentStatus, Tone> = { PENDING: 'warning', CONFIRMED: 'success', REJECTED: 'destructive' };
 const DELIVERY_TONE: Record<DeliveryStatus, Tone> = { ASSIGNED: 'info', IN_TRANSIT: 'teal', DELIVERED: 'success', FAILED: 'destructive' };
-const QUOTE_TONE: Record<QuoteStatus, Tone> = { PENDING: 'violet', ACCEPTED: 'success', REJECTED: 'destructive', SUPERSEDED: 'neutral', EXPIRED: 'neutral' };
 const STOCK_TONE: Record<StockLevel, Tone> = { IN_STOCK: 'success', LOW: 'warning', ON_ORDER: 'info', OUT_OF_STOCK: 'destructive' };
 
 type StatusProps =
   | { kind: 'orderStatus'; value: OrderStatus }
   | { kind: 'paymentStatus'; value: PaymentStatus }
   | { kind: 'deliveryStatus'; value: DeliveryStatus }
-  | { kind: 'quoteStatus'; value: QuoteStatus }
   | { kind: 'stockLevel'; value: StockLevel };
 
 type Props = (StatusProps | { kind?: undefined; tone: Tone; children: ReactNode }) & { className?: string };
@@ -49,10 +45,6 @@ export function StatusBadge(props: Props) {
     case 'deliveryStatus':
       tone = DELIVERY_TONE[props.value];
       text = label('deliveryStatus', props.value);
-      break;
-    case 'quoteStatus':
-      tone = QUOTE_TONE[props.value];
-      text = label('quoteStatus', props.value);
       break;
     case 'stockLevel':
       tone = STOCK_TONE[props.value];

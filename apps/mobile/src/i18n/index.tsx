@@ -32,11 +32,11 @@ export const LANGUAGES: { value: Locale; label: string; short: string }[] = [
   { value: 'en', label: 'English', short: 'EN' },
 ];
 
-/** Mijozga NEW — "ko'rib chiqilmoqda", QUOTED — "taklif keldi" (admin panelda boshqacha nomlanadi) */
+/** Mijozga NEW — "ko'rib chiqilmoqda" (admin panelda boshqacha nomlanadi) */
 const CUSTOMER_STATUS: Record<Locale, Partial<Record<OrderStatus, string>>> = {
-  uz: { NEW: "Ko'rib chiqilmoqda", QUOTED: 'Taklif keldi' },
-  ru: { NEW: 'На рассмотрении', QUOTED: 'Есть предложение' },
-  en: { NEW: 'Under review', QUOTED: 'Quote received' },
+  uz: { NEW: "Ko'rib chiqilmoqda" },
+  ru: { NEW: 'На рассмотрении' },
+  en: { NEW: 'Under review' },
 };
 
 const LOCALE_KEY = 'mebel.locale';
@@ -68,7 +68,7 @@ interface I18n {
   t: (key: Key, params?: Params) => string;
   money: (amount: number | null | undefined) => string;
   status: (s: OrderStatus) => string;
-  /** Taklif qatorlarida birlik oddiy satr bo'lib keladi — noma'lum bo'lsa o'zi qaytadi */
+  /** Birlik ba'zan oddiy satr bo'lib keladi — noma'lum bo'lsa o'zi qaytadi */
   unit: (u: Unit | string) => string;
   terms: (t: PaymentTerms) => string;
   method: (m: PaymentMethod) => string;

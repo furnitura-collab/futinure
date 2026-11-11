@@ -12,17 +12,16 @@ export function useActiveOrders() {
   });
 }
 
-/** Mijozdan harakat kutayotgan buyurtmalar soni (taklif, to'lov, yangi xabar) — tab va sayt sarlavhasidagi belgi */
+/** Mijozdan harakat kutayotgan buyurtmalar soni (to'lov, yangi xabar) — tab va sayt sarlavhasidagi belgi */
 export function useAttentionCount() {
   const orders = useActiveOrders();
   return orders.data?.items.filter((o) => orderAction(o)).length ?? 0;
 }
 
 /** Mijoz hozir nima qilishi kerak — bitta, eng muhimi */
-export type OrderAction = 'quote' | 'pay' | 'chat';
+export type OrderAction = 'pay' | 'chat';
 
-export function orderAction(o: { hasPendingQuote?: boolean; pendingQuote?: unknown; amountDue: number; unreadMessages?: number }): OrderAction | null {
-  if (o.hasPendingQuote || o.pendingQuote) return 'quote';
+export function orderAction(o: { amountDue: number; unreadMessages?: number }): OrderAction | null {
   if (o.amountDue > 0) return 'pay';
   if (o.unreadMessages) return 'chat';
   return null;
@@ -30,15 +29,14 @@ export function orderAction(o: { hasPendingQuote?: boolean; pendingQuote?: unkno
 
 /** Holat + "keyin nima bo'ladi" jumlasi. To'lov kutilayotgan bo'lsa — shu haqda */
 export function statusSentenceKey(status: OrderStatus, deliveryType: DeliveryType, amountDue: number): I18nKey {
-  if (amountDue > 0 && status === 'CONFIRMED') return 'sayCONFIRMED_PAY';
+  if (amountDue > 0 && status === 'NEW') return 'sayNEW_PAY';
   if (status === 'READY') return deliveryType === 'PICKUP' ? 'sayREADY_PICKUP' : 'sayREADY_DELIVERY';
   return `say${status}` as const;
 }
 
-/** 4-bosqich nomi yetkazish turiga bog'liq: "Yo'lda" yoki "Olib ketishga tayyor" */
+/** 3-bosqich nomi yetkazish turiga bog'liq: "Yo'lda" yoki "Olib ketishga tayyor" */
 export const stageKeys = (deliveryType: DeliveryType): I18nKey[] => [
   'stagePlaced',
-  'stageAgreed',
   'stagePreparing',
   deliveryType === 'PICKUP' ? 'stageReadyPickup' : 'stageOnTheWay',
   'stageHandedOver',

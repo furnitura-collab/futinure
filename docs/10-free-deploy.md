@@ -56,7 +56,7 @@ ko'rinishidagi URL — bu `REDIS_URL`.
   (Supabase → Storage → `catalog` da fayl paydo bo'ladi).
 
 ## 5. Uxlab qolmasligi uchun
-Render bepul server 15 daqiqa so'rov kelmasa to'xtaydi — fon vazifalari (taklif muddati, qarz eslatmasi,
+Render bepul server 15 daqiqa so'rov kelmasa to'xtaydi — fon vazifalari (qarz eslatmasi,
 Telegram xabarlari) ham to'xtaydi, birinchi kirish ~1 daqiqa kutadi.
 cron-job.org → bepul ro'yxatdan o'ting → **Create cronjob**: URL `https://mebel-order.onrender.com/api/v1/health`,
 har **10 daqiqada**.

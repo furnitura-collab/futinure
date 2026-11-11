@@ -67,6 +67,11 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       void qc.invalidateQueries({ queryKey: ['orders'] });
       void qc.invalidateQueries({ queryKey: ['order', e.orderId] });
     });
+    // Shartlar saqlandi (status NEW qoladi) — kartochka va tafsilot yangilanadi
+    s.on(RT.ORDER_TERMS_SET, (e: { orderId: string }) => {
+      void qc.invalidateQueries({ queryKey: ['orders'] });
+      void qc.invalidateQueries({ queryKey: ['order', e.orderId] });
+    });
     s.on(RT.PAYMENT_CREATED, (p: { amount: number; method: string }) => {
       beep();
       const amount = tr().money(p.amount);

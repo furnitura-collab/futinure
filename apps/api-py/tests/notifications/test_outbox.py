@@ -24,7 +24,7 @@ async def test_rolled_back_transaction_leaves_no_event(s: SimpleNamespace):
     ctx = s.ctx
     o = await place_order(s, 130)  # omborda 120
     await drain()
-    assert (await go(s, o["id"], {"to": "CONFIRMED", "terms": TERMS})).status_code == 409
+    assert (await go(s, o["id"], {"to": "PREPARING", "terms": TERMS})).status_code == 409
     assert await ctx.count(OutboxEvent, OutboxEvent.processed_at.is_(None)) == 0
 
 
@@ -45,7 +45,7 @@ async def test_handler_error_retried_later(s: SimpleNamespace):
 async def test_reprocessing_gives_no_duplicate_notification_or_push(s: SimpleNamespace):
     ctx = s.ctx
     o = await place_order(s)
-    assert (await go(s, o["id"], {"to": "CONFIRMED", "terms": TERMS})).status_code == 200
+    assert (await go(s, o["id"], {"to": "PREPARING", "terms": TERMS})).status_code == 200
     await drain()
     assert len(await notifications(s)) == 1
     assert len(ctx.push.sent) == 1

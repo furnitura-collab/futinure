@@ -17,7 +17,6 @@ from app.models import (
     Delivery,
     Order,
     OrderItem,
-    OrderQuote,
     OrderStatusHistory,
     Payment,
     PriceGroup,
@@ -26,7 +25,6 @@ from app.models import (
     Warehouse,
 )
 from app.modules.orders import inventory
-from app.modules.orders.quotes import present_quote
 from app.services.audit import audit
 
 # ───────────── Batafsil ─────────────
@@ -66,9 +64,6 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         if order.pickup_warehouse_id
         else None
     )
-    quotes = (
-        await db.scalars(fresh(select(OrderQuote).where(OrderQuote.order_id == order_id).order_by(OrderQuote.version.desc())))
-    ).all()
     history = (
         await db.scalars(
             fresh(
@@ -149,7 +144,6 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         },
         "manager": _user_pick(manager, "id", "fullName", "phone"),
         "pickupWarehouse": row(warehouse) if warehouse else None,
-        "quotes": [present_quote(q) for q in quotes],
         "statusHistory": [row(h, actor=actor_json(h.actor_id)) for h in history],
         "payments": [row(p) for p in payments],
         "delivery": row(delivery, driver=_user_pick(driver, "id", "fullName", "phone")) if delivery else None,
@@ -158,9 +152,9 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         "availableTransitions": [
             {"to": t.to, "requiresComment": t.requires_comment}
             for t in available_transitions(order.status, viewer.role, order.delivery_type)
-            if t.to != "QUOTED"
         ],
-        "canQuote": order.status in ("NEW", "QUOTED"),
+        # Shartlar (to'lov turi, yetkazish narxi) faqat qabul qilinmagan buyurtmada o'zgaradi
+        "canSetTerms": order.status == "NEW",
         "today": business_date(),
     }
 

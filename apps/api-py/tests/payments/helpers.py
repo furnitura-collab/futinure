@@ -39,9 +39,13 @@ class Env:
         )
         order_id: str = expect(res, 201).json()["id"]
         if terms:
-            body = {"to": "CONFIRMED", "terms": {"allowedMethods": ["CASH", "CARD_TRANSFER"], **terms}}
-            expect(await self.go(order_id, body), 200)
+            # Shartlar saqlanadi, buyurtma NEW'da qoladi — to'lov qabul qilinadi, yig'ishga deliver() beradi
+            expect(await self.set_terms(order_id, terms), 200)
         return order_id
+
+    async def set_terms(self, order_id: str, terms: dict[str, Any]) -> httpx.Response:
+        body = {"terms": {"allowedMethods": ["CASH", "CARD_TRANSFER"], **terms}}
+        return await self.ctx.http.put(f"/api/v1/admin/orders/{order_id}/terms", headers=self.manager, json=body)
 
     async def go(self, order_id: str, body: dict[str, Any], auth: Auth | None = None) -> httpx.Response:
         return await self.ctx.http.post(f"/api/v1/admin/orders/{order_id}/transition", headers=auth or self.manager, json=body)

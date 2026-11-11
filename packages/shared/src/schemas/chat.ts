@@ -31,7 +31,8 @@ export type NotificationsReadInput = z.infer<typeof notificationsReadSchema>;
 export const RT = {
   ORDER_CREATED: 'order.created',
   ORDER_STATUS_CHANGED: 'order.status_changed',
-  ORDER_QUOTE_CREATED: 'order.quote_created',
+  /** Yangi buyurtmaga shartlar saqlandi (oldindan to'lovda mijoz to'lovni shundan keyin qiladi) */
+  ORDER_TERMS_SET: 'order.terms_set',
   PAYMENT_CREATED: 'payment.created',
   PAYMENT_UPDATED: 'payment.updated',
   CHAT_MESSAGE: 'chat.message',

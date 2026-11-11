@@ -9,12 +9,13 @@ To'lovlar.
         await payments.create_driver_cash(db, order, amount, driver)  # haydovchi topshirishda olgan naqd
 """
 
-from app.modules.payments.service_common import METHOD_LABEL, PAYABLE, payment_json
+from app.modules.payments.service_common import METHOD_LABEL, PAYABLE, payable, payment_json
 from app.modules.payments.service_customer import create_driver_cash, customer_payments, report_for_debt, report_for_order
 from app.modules.payments.service_manager import confirm, get, list_payments, payment_info, receipt_for, record, reject
 
 __all__ = [
     "PAYABLE",
+    "payable",
     "METHOD_LABEL",
     "payment_json",
     "report_for_order",

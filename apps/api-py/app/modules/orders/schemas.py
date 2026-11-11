@@ -12,17 +12,14 @@ from pydantic import BeforeValidator
 
 from app.core.schemas import Schema, Uuid, custom_error, trimmed
 from app.modules.orders.schemas_admin import (
-    Addition,
     AdminOrderListQuery,
     AllowedMethods,
     AssignOrderInput,
-    ItemChange,
     OrderTermsInput,
-    QuoteInput,
-    Replacement,
+    SetTermsInput,
     TermsDict,
     TransitionInput,
-    quote_rule,
+    set_terms_rule,
     terms_rule,
     transition_rule,
 )
@@ -33,7 +30,6 @@ from app.modules.orders.schemas_common import (
     ORDER_STATUSES,
     PAYMENT_METHODS,
     PAYMENT_TERMS,
-    QUOTE_LINE_ACTIONS,
     DeliveryType,
     IsoDate,
     Issue,
@@ -55,14 +51,12 @@ __all__ = [
     "create_order_rule",
     "OrderListQuery",
     "CancelOrderInput",
-    "RejectQuoteInput",
     "IDEMPOTENCY_KEY_RE",
     "MAX_DELIVERY_DAYS_AHEAD",
     "ORDER_STATUSES",
     "DELIVERY_TYPES",
     "PAYMENT_TERMS",
     "PAYMENT_METHODS",
-    "QUOTE_LINE_ACTIONS",
     "Issue",
     "Rule",
     "zenum",
@@ -80,11 +74,8 @@ __all__ = [
     "TermsDict",
     "terms_rule",
     "OrderTermsInput",
-    "ItemChange",
-    "Replacement",
-    "Addition",
-    "QuoteInput",
-    "quote_rule",
+    "SetTermsInput",
+    "set_terms_rule",
     "TransitionInput",
     "transition_rule",
     "AssignOrderInput",
@@ -129,7 +120,3 @@ class OrderListQuery(Schema):
 
 class CancelOrderInput(Schema):
     reason: trimmed(3, 500)  # type: ignore[valid-type]
-
-
-class RejectQuoteInput(Schema):
-    comment: trimmed(3, 1000)  # type: ignore[valid-type]

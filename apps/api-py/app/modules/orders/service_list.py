@@ -10,7 +10,7 @@ from sqlalchemy.orm import aliased
 from app.core.serialize import pick
 from app.domain.customer_order import amount_due_now
 from app.domain.state_machine import TERMINAL_STATUSES
-from app.models import ChatMessage, Order, OrderItem, OrderQuote, Payment, User
+from app.models import ChatMessage, Order, OrderItem, Payment, User
 from app.modules.orders.schemas import OrderListQuery
 
 PREVIEW_ITEMS = 3
@@ -63,15 +63,6 @@ async def list_orders(db: AsyncSession, customer_id: str, q: OrderListQuery) -> 
     total = await db.scalar(select(func.count()).select_from(Order).where(*conds)) or 0
     ids = [o.id for o in orders]
 
-    quote_status = dict(
-        (
-            await db.execute(
-                select(OrderQuote.id, OrderQuote.status).where(
-                    OrderQuote.id.in_([o.current_quote_id for o in orders if o.current_quote_id])
-                )
-            )
-        ).all()  # noqa: E501
-    )
     preview: dict[str, list[dict[str, Any]]] = defaultdict(list)
     counts: dict[str, int] = defaultdict(int)
     for i in (
@@ -116,7 +107,6 @@ async def list_orders(db: AsyncSession, customer_id: str, q: OrderListQuery) -> 
                 "amountDue": amount_due(o, pending[o.id]),
                 "itemsCount": counts[o.id],
                 "unreadMessages": unread.get(o.id, 0),
-                "hasPendingQuote": o.status == "QUOTED" and quote_status.get(o.current_quote_id) == "PENDING",
             }
         )
     return {"items": items, "total": total, "page": q.page, "limit": q.limit}

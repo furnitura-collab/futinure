@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.domain.dates import day_range
-from app.models import ChatMessage, CustomerProfile, Order, OrderItem, OrderQuote, User
+from app.models import ChatMessage, CustomerProfile, Order, OrderItem, User
 from app.modules.orders.schemas import AdminOrderListQuery
 
-KANBAN_STATUSES = ("NEW", "QUOTED", "CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY", "DELIVERED")
+KANBAN_STATUSES = ("NEW", "PREPARING", "READY", "OUT_FOR_DELIVERY", "DELIVERED")
 KANBAN_LIMIT = 50
 
 
@@ -43,16 +43,6 @@ async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
             )
         ).all()
     }
-    quotes = {
-        q.id: q
-        for q in (
-            await db.execute(
-                select(OrderQuote.id, OrderQuote.status, OrderQuote.expires_at).where(
-                    OrderQuote.id.in_([o.current_quote_id for o in orders if o.current_quote_id])
-                )
-            )
-        ).all()
-    }
     counts = dict(
         (
             await db.execute(
@@ -69,7 +59,6 @@ async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
         c = users[o.customer_id]
         p = profiles.get(o.customer_id)
         m = users.get(o.manager_id) if o.manager_id else None
-        q = quotes.get(o.current_quote_id) if o.current_quote_id else None
         out.append(
             {
                 "id": o.id,
@@ -89,7 +78,6 @@ async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
                     "customerProfile": {"type": p.type, "companyName": p.company_name} if p else None,
                 },
                 "manager": {"id": m.id, "fullName": m.full_name} if m else None,
-                "currentQuote": {"status": q.status, "expiresAt": q.expires_at} if q else None,
                 "itemsCount": counts.get(o.id, 0),
                 "unreadMessages": unread.get(o.id, 0),
                 "balanceDue": o.grand_total - o.paid_total,

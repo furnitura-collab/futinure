@@ -16,7 +16,7 @@ import { useApiMutation } from '@/lib/mutation';
 import type { Driver, OrderDetail } from '@/lib/types';
 
 /** Yo'lga chiqqunga qadar haydovchini almashtirish mumkin (API'dagi qoida bilan bir xil) */
-const ASSIGNABLE: OrderStatus[] = ['CONFIRMED', 'PREPARING', 'READY'];
+const ASSIGNABLE: OrderStatus[] = ['PREPARING', 'READY'];
 
 /** Yetkazish: haydovchi biriktirish va topshirish natijasi (surat, qabul qilgan, naqd) */
 export function DeliveryCard({ order }: { order: OrderDetail }) {

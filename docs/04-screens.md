@@ -21,14 +21,13 @@ Bosqich belgisi: **[1]** MVP, **[2]** 2-bosqich, **[3]** 3-bosqich.
 12. **Buyurtma yuborildi** [1]: raqam, "menejer tez orada ko'rib chiqadi"
 
 ### Buyurtmalar
-13. **Buyurtmalar ro'yxati** [1]: faol / tarix, status belgilari, "Taklif keldi" badge
+13. **Buyurtmalar ro'yxati** [1]: faol / tarix, status belgilari, "To'lov kutilmoqda" badge
 14. **Buyurtma sahifasi** [1]:
     - status timeline (tarix bilan)
     - tarkib, summalar: jami / to'langan / qoldiq
     - yetkazish ma'lumoti
     - to'lov yo'riqnomasi (karta raqami, nusxalash) + "Chek yuklash"
-    - "Chat" tugmasi, "Qayta buyurtma", "Bekor qilish" (NEW/QUOTED)
-15. **Taklifni ko'rish** [1]: o'zgarishlar diff ko'rinishida (eski → yangi miqdor/narx, analog mahsulot rasmi bilan), yetkazish narxi, to'lov shartlari, muddat taymer → "Qabul qilaman" / "Rad etaman + izoh"
+    - "Chat" tugmasi, "Qayta buyurtma", "Bekor qilish" (NEW)
 16. **Chek yuklash** [1]: summa, usul, rasm (kamera/galereya)
 17. **Chat** [1]: matn, rasm, fayl, o'qildi belgisi
 18. **Yetkazishni kuzatish** [2]: haydovchi ismi, telefoni, holat
@@ -51,9 +50,9 @@ Chap menyu rolga qarab ko'rinadi.
 5. **Buyurtma sahifasi** [1]:
    - chap: tarkib (inline miqdor tahrirlash, "analog bilan almashtirish" qidiruvi, qoldiq ko'rsatkichi), raspil kartalari [2]
    - o'ng: mijoz kartasi (balans, limit, guruh, oldingi buyurtmalar soni), harakat tugmalari (faqat ruxsat etilgan o'tishlar), to'lovlar, menejer/haydovchi biriktirish
-   - pastda tablar: Chat · Tarix · Takliflar · Audit
+   - pastda tablar: Chat · Tarix · Audit
    - PDF: schyot, nakladnoy [2], raspil kartasi [2]
-6. **Taklif tuzish (modal/drawer)** [1]: o'zgarishlar preview, yetkazish narxi (avtomatik hisob + tahrir), sana, to'lov shartlari, avans, ruxsat etilgan usullar, izoh → yuborish
+6. **Qabul qilish (modal)** [1]: to'lov shartlari, avans, ruxsat etilgan usullar, yetkazish narxi va sanasi → "Qabul qilish" (darhol yig'ishga) yoki oldindan to'lovda "Shartlarni saqlash"
 7. **To'lovlar** [1]: PENDING navbati (chek rasmi katta ko'rinishda, tasdiqlash/rad etish), barcha to'lovlar
 8. **Katalog** [1]: kategoriyalar daraxti, brendlar, mahsulotlar jadvali, mahsulot formasi (variantlar jadvali, rasmlar drag-drop, pog'onali va guruh narxlari)
 9. **Excel import** [1]: fayl → dry-run natijasi (yangi / yangilanadi / xatolar qatorma-qator) → tasdiqlash
@@ -65,7 +64,7 @@ Chap menyu rolga qarab ko'rinadi.
 15. **Audit log** [1]
 
 ## Omborchi (admin panelning soddalashtirilgan ko'rinishi, planshetga moslangan) [1]
-1. **Vazifalar**: CONFIRMED (boshlash kerak) va PREPARING (jarayonda)
+1. **Vazifalar**: PREPARING (yig'ilmoqda)
 2. **Yig'ish ro'yxati**: qatorlar, belgilash checkbox'lari, raspil kartasi [2] → "Tayyor"
 3. **Topshirish** (PICKUP): qabul qiluvchi ismi → "Topshirildi"
 

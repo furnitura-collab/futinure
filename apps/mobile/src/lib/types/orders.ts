@@ -5,7 +5,6 @@ import type {
   PaymentMethod,
   PaymentStatus,
   PaymentTerms,
-  QuoteLine,
   Role,
   Unit,
 } from '@mebel/shared';
@@ -45,20 +44,6 @@ export interface OrderListItem {
   preview: { nameUz: string; nameRu: string; qty: string; unit: Unit }[];
   itemsCount: number;
   unreadMessages: number;
-  hasPendingQuote: boolean;
-}
-
-export interface Quote {
-  id: string;
-  version: number;
-  lines: QuoteLine[];
-  totals: { itemsTotal: number; servicesTotal: number; deliveryFee: number; discountTotal: number; grandTotal: number };
-  terms: { deliveryDate?: string | null };
-  paymentTerms: PaymentTerms;
-  advanceAmount: number;
-  allowedMethods: PaymentMethod[];
-  managerNote: string | null;
-  expiresAt: string;
 }
 
 export interface OrderDetail {
@@ -98,7 +83,6 @@ export interface OrderDetail {
   pickupWarehouse: { name: string; addressText: string; phone: string | null; workHours: string | null } | null;
   statusHistory: { fromStatus: OrderStatus | null; toStatus: OrderStatus; comment: string | null; createdAt: string }[];
   payments: { id: string; amount: number; method: PaymentMethod; status: PaymentStatus; createdAt: string; rejectReason: string | null }[];
-  pendingQuote: Quote | null;
   canCancel: boolean;
   createdAt: string;
 }

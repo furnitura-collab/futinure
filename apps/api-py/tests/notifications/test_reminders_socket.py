@@ -67,7 +67,7 @@ async def test_order_room_only_own_order_status_changes_arrive(s: SimpleNamespac
 
     status = next_event(mine, RT.ORDER_STATUS_CHANGED)
     notif = next_event(mine, RT.NOTIFICATION)
-    assert (await go(s, o["id"], {"to": "CONFIRMED", "terms": TERMS})).status_code == 200
+    assert (await go(s, o["id"], {"to": "PREPARING", "terms": TERMS})).status_code == 200
     await drain()
-    assert_matches(await status, {"orderId": o["id"], "from": "NEW", "to": "CONFIRMED"})
-    assert_matches(await notif, {"type": "order.confirmed"})
+    assert_matches(await status, {"orderId": o["id"], "from": "NEW", "to": "PREPARING"})
+    assert_matches(await notif, {"type": "order.preparing"})

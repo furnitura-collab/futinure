@@ -1,11 +1,10 @@
 """Hodisalar: buyurtma va yetkazish."""
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.format import format_money
-from app.models import Order, OrderQuote
-from app.modules.notifications.event_common import _MISSING, EntityNotFound, OutboxEnvelope, _link, _order, _role_of, _tg, _who
+from app.models import Order
+from app.modules.notifications.event_common import _MISSING, OutboxEnvelope, _link, _order, _role_of, _tg, _who
 from app.modules.notifications.messages import DELIVERY_FAILED, READY_FOR_PICKUP, STATUS_TEXT, TEXTS
 from app.modules.notifications.service import NotifyInput, Som, notify
 from app.services import realtime as rt
@@ -51,21 +50,13 @@ async def _order_status_changed(db: AsyncSession, e: OutboxEnvelope) -> None:
 
     # Mijozning o'z harakati — unga emas, xodimlarga xabar
     if actor_role == "CUSTOMER":
-        what = {
-            "CONFIRMED": "✅ Mijoz taklifni qabul qildi",
-            "NEW": "↩️ Mijoz taklifni rad etdi",
-            "CANCELLED": "❌ Mijoz buyurtmani bekor qildi",
-        }.get(to or "")
-        if what:
+        if to == "CANCELLED":
             note = f"\n💬 {escape_html(comment)}" if comment else ""
-            await _tg(f"{what}: <b>{o.number}</b>\n{_who(x.customer)}{note}\n{_link(o.id)}")
+            await _tg(f"❌ Mijoz buyurtmani bekor qildi: <b>{o.number}</b>\n{_who(x.customer)}{note}\n{_link(o.id)}")
         return
 
-    # QUOTED haqida mijozga "order.quote_created" xabar beradi; COMPLETED — to'lov xabari bilan
-    if to in ("QUOTED", "COMPLETED"):
-        return
-    # NEW ga faqat taklif muddati o'tganda (tizim) qaytadi
-    if to == "NEW" and actor_id is not None:
+    # COMPLETED haqida mijozga to'lov xabari boradi
+    if to == "COMPLETED":
         return
 
     if failed:
@@ -89,26 +80,26 @@ async def _order_status_changed(db: AsyncSession, e: OutboxEnvelope) -> None:
     )
 
 
-async def _order_quote_created(db: AsyncSession, e: OutboxEnvelope) -> None:
+async def _order_terms_set(db: AsyncSession, e: OutboxEnvelope) -> None:
+    """Yangi buyurtmaga shartlar saqlandi: ilovalar yangilanadi; oldindan to'lovda mijozga — qancha to'lash kerak"""
     x = await _order(db, e.payload["orderId"])
     o = x.o
-    quote_id = e.payload["quoteId"]
-    totals = await db.scalar(select(OrderQuote.totals).where(OrderQuote.id == quote_id))
-    if totals is None:
-        raise EntityNotFound("No OrderQuote found")
-    data = {"orderId": o.id, "quoteId": quote_id}
-    await rt.to_user(o.customer_id, rt.ORDER_QUOTE_CREATED, data)
-    await rt.to_order(o.id, rt.ORDER_QUOTE_CREATED, data)
+    data = {"orderId": o.id, "number": o.number, "version": o.version}
+    await rt.to_staff(rt.ORDER_TERMS_SET, data)
+    await rt.to_user(o.customer_id, rt.ORDER_TERMS_SET, data)
+    await rt.to_order(o.id, rt.ORDER_TERMS_SET, data)
+    amount = o.grand_total if o.payment_terms == "PREPAID" else o.advance_amount if o.payment_terms == "ADVANCE" else 0
+    if amount <= 0:
+        return
     await notify(
         db,
         NotifyInput(
             event_id=e.id,
             user_id=o.customer_id,
-            type="order.quote",
-            template=TEXTS["quote"],
-            # Taklifdagi yangi summa (buyurtma summasi qabul qilinganda o'zgaradi)
-            params={"number": o.number, "total": Som(totals["grandTotal"])},
-            payload={"orderId": o.id, "quoteId": quote_id},
+            type="order.terms_set",
+            template=TEXTS["termsSet"],
+            params={"number": o.number, "amount": Som(amount)},
+            payload={"orderId": o.id},
         ),
     )
 

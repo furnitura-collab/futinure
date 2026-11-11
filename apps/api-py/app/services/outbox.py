@@ -5,7 +5,7 @@ tranzaksiya bekor bo'lsa — xabar ham ketmaydi; server yiqilsa — xabar yo'qol
 Hodisa turlari va ma'lumoti (minimal — handler kerakli narsani bazadan o'qiydi):
   order.created          { orderId }
   order.status_changed   { orderId, from, to, actorId, comment }
-  order.quote_created    { orderId, quoteId }
+  order.terms_set        { orderId }
   payment.created        { paymentId }
   payment.confirmed      { paymentId }
   payment.rejected       { paymentId }

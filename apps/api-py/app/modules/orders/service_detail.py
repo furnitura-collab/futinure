@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import exists, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import AuthUser
@@ -10,10 +10,9 @@ from app.core.errors import AppError
 from app.core.serialize import row
 from app.db import transaction
 from app.domain.state_machine import CUSTOMER_CANCELLABLE
-from app.models import Order, OrderItem, OrderQuote, OrderStatusHistory, Payment, Warehouse
+from app.models import Order, OrderItem, OrderStatusHistory, Payment, Warehouse
 from app.modules.orders import workflow
 from app.modules.orders.lock import lock_order
-from app.modules.orders.quotes import present_quote
 from app.modules.orders.service_list import amount_due
 
 
@@ -63,13 +62,6 @@ async def detail(db: AsyncSession, customer_id: str, order_id: str) -> dict[str,
             .order_by(Payment.created_at.desc())
         )
     ).all()
-    quote = None
-    if order.current_quote_id:
-        quote = (
-            await db.scalars(
-                select(OrderQuote).where(OrderQuote.id == order.current_quote_id).execution_options(populate_existing=True)
-            )
-        ).first()
 
     # Ichki maydonlar mijozga ko'rsatilmaydi
     return {
@@ -91,8 +83,6 @@ async def detail(db: AsyncSession, customer_id: str, order_id: str) -> dict[str,
             }
             for p in payments
         ],
-        # Faqat javob kutayotgan taklif ko'rsatiladi
-        "pendingQuote": present_quote(quote) if quote and quote.status == "PENDING" and order.status == "QUOTED" else None,
         "balanceDue": order.grand_total - order.paid_total,
         "amountDue": amount_due(order, list(payments)),
         "canCancel": order.status in CUSTOMER_CANCELLABLE,
@@ -106,18 +96,3 @@ async def cancel(db: AsyncSession, customer: AuthUser, order_id: str, reason: st
             raise AppError.not_found("Buyurtma")
         await workflow.cancel(db, order, reason, customer)
     return await detail(db, customer.id, order_id)
-
-
-async def quote_history(db: AsyncSession, customer_id: str, order_id: str) -> list[dict[str, Any]]:
-    found = await db.scalar(select(exists().where(Order.id == order_id, Order.customer_id == customer_id)))
-    if not found:
-        raise AppError.not_found("Buyurtma")
-    quotes = (
-        await db.scalars(
-            select(OrderQuote)
-            .where(OrderQuote.order_id == order_id)
-            .order_by(OrderQuote.version.desc())
-            .execution_options(populate_existing=True)
-        )
-    ).all()
-    return [present_quote(q) for q in quotes]

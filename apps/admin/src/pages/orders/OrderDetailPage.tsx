@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { FileSignature } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { formatDateTime, type OrderStatus } from '@mebel/shared';
@@ -19,16 +18,15 @@ import { DeliveryCard } from './DeliveryCard';
 import { OrderChat } from './OrderChat';
 import { OrderItemsCard } from './OrderItemsCard';
 import { CustomerCard, DeliveryInfoCard, HistoryCard, ManagerCard, PaymentsCard, PaymentTermsCard } from './OrderSideCards';
-import { QuotesCard } from './QuotesCard';
-import { QuoteDialog } from './QuoteDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { requiredPrepayment } from './TermsForm';
 import { TransitionDialog } from './TransitionDialog';
 
-/** Haydovchi va to'lovlar faqat taklif kelishilgandan keyin */
-const BEFORE_AGREEMENT: OrderStatus[] = ['NEW', 'QUOTED', 'CANCELLED'];
+/** Haydovchi faqat qabul qilingan buyurtmaga */
+const NOT_ACCEPTED: OrderStatus[] = ['NEW', 'CANCELLED'];
 
 export function OrderDetailPage() {
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const { id } = useParams<{ id: string }>();
   const { can } = useAuth();
   useOrderRoom(id);
@@ -37,7 +35,6 @@ export function OrderDetailPage() {
     queryFn: () => api<OrderDetail>(`/admin/orders/${id}`),
   });
   const [transition, setTransition] = useState<{ to: OrderStatus; requiresComment: boolean } | null>(null);
-  const [quoting, setQuoting] = useState(false);
   const [paying, setPaying] = useState(false);
 
   if (isPending) return <PageSkeleton />;
@@ -45,10 +42,20 @@ export function OrderDetailPage() {
 
   const isManager = can(...MANAGERS);
   const shortage = order.items.some((i) => i.status === 'ACTIVE' && i.stock?.shortage);
-  const pendingQuote = order.quotes.some((q) => q.status === 'PENDING');
   const forward = order.availableTransitions.filter((tr) => tr.to !== 'CANCELLED');
   const cancel = order.availableTransitions.find((tr) => tr.to === 'CANCELLED');
-  const agreed = !BEFORE_AGREEMENT.includes(order.status);
+  const accepted = !NOT_ACCEPTED.includes(order.status);
+  // To'lov shartlar belgilangach qabul qilinadi (yangi buyurtmada ham — avans)
+  const payable = !!order.paymentTerms && order.status !== 'CANCELLED';
+  // Shartlar saqlangan, oldindan to'lov hali kelmagan — mijoz to'lovini kutyapmiz
+  const required = order.canSetTerms ? requiredPrepayment(order.paymentTerms, order.grandTotal, order.advanceAmount) : 0;
+  const awaitingPayment = required > order.paidTotal;
+  const actionText = (to: OrderStatus) =>
+    order.status === 'NEW' && to === 'PREPARING'
+      ? t('order.accept')
+      : order.status === 'OUT_FOR_DELIVERY' && to === 'READY'
+        ? t('order.notDelivered')
+        : t(`order.action.${to}`);
 
   return (
     <div>
@@ -62,14 +69,9 @@ export function OrderDetailPage() {
           </>
         }
       >
-        {isManager && order.canQuote && (
-          <Button variant={shortage ? 'default' : 'outline'} onClick={() => setQuoting(true)}>
-            <FileSignature /> {pendingQuote ? t('order.updateQuote') : t('order.sendQuote')}
-          </Button>
-        )}
         {forward.map((tr) => (
-          <Button key={tr.to} variant={tr.to === 'CONFIRMED' && shortage ? 'outline' : 'default'} onClick={() => setTransition(tr)}>
-            {order.status === 'OUT_FOR_DELIVERY' && tr.to === 'READY' ? t('order.notDelivered') : t(`order.action.${tr.to}`)}
+          <Button key={tr.to} onClick={() => setTransition(tr)}>
+            {actionText(tr.to)}
           </Button>
         ))}
         {cancel && (
@@ -80,33 +82,34 @@ export function OrderDetailPage() {
       </PageHeader>
 
       <div className="space-y-3 empty:hidden">
-        {shortage && order.canQuote && <Callout tone="warning">{t('order.shortage')}</Callout>}
+        {shortage && order.canSetTerms && <Callout tone="warning">{t('order.shortage')}</Callout>}
+        {awaitingPayment && (
+          <Callout tone="info">{t('order.termsAwaitPayment', { required: money(required), paid: money(order.paidTotal) })}</Callout>
+        )}
         {order.cancelReason && <Callout tone="destructive">{t('order.cancelReason', { reason: order.cancelReason })}</Callout>}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
           <OrderItemsCard order={order} />
-          {order.quotes.length > 0 && <QuotesCard quotes={order.quotes} />}
           {isManager && <OrderChat orderId={order.id} />}
         </div>
 
         <div className="min-w-0 space-y-6">
           <CustomerCard order={order} />
           <DeliveryInfoCard order={order} />
-          {isManager && order.deliveryType === 'DELIVERY' && agreed && (
+          {isManager && order.deliveryType === 'DELIVERY' && accepted && (
             // Server qiymati o'zgarsa (boshqa menejer) — forma qayta boshlanadi
             <DeliveryCard key={`${order.delivery?.driverId}-${order.delivery?.scheduledDate}`} order={order} />
           )}
           {order.paymentTerms && <PaymentTermsCard order={order} />}
-          <PaymentsCard order={order} onRecord={isManager && order.balanceDue > 0 && agreed ? () => setPaying(true) : undefined} />
+          <PaymentsCard order={order} onRecord={isManager && order.balanceDue > 0 && payable ? () => setPaying(true) : undefined} />
           {isManager && <ManagerCard order={order} />}
           <HistoryCard order={order} />
         </div>
       </div>
 
       {transition && <TransitionDialog order={order} {...transition} onClose={() => setTransition(null)} />}
-      {quoting && <QuoteDialog order={order} onClose={() => setQuoting(false)} />}
       {paying && <RecordPaymentDialog order={order} onClose={() => setPaying(false)} />}
     </div>
   );

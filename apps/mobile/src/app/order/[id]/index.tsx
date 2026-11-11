@@ -1,14 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useRef, useState, type ComponentRef } from 'react';
-import { View, type ScrollView } from 'react-native';
+import { useState } from 'react';
 import type { OrderStatus } from '@mebel/shared';
 import { DeliveryInfo } from '@/components/order/DeliveryInfo';
 import { OrderHeaderCard } from '@/components/order/OrderHeaderCard';
 import { OrderItems } from '@/components/order/OrderItems';
 import { OrderTracker } from '@/components/order/OrderTracker';
 import { PaymentSummary } from '@/components/order/PaymentSummary';
-import { QuoteCard } from '@/components/order/QuoteCard';
 import { Appear, Button, Card, ErrorState, Input, ListGroup, ListItem, Row, Screen, SkeletonList } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
@@ -29,8 +27,6 @@ export default function Order() {
   const q = useQuery({ queryKey: ['order', id], queryFn: () => api<OrderDetail>(`/orders/${id}`) });
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState('');
-  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
-  const quoteY = useRef(0);
 
   const cancel = useApiMutation(() => api(`/orders/${id}/cancel`, { body: { reason: reason.trim() } }), {
     invalidate: [['order', id], ['orders']],
@@ -48,10 +44,10 @@ export default function Order() {
   const openChat = () => router.push({ pathname: '/order/[id]/chat', params: { id: o.id } });
   const canReorder = REORDERABLE.includes(o.status);
 
-  const header = <OrderHeaderCard o={o} onReviewQuote={() => scroll.current?.scrollTo({ y: quoteY.current, animated: true })} />;
+  const header = <OrderHeaderCard o={o} />;
   const tracker = <OrderTracker o={o} />;
   const payment = <PaymentSummary o={o} />;
-  // Asosiy harakat (taklif/to'lov) sarlavha kartasida; pastda — doim qo'l ostidagi chat va qayta buyurtma
+  // Asosiy harakat (to'lov) sarlavha kartasida; pastda — doim qo'l ostidagi chat va qayta buyurtma
   const footer = (
     <Row>
       <Button title={t('chatShort')} accessibilityLabel={t('chat')} variant="outline" style={{ flex: 1 }} onPress={openChat} />
@@ -63,7 +59,6 @@ export default function Order() {
 
   return (
     <Screen
-      scrollRef={scroll}
       refreshing={q.isRefetching}
       onRefresh={() => void q.refetch()}
       footer={footer}
@@ -83,11 +78,6 @@ export default function Order() {
       <Stack.Screen options={{ title: o.number }} />
       {!site && <Appear>{header}</Appear>}
 
-      {o.pendingQuote && (
-        <View onLayout={(e) => (quoteY.current = e.nativeEvent.layout.y)}>
-          <QuoteCard orderId={o.id} quote={o.pendingQuote} />
-        </View>
-      )}
       {!site && <Appear index={1}>{tracker}</Appear>}
       <Appear index={2}>
         <OrderItems o={o} />

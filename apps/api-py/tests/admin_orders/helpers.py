@@ -52,8 +52,8 @@ class Env:
     async def go(self, order_id: str, auth: Auth, body: dict[str, Any]) -> httpx.Response:
         return await self.ctx.http.post(f"/api/v1/admin/orders/{order_id}/transition", headers=auth, json=body)
 
-    async def quote(self, order_id: str, body: dict[str, Any]) -> httpx.Response:
-        return await self.ctx.http.post(f"/api/v1/admin/orders/{order_id}/quotes", headers=self.manager, json={**terms(), **body})
+    async def set_terms(self, order_id: str, auth: Auth, body: dict[str, Any]) -> httpx.Response:
+        return await self.ctx.http.put(f"/api/v1/admin/orders/{order_id}/terms", headers=auth, json=body)
 
     async def reserved(self, variant_id: str) -> str:
         return dec((await self.ctx.get(ProductVariant, variant_id)).reserved_qty)
@@ -64,7 +64,3 @@ class Env:
 
 def terms(**over: Any) -> dict[str, Any]:
     return {"paymentTerms": "ON_DELIVERY", "allowedMethods": ["CASH"], **over}
-
-
-async def accept(e: Env, order_id: str, quote_id: str, auth: Auth | None = None) -> httpx.Response:
-    return await e.ctx.http.post(f"/api/v1/orders/{order_id}/quotes/{quote_id}/accept", headers=auth or e.customer.auth)

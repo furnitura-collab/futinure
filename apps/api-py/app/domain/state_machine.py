@@ -25,11 +25,8 @@ MGR = ("MANAGER", "SUPER_ADMIN")
 SYSTEM: tuple[str, ...] = ()
 
 ORDER_TRANSITIONS: tuple[Transition, ...] = (
-    Transition("NEW", "CONFIRMED", MGR),
-    Transition("NEW", "QUOTED", MGR),
-    Transition("QUOTED", "CONFIRMED", ("CUSTOMER",)),
-    Transition("QUOTED", "NEW", ("CUSTOMER",), requires_comment=True),
-    Transition("CONFIRMED", "PREPARING", (*MGR, "WAREHOUSE")),
+    # Menejer qabul qiladi: shartlar belgilanadi, avans/nasiya tekshiriladi, tovar rezervlanadi
+    Transition("NEW", "PREPARING", MGR),
     Transition("PREPARING", "READY", (*MGR, "WAREHOUSE")),
     Transition("READY", "OUT_FOR_DELIVERY", (*MGR, "DRIVER"), delivery_type="DELIVERY"),
     Transition("READY", "DELIVERED", (*MGR, "WAREHOUSE"), delivery_type="PICKUP"),
@@ -37,8 +34,6 @@ ORDER_TRANSITIONS: tuple[Transition, ...] = (
     Transition("OUT_FOR_DELIVERY", "READY", (*MGR, "DRIVER"), requires_comment=True),
     Transition("DELIVERED", "COMPLETED", SYSTEM),
     Transition("NEW", "CANCELLED", ("CUSTOMER", *MGR), requires_comment=True),
-    Transition("QUOTED", "CANCELLED", ("CUSTOMER", *MGR), requires_comment=True),
-    Transition("CONFIRMED", "CANCELLED", MGR, requires_comment=True),
     # PREPARING'dan menejer faqat raspilsiz buyurtmani bekor qila oladi (API'da tekshiriladi)
     Transition("PREPARING", "CANCELLED", MGR, requires_comment=True),
     Transition("READY", "CANCELLED", ("SUPER_ADMIN",), requires_comment=True),
@@ -46,9 +41,9 @@ ORDER_TRANSITIONS: tuple[Transition, ...] = (
 
 TERMINAL_STATUSES = ("COMPLETED", "CANCELLED")
 # Mijoz o'z buyurtmasini qaysi statuslarda bekor qila oladi
-CUSTOMER_CANCELLABLE = ("NEW", "QUOTED")
+CUSTOMER_CANCELLABLE = ("NEW",)
 # Shu statuslarda tovar rezervda turadi
-RESERVED_STATUSES = ("CONFIRMED", "PREPARING", "READY")
+RESERVED_STATUSES = ("PREPARING", "READY")
 
 TransitionError = Literal["NO_SUCH_TRANSITION", "FORBIDDEN_ROLE", "WRONG_DELIVERY_TYPE", "COMMENT_REQUIRED"]
 

@@ -43,21 +43,35 @@ export function termsPayload(v: TermsValue) {
   };
 }
 
+/** Faol tovarlar summasi (olib tashlanganlarsiz) */
+export function activeItemsTotal(order: OrderDetail): number {
+  return order.items.filter((i) => i.status === 'ACTIVE').reduce((s, i) => s + i.lineTotal, 0);
+}
+
+/** Shartlar bo'yicha yakuniy summa */
+export function termsGrandTotal(order: OrderDetail, v: TermsValue): number {
+  return activeItemsTotal(order) + order.servicesTotal + v.deliveryFee - v.discountTotal;
+}
+
+/** Yig'ishga berishdan oldin to'lanishi kerak bo'lgan summa: PREPAID — hammasi, ADVANCE — avans */
+export function requiredPrepayment(terms: PaymentTerms | null, grandTotal: number, advanceAmount: number): number {
+  return terms === 'PREPAID' ? grandTotal : terms === 'ADVANCE' ? advanceAmount : 0;
+}
+
 export function TermsForm({
   value,
   onChange,
   order,
-  itemsTotal,
 }: {
   value: TermsValue;
   onChange: (v: TermsValue) => void;
   order: OrderDetail;
-  itemsTotal: number;
 }) {
   const { t, money, label } = useI18n();
   const set = <K extends keyof TermsValue>(k: K, v: TermsValue[K]) => onChange({ ...value, [k]: v });
   const credit = order.customer.customerProfile?.creditLimit ?? 0;
-  const grand = itemsTotal + order.servicesTotal + value.deliveryFee - value.discountTotal;
+  const itemsTotal = activeItemsTotal(order);
+  const grand = termsGrandTotal(order, value);
 
   return (
     <div className="grid gap-4">

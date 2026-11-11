@@ -24,13 +24,11 @@ from app.auth.deps import AuthUser
 from app.core.errors import AppError
 from app.db import transaction
 from app.domain.dates import add_days, business_date, to_date
-from app.domain.pricing import compute_order_totals
 from app.models import Delivery, Order, utcnow
-from app.modules.orders import inventory
+from app.modules.orders import acceptance, inventory
 from app.modules.orders.lock import LockedOrder, lock_order
 from app.modules.orders.schemas import TransitionInput
 from app.modules.orders.state_machine import opt, transition
-from app.modules.orders.terms import terms_data, validate_terms
 from app.services.ledger import post_ledger
 
 
@@ -58,14 +56,10 @@ async def apply(db: AsyncSession, order_id: str, body: TransitionInput, actor: A
     comment = opt(body.comment)
 
     match body.to:
-        case "QUOTED":
-            raise AppError("USE_QUOTE_ENDPOINT", "Taklif uchun /quotes endpointidan foydalaning")
-        case "NEW":
-            raise AppError("USE_QUOTE_ENDPOINT", "Taklifni faqat mijoz rad etadi")
-        case "CONFIRMED":
-            return await _confirm(db, order, body, actor, assign)
         case "PREPARING":
-            _check_payments(order, body, actor)
+            # Yangi buyurtmani qabul qilish — shartlar, avans/nasiya tekshiruvi va rezerv; boshqa holatni state machine rad etadi
+            if order.status == "NEW":
+                return await acceptance.accept(db, order, body, actor, assign)
             return await transition(db, order, "PREPARING", actor, comment=comment, data=assign)
         case "READY":
             from_status = order.status
@@ -94,48 +88,6 @@ async def cancel(db: AsyncSession, order: LockedOrder, reason: str | None, actor
     await transition(db, order, "CANCELLED", actor, comment=reason)
     await inventory.release(db, order.id, actor.id, "Buyurtma bekor qilindi")
     # To'langan pul ledger'da mijoz foydasiga qoladi (balans manfiy — haqdor). Qaytarish to'lovlar bo'limida
-
-
-async def _confirm(db: AsyncSession, order: LockedOrder, body: TransitionInput, actor: AuthUser, assign: dict[str, Any]) -> None:
-    """NEW → CONFIRMED: menejer o'zgarishsiz tasdiqlaydi, faqat shartlarni belgilaydi"""
-    if not body.terms:
-        raise AppError("TERMS_REQUIRED", "To'lov shartlarini belgilang", 422)
-    terms = body.terms.terms()
-    totals = compute_order_totals(
-        [(i.qty, i.unit_price) for i in order.items],
-        services_total=order.services_total,
-        delivery_fee=terms["deliveryFee"],
-        discount_total=terms["discountTotal"],
-    ).as_dict()
-    validate_terms(terms, totals, order.customer_profile)
-    await transition(db, order, "CONFIRMED", actor, comment=opt(body.comment), data={**terms_data(terms, totals), **assign})
-    await inventory.reserve(db, order.id, actor.id)
-
-
-def _check_payments(order: LockedOrder, body: TransitionInput, actor: AuthUser) -> None:
-    """CONFIRMED → PREPARING: avans to'langanmi, nasiya limitdan oshmaydimi"""
-    if order.status != "CONFIRMED":
-        return  # noto'g'ri o'tishni state machine o'zi rad etadi
-
-    terms = order.payment_terms
-    required = order.grand_total if terms == "PREPAID" else order.advance_amount if terms == "ADVANCE" else 0
-    has_comment = bool((body.comment or "").strip())
-    if order.paid_total < required:
-        can_override = body.override_advance and actor.role == "SUPER_ADMIN" and has_comment
-        if not can_override:
-            raise AppError("ADVANCE_NOT_PAID", "Avans hali to'lanmagan", 409, {"required": required, "paid": order.paid_total})
-
-    if terms == "CREDIT":
-        profile = order.customer_profile
-        assert profile is not None
-        exposure = profile.balance_cached + order.grand_total
-        if exposure > profile.credit_limit and not (body.override_credit_limit and has_comment):
-            raise AppError(
-                "CREDIT_LIMIT_EXCEEDED",
-                "Mijoz kredit limitidan oshadi. Izoh bilan tasdiqlang",
-                409,
-                {"creditLimit": profile.credit_limit, "balance": profile.balance_cached, "exposure": exposure},
-            )
 
 
 async def _deliver(db: AsyncSession, order: LockedOrder, body: TransitionInput, actor: AuthUser, assign: dict[str, Any]) -> None:

@@ -15,13 +15,13 @@ def _t(title: tuple[str, str, str], body: tuple[str, str, str]) -> Template:
 
 # Mijozga bildirishnoma beriladigan statuslar
 STATUS_TEXT: dict[str, Template] = {
-    "CONFIRMED": _t(
-        ("Buyurtma tasdiqlandi", "Заказ подтверждён", "Order confirmed"),
-        ("{number} tasdiqlandi. Jami: {total}", "{number} подтверждён. Итого: {total}", "{number} is confirmed. Total: {total}"),
-    ),
     "PREPARING": _t(
-        ("Buyurtma tayyorlanmoqda", "Заказ собирается", "Order is being prepared"),
-        ("{number} omborda yig'ilmoqda", "{number} собирается на складе", "{number} is being packed at the warehouse"),
+        ("Buyurtma qabul qilindi", "Заказ принят", "Order accepted"),
+        (
+            "{number} qabul qilindi va yig'ilmoqda. Jami: {total}",
+            "{number} принят и собирается. Итого: {total}",
+            "{number} is accepted and being packed. Total: {total}",
+        ),
     ),
     "READY": _t(
         ("Buyurtma tayyor", "Заказ готов", "Order is ready"),
@@ -38,14 +38,6 @@ STATUS_TEXT: dict[str, Template] = {
     "CANCELLED": _t(
         ("Buyurtma bekor qilindi", "Заказ отменён", "Order cancelled"),
         ("{number}: {comment}", "{number}: {comment}", "{number}: {comment}"),
-    ),
-    "NEW": _t(
-        ("Taklif muddati o'tdi", "Срок предложения истёк", "Quote expired"),
-        (
-            "{number}: menejer yangi taklif yuboradi",
-            "{number}: менеджер отправит новое предложение",
-            "{number}: your manager will send a new quote",
-        ),
     ),
 }
 
@@ -64,12 +56,12 @@ DELIVERY_FAILED = _t(
 )
 
 TEXTS: dict[str, Template] = {
-    "quote": _t(
-        ("Yangi taklif", "Новое предложение", "New quote"),
+    "termsSet": _t(
+        ("To'lov kutilmoqda", "Ожидается оплата", "Payment required"),
         (
-            "{number}: jami {total}. Ko'rib chiqing va tasdiqlang",
-            "{number}: итого {total}. Посмотрите и подтвердите",
-            "{number}: total {total}. Please review and confirm",
+            "{number}: {amount} to'lang — to'lovdan keyin buyurtma yig'ila boshlaydi",
+            "{number}: оплатите {amount} — после оплаты заказ начнут собирать",
+            "{number}: please pay {amount} — the order will be packed after payment",
         ),
     ),
     "paymentConfirmed": _t(

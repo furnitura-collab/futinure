@@ -4,18 +4,16 @@ from datetime import date, datetime
 
 from app.domain.dates import business_date
 
-# Mijozga ko'rinadigan 5 bosqich. Ichki statuslar (9 ta) mijoz uchun ortiqcha
-CUSTOMER_STAGES = ("PLACED", "AGREED", "PREPARING", "ON_THE_WAY", "HANDED_OVER")
+# Mijozga ko'rinadigan 4 bosqich. Ichki statuslar (7 ta) mijoz uchun ortiqcha
+CUSTOMER_STAGES = ("PLACED", "PREPARING", "ON_THE_WAY", "HANDED_OVER")
 
 _STAGE_OF = {
     "NEW": 0,
-    "QUOTED": 0,
-    "CONFIRMED": 1,
-    "PREPARING": 2,
-    "READY": 3,
-    "OUT_FOR_DELIVERY": 3,
-    "DELIVERED": 4,
-    "COMPLETED": 4,
+    "PREPARING": 1,
+    "READY": 2,
+    "OUT_FOR_DELIVERY": 2,
+    "DELIVERED": 3,
+    "COMPLETED": 3,
     "CANCELLED": -1,
 }
 
@@ -24,7 +22,7 @@ _AT_HANDOVER = ("READY", "OUT_FOR_DELIVERY", *_AFTER_HANDOVER)
 
 
 def customer_stage(status: str) -> int:
-    """Joriy bosqich indeksi (0–4); bekor qilingan buyurtma — -1"""
+    """Joriy bosqich indeksi (0–3); bekor qilingan buyurtma — -1"""
     return _STAGE_OF[status]
 
 
@@ -44,7 +42,7 @@ def amount_due_now(
     PREPAID — hammasi, ADVANCE — avans, topshirishda — tayyor bo'lganda, nasiya — muddati kelganda.
     pending_total — tekshirilayotgan cheklar (qayta so'ramaymiz).
     """
-    if not payment_terms or status == "CANCELLED" or customer_stage(status) < 1:
+    if not payment_terms or status == "CANCELLED":
         return 0
     balance = grand_total - paid_total
     match payment_terms:

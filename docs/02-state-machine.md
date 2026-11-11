@@ -5,11 +5,7 @@
 ```mermaid
 stateDiagram-v2
     [*] --> NEW : mijoz yubordi
-    NEW --> CONFIRMED : menejer tasdiqladi (o'zgarishsiz)
-    NEW --> QUOTED : menejer taklif yubordi
-    QUOTED --> CONFIRMED : mijoz qabul qildi
-    QUOTED --> NEW : mijoz rad etdi (izoh bilan) / taklif muddati o'tdi
-    CONFIRMED --> PREPARING : yig'ish/kesish boshlandi
+    NEW --> PREPARING : menejer qabul qildi (shartlar, rezerv)
     PREPARING --> READY : tayyor
     READY --> OUT_FOR_DELIVERY : haydovchi oldi (DELIVERY)
     READY --> DELIVERED : mijoz olib ketdi (PICKUP)
@@ -18,13 +14,15 @@ stateDiagram-v2
     DELIVERED --> COMPLETED : to'lov yopildi yoki nasiyaga yozildi
 
     NEW --> CANCELLED
-    QUOTED --> CANCELLED
-    CONFIRMED --> CANCELLED
     PREPARING --> CANCELLED
     READY --> CANCELLED
     COMPLETED --> [*]
     CANCELLED --> [*]
 ```
+
+Takliflar (`QUOTED`) va alohida "kelishildi" (`CONFIRMED`) bosqichi yo'q (migratsiya `0002_drop_quotes`):
+menejer buyurtmani bir qadamda qabul qiladi. Oldindan to'lovda shartlar avval saqlanadi (`PUT /admin/orders/{id}/terms`),
+buyurtma avans tushguncha `NEW`da kutadi.
 
 **Promptdan farq:** `READY_FOR_PICKUP` alohida status qilinmadi. `READY` + `delivery_type = PICKUP` UI'da "Olib ketishga tayyor" deb ko'rsatiladi. Statuslar soni kamroq, mantiq bir xil.
 
@@ -32,18 +30,14 @@ stateDiagram-v2
 
 | # | Dan → Ga | Kim qila oladi | Shart (guard) | Yon ta'sirlar (bitta tranzaksiyada) |
 |---|---|---|---|---|
-| 1 | NEW → CONFIRMED | MANAGER, SUPER_ADMIN | Barcha qatorlar uchun mavjud qoldiq yetarli (yoki ON_ORDER). Raspil bo'lsa `price_final` belgilangan. To'lov shartlari belgilangan | Rezerv (`RESERVE` harakatlari), summalar muzlatiladi, push mijozga |
-| 2 | NEW → QUOTED | MANAGER, SUPER_ADMIN | Kamida bitta o'zgarish yoki shart bor | `order_quotes` yangi versiya (oldingisi `SUPERSEDED`), push mijozga |
-| 3 | QUOTED → CONFIRMED | CUSTOMER (o'z buyurtmasi) | Joriy taklif `PENDING` va muddati o'tmagan. Qoldiq hali ham yetarli | Taklif `ACCEPTED`, taklif o'zgarishlari `order_items`ga qo'llanadi, rezerv, menejerga xabar |
-| 4 | QUOTED → NEW | CUSTOMER / tizim (cron) | Rad etishda izoh majburiy | Taklif `REJECTED`/`EXPIRED`, menejerga xabar |
-| 5 | CONFIRMED → PREPARING | MANAGER, WAREHOUSE | `ADVANCE`/`PREPAID` bo'lsa `paid_total >= advance_amount` (yoki SUPER_ADMIN izoh bilan chetlab o'tadi). `CREDIT` bo'lsa yangi balans `<= credit_limit` yoki menejer ogohlantirishni tasdiqlagan | Omborchiga yig'ish vazifasi, raspil kartalari `IN_WORK` |
-| 6 | PREPARING → READY | WAREHOUSE, MANAGER | Raspil kartalari `DONE` | Push mijozga ("tayyor" / "olib ketishga tayyor") |
-| 7 | READY → OUT_FOR_DELIVERY | DRIVER, MANAGER | `delivery_type = DELIVERY`, haydovchi biriktirilgan | Qoldiqdan yechiladi (`OUT`, rezerv `RELEASE`), push mijozga |
-| 8 | READY → DELIVERED | WAREHOUSE, MANAGER | `delivery_type = PICKUP`, qabul qiluvchi ismi | Qoldiqdan yechiladi, ledger `DEBIT grand_total` |
-| 9 | OUT_FOR_DELIVERY → DELIVERED | DRIVER | Foto va qabul qiluvchi ismi | Ledger `DEBIT grand_total`, push |
-| 10 | OUT_FOR_DELIVERY → READY | DRIVER, MANAGER | Sabab majburiy | Qoldiq qaytariladi (`IN` + `RESERVE`), menejerga xabar |
-| 11 | DELIVERED → COMPLETED | tizim (avtomatik) | `paid_total >= grand_total` YOKI `payment_terms = CREDIT` | — |
-| 12 | * → CANCELLED | CUSTOMER: faqat NEW, QUOTED. MANAGER: CONFIRMED gacha, PREPARING (raspilsiz). SUPER_ADMIN: READY gacha hammasi | Sabab majburiy | Rezerv `RELEASE`. To'langan bo'lsa: ledger'da mijoz balansiga qaytariladi (haqdor) yoki `REFUND` yoziladi — tanlov menejerda |
+| 1 | NEW → PREPARING | MANAGER, SUPER_ADMIN | To'lov shartlari (so'rovda yoki oldin saqlangan). Barcha qatorlar uchun qoldiq yetarli (yoki ON_ORDER). `ADVANCE`/`PREPAID` bo'lsa avans to'langan (yoki SUPER_ADMIN izoh bilan chetlab o'tadi). `CREDIT` bo'lsa yangi balans `<= credit_limit` yoki menejer izoh bilan tasdiqlagan | Shartlar va summalar yoziladi, menejer biriktiriladi, rezerv (`RESERVE`), push mijozga ("qabul qilindi") |
+| 2 | PREPARING → READY | WAREHOUSE, MANAGER | Raspil kartalari `DONE` | Push mijozga ("tayyor" / "olib ketishga tayyor") |
+| 3 | READY → OUT_FOR_DELIVERY | DRIVER, MANAGER | `delivery_type = DELIVERY`, haydovchi biriktirilgan | Qoldiqdan yechiladi (`OUT`, rezerv `RELEASE`), push mijozga |
+| 4 | READY → DELIVERED | WAREHOUSE, MANAGER | `delivery_type = PICKUP`, qabul qiluvchi ismi | Qoldiqdan yechiladi, ledger `DEBIT grand_total` |
+| 5 | OUT_FOR_DELIVERY → DELIVERED | DRIVER | Foto va qabul qiluvchi ismi | Ledger `DEBIT grand_total`, push |
+| 6 | OUT_FOR_DELIVERY → READY | DRIVER, MANAGER | Sabab majburiy | Qoldiq qaytariladi (`IN` + `RESERVE`), menejerga xabar |
+| 7 | DELIVERED → COMPLETED | tizim (avtomatik) | `paid_total >= grand_total` YOKI `payment_terms = CREDIT` | — |
+| 8 | * → CANCELLED | CUSTOMER: faqat NEW. MANAGER: NEW, PREPARING (raspilsiz). SUPER_ADMIN: READY gacha hammasi | Sabab majburiy | Rezerv `RELEASE`. To'langan bo'lsa: ledger'da mijoz balansiga qaytariladi (haqdor) yoki `REFUND` yoziladi — tanlov menejerda |
 
 ## Amalga oshirishdagi aniqliklar
 
@@ -52,7 +46,8 @@ stateDiagram-v2
 - **Avansni chetlab o'tish** (`overrideAdvance`) — faqat super admin, izoh bilan. **Kredit limitidan oshish** (`overrideCreditLimit`) — menejer, izoh bilan.
 - **Olib ketishda** `receiverName` majburiy, tarixga "Qabul qildi: …" bo'lib yoziladi.
 - **Nasiyada** topshirilganda `due_date = bugun + payment_term_days`, buyurtma darhol COMPLETED (qarz ledger'da qoladi).
-- **Taklif muddati** har daqiqada tekshiriladi (`QuoteExpiryScheduler`).
+- **Shartlarni oldindan saqlash** (`PUT /admin/orders/{id}/terms`) — faqat `NEW`da; status o'zgarmaydi, versiya oshadi.
+  `PREPAID`/`ADVANCE` bo'lsa mijozga "X so'm to'lang" xabari boradi; to'lov `NEW` buyurtmaga shartlar bor bo'lsa qabul qilinadi.
 - **Menejer biriktirish** — buyurtmaga birinchi tekkan menejer avtomatik biriktiriladi; qo'lda almashtirish versiyani oshirmaydi.
 
 ## Muhim qoidalar
@@ -61,7 +56,6 @@ stateDiagram-v2
 - **Optimistic lock:** `orders.version` ustuni. Ikki menejer bir vaqtda bossa, ikkinchisi `409 Conflict` oladi.
 - **Rezerv atomik:** `UPDATE product_variants SET reserved_qty = reserved_qty + $q WHERE id = $id AND stock_qty - reserved_qty >= $q` — 0 qator yangilansa, o'tish rad etiladi va qaysi mahsulot yetmagani qaytariladi.
 - **Ledger qachon yoziladi:** qarz (DEBIT) tovar topshirilganda paydo bo'ladi. Oldindan to'langan avans darhol `CREDIT` bo'lib tushadi, ya'ni topshirishgacha mijoz "haqdor" bo'lib turadi. Shunda akt-sverka buxgalteriya mantiqiga mos keladi.
-- **Taklif muddati:** `expires_at` (default 24 soat, settings'da). Cron muddati o'tganlarni `QUOTED → NEW` qiladi.
 - **Har o'tish:** `order_status_history` + `audit_logs` + WebSocket event + push.
 
 ## To'lov oqimi (statusdan mustaqil)
@@ -75,4 +69,4 @@ stateDiagram-v2
     REJECTED --> [*]
 ```
 
-Tasdiqlanganda (bitta tranzaksiyada): `orders.paid_total += amount`, ledger `CREDIT`, `customer_profiles.balance_cached` yangilanadi, buyurtma DELIVERED bo'lsa 11-o'tish tekshiriladi.
+Tasdiqlanganda (bitta tranzaksiyada): `orders.paid_total += amount`, ledger `CREDIT`, `customer_profiles.balance_cached` yangilanadi, buyurtma DELIVERED bo'lsa 7-o'tish tekshiriladi.

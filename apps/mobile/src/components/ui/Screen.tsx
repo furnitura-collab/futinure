@@ -40,7 +40,7 @@ interface ScreenProps {
   refreshing?: boolean;
   onRefresh?: () => void;
   contentStyle?: StyleProp<ViewStyle>;
-  /** Ekran ichidagi bo'limga aylantirish uchun (masalan, "Taklifni ko'rish") */
+  /** Ekran ichidagi bo'limga aylantirish uchun (masalan, sarlavhadagi tugmadan) */
   scrollRef?: Ref<ComponentRef<typeof ScrollView>>;
   /** Sahifa nomi: brauzer tabida "… · Mebel Order", saytda — H1 */
   title?: string;

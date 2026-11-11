@@ -11,10 +11,10 @@ from app.models import Delivery, Order, OrderItem, Payment, User
 
 DELIVERY_PROOF_PURPOSE = "DELIVERY_PROOF"
 
-# Shu statuslarda haydovchi biriktirish/almashtirish mumkin (yo'lga chiqqandan keyin — yo'q)
-ASSIGNABLE = ("CONFIRMED", "PREPARING", "READY")
+# Qabul qilingan buyurtmaga haydovchi biriktiriladi/almashtiriladi (yo'lga chiqqandan keyin — yo'q)
+ASSIGNABLE = ("PREPARING", "READY")
 # Haydovchi ro'yxatidagi "faol" yetkazishlar
-ACTIVE = ("CONFIRMED", "PREPARING", "READY", "OUT_FOR_DELIVERY")
+ACTIVE = ("PREPARING", "READY", "OUT_FOR_DELIVERY")
 
 # deliverySelect — Prisma select tartibida
 _DELIVERY_FIELDS = (

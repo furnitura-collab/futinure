@@ -1,4 +1,4 @@
-/** Buyurtma, taklif, to'lov, chat va yetkazish turlari */
+/** Buyurtma, to'lov, chat va yetkazish turlari */
 import type {
   CustomerType,
   DeliveryStatus,
@@ -7,10 +7,7 @@ import type {
   PaymentMethod,
   PaymentStatus,
   PaymentTerms,
-  QuoteLine,
-  QuoteStatus,
   Role,
-  StockLevel,
   Unit,
 } from '@mebel/shared';
 
@@ -37,7 +34,6 @@ export interface OrderCard {
   unreadMessages: number;
   customer: CustomerBrief;
   manager: { id: string; fullName: string | null } | null;
-  currentQuote: { status: QuoteStatus; expiresAt: string } | null;
 }
 
 export interface KanbanColumn {
@@ -63,30 +59,6 @@ export interface OrderItem {
   stock: { available: string; reserved: string; onOrder: boolean; isActive: boolean; shortage: boolean } | null;
 }
 
-export interface QuoteTotals {
-  itemsTotal: number;
-  servicesTotal: number;
-  deliveryFee: number;
-  discountTotal: number;
-  grandTotal: number;
-}
-
-export interface QuoteView {
-  id: string;
-  version: number;
-  status: QuoteStatus;
-  lines: QuoteLine[];
-  totals: QuoteTotals;
-  paymentTerms: PaymentTerms;
-  advanceAmount: number;
-  allowedMethods: PaymentMethod[];
-  managerNote: string | null;
-  customerComment: string | null;
-  expiresAt: string;
-  respondedAt: string | null;
-  createdAt: string;
-}
-
 export interface PaymentRow {
   id: string;
   customerId: string;
@@ -104,7 +76,7 @@ export interface PaymentRow {
   receipt?: { id: string; mimeType: string; size: number } | null;
 }
 
-export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessages' | 'currentQuote' | 'customer'> {
+export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessages' | 'customer'> {
   customerId: string;
   managerId: string | null;
   items: OrderItem[];
@@ -116,6 +88,7 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
   allowedMethods: PaymentMethod[];
   dueDate: string | null;
   deliveryDate: string | null;
+  vehicleType: string | null;
   customerComment: string | null;
   cancelReason: string | null;
   totalWeightKg: string;
@@ -135,7 +108,6 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
     _count: { orders: number };
   };
   manager: { id: string; fullName: string | null; phone: string } | null;
-  quotes: QuoteView[];
   statusHistory: {
     id: string;
     fromStatus: OrderStatus | null;
@@ -148,7 +120,8 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
   delivery: DeliveryInfo | null;
   creditCheck: { creditLimit: number; balance: number; exposureAfter: number; exceeds: boolean } | null;
   availableTransitions: { to: OrderStatus; requiresComment: boolean }[];
-  canQuote: boolean;
+  /** Shartlarni faqat yangi (qabul qilinmagan) buyurtmada saqlash mumkin */
+  canSetTerms: boolean;
   today: string;
 }
 
@@ -161,19 +134,6 @@ export interface ChatMessage {
   readByStaffAt: string | null;
   sender: { id: string; fullName: string | null; role: Role };
   attachment: { id: string; mimeType: string; size: number } | null;
-}
-
-/** Katalogdan narx so'rash (taklifga tovar qo'shishda) */
-export interface ProductSearchResult {
-  variantId: string;
-  product: {
-    id: string;
-    nameUz: string;
-    unit: Unit;
-    minQty: string;
-    qtyStep: string;
-    variants: { id: string; sku: string; attributes: Record<string, string | number>; price: number; stockLevel: StockLevel }[];
-  };
 }
 
 export interface DeliveryInfo {

@@ -31,9 +31,13 @@ async def test_pdf_receipt_accepted(env: Env):
 # ───────────────────────── Buyurtma uchun to'lov (chek bilan) ─────────────────────────
 
 
-async def test_unconfirmed_order_not_payable(env: Env):
+async def test_new_order_payable_only_after_terms_set(env: Env):
     order_id = await env.order([(env.c.white.id, 12)], {})
     assert expect(await env.report(order_id, 1000), 409).json()["error"]["code"] == "ORDER_NOT_PAYABLE"
+    # Menejer shartlarni saqlagach (status NEW'da qoladi) — avans to'lash mumkin
+    expect(await env.set_terms(order_id, {"paymentTerms": "ADVANCE", "advanceAmount": 1_000_000}), 200)
+    assert (await env.get_order(order_id)).status == "NEW"
+    expect(await env.report(order_id, 1000), 201)
 
 
 async def test_method_not_agreed_422(env: Env):

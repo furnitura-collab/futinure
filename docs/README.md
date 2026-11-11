@@ -26,8 +26,8 @@ mebel-order/
 ```
 
 ## Bosqichlar
-- **MVP:** auth, katalog va admin CRUD (Excel import), ombor qoldig'i, savat, buyurtma, NEW → QUOTED/CONFIRMED oqimi, qo'lda to'lov tasdig'i, ledger/qarz, admin panel, push, chat
+- **MVP:** auth, katalog va admin CRUD (Excel import), ombor qoldig'i, savat, buyurtma, NEW → PREPARING oqimi (oldindan to'lovli shartlar), qo'lda to'lov tasdig'i, ledger/qarz, admin panel, push, chat
 - **2-bosqich:** raspil, ~~haydovchi~~ (tayyor), slotlar va yetkazish narxi, Telegram bot, PDF hujjatlar, hisobotlar
 - **3-bosqich:** Click/Payme, kesish optimizatsiyasi, promo-kodlar, bonus
 
-MVP ichidagi tartib: shared + DB sxema → auth → katalog/admin → savat/buyurtma → state machine/taklif → to'lov/ledger → chat/push → mobil UI → admin UI.
+MVP ichidagi tartib: shared + DB sxema → auth → katalog/admin → savat/buyurtma → state machine → to'lov/ledger → chat/push → mobil UI → admin UI.

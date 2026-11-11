@@ -37,33 +37,36 @@ async def test_detail_stock_shortage_and_available_transitions(ctx: Ctx, env: En
     res = expect(await ctx.http.get(f"/api/v1/admin/orders/{o['id']}", headers=env.manager), 200).json()
     black = next(i for i in res["items"] if i["sku"] == "KR-0190-16")
     assert_matches(black["stock"], {"available": "6", "reserved": "0", "shortage": True})
-    assert [t["to"] for t in res["availableTransitions"]] == ["CONFIRMED", "CANCELLED"]
-    assert res["canQuote"] is True
+    assert [t["to"] for t in res["availableTransitions"]] == ["PREPARING", "CANCELLED"]
+    assert res["canSetTerms"] is True
+    assert "quotes" not in res and "canQuote" not in res
     assert_matches(res["customer"]["customerProfile"], {"creditLimit": 0, "balanceCached": 0})
 
 
-# ───────────────────────── To'g'ridan-to'g'ri tasdiqlash (NEW → CONFIRMED) ─────────────────────────
+# ───────────────────────── Qabul qilish (NEW → PREPARING) ─────────────────────────
 
 
-async def test_confirm_without_terms_422(env: Env):
+async def test_accept_without_saved_or_sent_terms_422(ctx: Ctx, env: Env):
     o = await env.place_order([(env.c.white.id, 12)])
-    res = expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED"}), 422)
+    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 422)
     assert res.json()["error"]["code"] == "TERMS_REQUIRED"
+    assert (await ctx.get(Order, o["id"])).status == "NEW"
+    assert await env.reserved(env.c.white.id) == "0"
 
 
-async def test_confirm_sets_terms_totals_reserve_and_manager(ctx: Ctx, env: Env):
+async def test_accept_sets_terms_totals_reserve_manager_preparing(ctx: Ctx, env: Env):
     c = env.c
     o = await env.place_order([(c.white.id, 12), (c.hinge_v.id, 4)])
     res = await env.go(
         o["id"],
         env.manager,
-        {"to": "CONFIRMED", "terms": terms(deliveryFee=0, discountTotal=6_000, allowedMethods=["CASH", "CARD_TRANSFER"])},
+        {"to": "PREPARING", "terms": terms(deliveryFee=0, discountTotal=6_000, allowedMethods=["CASH", "CARD_TRANSFER"])},
     )
     body = expect(res, 200).json()
     assert_matches(
         body,
         {
-            "status": "CONFIRMED",
+            "status": "PREPARING",
             "itemsTotal": 4_676_000,
             "discountTotal": 6_000,
             "grandTotal": 4_670_000,
@@ -72,16 +75,18 @@ async def test_confirm_sets_terms_totals_reserve_and_manager(ctx: Ctx, env: Env)
         },
     )
     assert "MANAGER" in body["manager"]["fullName"]
+    assert body["canSetTerms"] is False
+    assert (await ctx.get(Order, o["id"])).confirmed_at is not None
     assert await env.reserved(c.white.id) == "12"
     assert await env.reserved(c.hinge_v.id) == "4"
     movements = await ctx.count(StockMovement, StockMovement.order_id == o["id"], StockMovement.type == "RESERVE")
     assert movements == 2
 
 
-async def test_confirm_insufficient_stock_409_nothing_reserved(ctx: Ctx, env: Env):
+async def test_accept_insufficient_stock_409_nothing_reserved(ctx: Ctx, env: Env):
     c = env.c
     o = await env.place_order([(c.hinge_v.id, 4), (c.black.id, 10)])
-    res = expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms()}), 409)
+    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms()}), 409)
     assert_matches(
         res.json()["error"],
         {
@@ -93,21 +98,21 @@ async def test_confirm_insufficient_stock_409_nothing_reserved(ctx: Ctx, env: En
     assert (await ctx.get(Order, o["id"])).status == "NEW"
 
 
-async def test_warehouse_cannot_confirm(env: Env):
+async def test_warehouse_cannot_accept_new(env: Env):
     o = await env.place_order([(env.c.white.id, 1)])
-    res = expect(await env.go(o["id"], env.warehouse, {"to": "CONFIRMED", "terms": terms()}), 403)
+    res = expect(await env.go(o["id"], env.warehouse, {"to": "PREPARING", "terms": terms()}), 403)
     assert res.json()["error"]["code"] == "TRANSITION_FORBIDDEN_ROLE"
 
 
 async def test_credit_not_allowed_without_credit_limit(env: Env):
     o = await env.place_order([(env.c.white.id, 1)])
-    res = expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms(paymentTerms="CREDIT")}), 422)
+    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms(paymentTerms="CREDIT")}), 422)
     assert res.json()["error"]["code"] == "CREDIT_NOT_ALLOWED"
 
 
 async def test_stale_version_409(env: Env):
     o = await env.place_order([(env.c.white.id, 1)])
-    res = expect(await env.go(o["id"], env.manager, {"to": "CONFIRMED", "terms": terms(), "expectedVersion": 99}), 409)
+    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms(), "expectedVersion": 99}), 409)
     assert res.json()["error"]["code"] == "ORDER_CONFLICT"
 
 
@@ -117,8 +122,8 @@ async def test_parallel_confirm_same_stock_only_one_reserves(ctx: Ctx, env: Env)
     a = await env.place_order([(c.white.id, 70)])
     b = await env.place_order([(c.white.id, 70)], who=other)
     results = await asyncio.gather(
-        env.go(a["id"], env.manager, {"to": "CONFIRMED", "terms": terms()}),
-        env.go(b["id"], env.admin, {"to": "CONFIRMED", "terms": terms()}),
+        env.go(a["id"], env.manager, {"to": "PREPARING", "terms": terms()}),
+        env.go(b["id"], env.admin, {"to": "PREPARING", "terms": terms()}),
     )
     assert sorted(r.status_code for r in results) == [200, 409]
     assert await env.reserved(c.white.id) == "70"

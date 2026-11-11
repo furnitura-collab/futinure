@@ -42,7 +42,9 @@ export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }
 
 function BoardCard({ order: o }: { order: OrderCard }) {
   const { t, money, label } = useI18n();
-  const waitingQuote = o.status === 'QUOTED' && o.currentQuote?.status === 'PENDING';
+  // Shartlar saqlangan, oldindan to'lov kutilmoqda (aniq avans summasi faqat tafsilotda)
+  const awaitingPayment =
+    o.status === 'NEW' && (o.paymentTerms === 'PREPAID' ? o.paidTotal < o.grandTotal : o.paymentTerms === 'ADVANCE' && o.paidTotal === 0);
   return (
     <Link
       to={`/orders/${o.id}`}
@@ -64,9 +66,9 @@ function BoardCard({ order: o }: { order: OrderCard }) {
           )}
         </span>
       </div>
-      {(waitingQuote || o.paymentTerms || (o.balanceDue > 0 && o.paidTotal > 0) || !o.manager) && (
+      {(awaitingPayment || o.paymentTerms || (o.balanceDue > 0 && o.paidTotal > 0) || !o.manager) && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {waitingQuote && <Badge variant="violet">{t('orders.awaitingReply')}</Badge>}
+          {awaitingPayment && <Badge variant="violet">{t('orders.awaitingPayment')}</Badge>}
           {o.paymentTerms && <Badge>{label('paymentTerms', o.paymentTerms)}</Badge>}
           {o.balanceDue > 0 && o.paidTotal > 0 && <Badge variant="warning">{t('orders.balance', { amount: money(o.balanceDue) })}</Badge>}
           {!o.manager && <Badge variant="destructive">{t('orders.noManager')}</Badge>}

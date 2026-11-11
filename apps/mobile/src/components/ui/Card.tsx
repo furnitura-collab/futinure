@@ -7,7 +7,7 @@ interface CardProps {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
-  /** Holat rangidagi yumshoq karta (ogohlantirish, taklif) */
+  /** Holat rangidagi yumshoq karta (ogohlantirish, to'lov) */
   tone?: Tone;
   accessibilityLabel?: string;
 }

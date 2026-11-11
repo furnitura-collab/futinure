@@ -11,7 +11,7 @@ import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useApiMutation } from '@/lib/mutation';
 import type { OrderDetail } from '@/lib/types';
-import { defaultTerms, TermsForm, termsPayload, type TermsValue } from './TermsForm';
+import { defaultTerms, requiredPrepayment, TermsForm, termsGrandTotal, termsPayload, type TermsValue } from './TermsForm';
 
 type Blocked =
   | { code: 'ADVANCE_NOT_PAID'; required: number; paid: number }
@@ -29,10 +29,13 @@ function toBlocked(e: unknown): Blocked | null {
   return null;
 }
 
+const sameTerms = (a: TermsValue, b: TermsValue) => JSON.stringify(termsPayload(a)) === JSON.stringify(termsPayload(b));
+
 /**
  * Status o'tishi. Har bir maqsadga kerakli maydonlar:
- *   CONFIRMED — to'lov shartlari; CANCELLED / qaytdi — sabab; olib ketishda DELIVERED — kim oldi.
- * Avans/kredit tekshiruvidan o'tmasa — sabab va (huquq bo'lsa) "baribir davom etish" taklif qilinadi.
+ *   qabul qilish (NEW → PREPARING) — to'lov shartlari; CANCELLED / qaytdi — sabab; olib ketishda DELIVERED — kim oldi.
+ * Oldindan to'lovda (PREPAID/ADVANCE, hali to'lanmagan) — "Shartlarni saqlash": status NEW qoladi, mijoz to'laydi.
+ * Avans/kredit tekshiruvidan o'tmasa — sabab ko'rsatiladi va (huquq bo'lsa) izoh bilan "baribir davom etish" mumkin.
  */
 export function TransitionDialog({
   order,
@@ -52,10 +55,17 @@ export function TransitionDialog({
   const [terms, setTerms] = useState<TermsValue>(() => defaultTerms(order));
   const [blocked, setBlocked] = useState<Blocked | null>(null);
 
+  const accept = to === 'PREPARING' && order.status === 'NEW';
   const pickupHandover = to === 'DELIVERED' && order.status === 'READY';
   const override = blocked?.code === 'ADVANCE_NOT_PAID' ? 'overrideAdvance' : blocked ? 'overrideCreditLimit' : null;
   const canOverride = override === 'overrideCreditLimit' || (override === 'overrideAdvance' && can('SUPER_ADMIN'));
-  const actionLabel = t(`order.action.${to}`);
+  const actionLabel = accept ? t('order.accept') : t(`order.action.${to}`);
+  // Shartlar oldin saqlangan va o'zgarmagan bo'lsa — qayta yuborilmaydi
+  const termsChanged = !order.paymentTerms || !sameTerms(terms, defaultTerms(order));
+  const required = requiredPrepayment(terms.paymentTerms, termsGrandTotal(order, terms), terms.advanceAmount);
+  const prepayPending = accept && order.canSetTerms && required > order.paidTotal;
+  // Saqlangan shartlar o'zgarmagan bo'lsa qayta saqlash (va mijozga qayta xabar) shart emas
+  const offerSave = prepayPending && termsChanged;
 
   const mutation = useApiMutation(
     () =>
@@ -64,7 +74,7 @@ export function TransitionDialog({
           to,
           expectedVersion: order.version,
           comment: comment.trim() || undefined,
-          ...(to === 'CONFIRMED' && { terms: termsPayload(terms) }),
+          ...(accept && termsChanged && { terms: termsPayload(terms) }),
           ...(pickupHandover && { receiverName: receiverName.trim() }),
           ...(override && { [override]: true }),
         },
@@ -77,30 +87,45 @@ export function TransitionDialog({
     },
   );
 
+  const saveTerms = useApiMutation(
+    () => api(`/admin/orders/${order.id}/terms`, { method: 'PUT', body: { terms: termsPayload(terms), expectedVersion: order.version } }),
+    { invalidate: [['order', order.id], ['orders']], success: t('transition.termsSaved', { number: order.number }), onSuccess: onClose },
+  );
+
   const submit = () => {
     setBlocked(null);
     mutation.mutate(undefined, { onError: (e) => setBlocked(toBlocked(e)) });
   };
 
+  const changeTerms = (v: TermsValue) => {
+    setTerms(v);
+    setBlocked(null);
+  };
+
   const needComment = requiresComment || !!blocked;
   const valid = (!needComment || comment.trim().length >= 3) && (!pickupHandover || receiverName.trim().length >= 2);
-  const itemsTotal = order.items.filter((i) => i.status === 'ACTIVE').reduce((s, i) => s + i.lineTotal, 0);
+  const busy = mutation.isPending || saveTerms.isPending;
 
   return (
     <FormDialog
       onClose={onClose}
-      size={to === 'CONFIRMED' ? 'lg' : 'md'}
+      size={accept ? 'lg' : 'md'}
       title={`${order.number}: ${actionLabel}`}
-      description={to === 'CONFIRMED' ? t('transition.confirmHint') : undefined}
+      description={accept ? t('transition.acceptHint') : undefined}
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
             {t('common.cancel')}
           </Button>
+          {offerSave && (
+            <Button loading={saveTerms.isPending} disabled={busy} onClick={() => saveTerms.mutate(undefined)}>
+              {t('order.saveTerms')}
+            </Button>
+          )}
           <Button
-            variant={to === 'CANCELLED' ? 'destructive' : 'default'}
+            variant={to === 'CANCELLED' ? 'destructive' : offerSave ? 'outline' : 'default'}
             loading={mutation.isPending}
-            disabled={!valid || (!!blocked && !canOverride)}
+            disabled={busy || !valid || (!!blocked && !canOverride)}
             onClick={submit}
           >
             {blocked && canOverride ? t('transition.override') : actionLabel}
@@ -109,7 +134,9 @@ export function TransitionDialog({
       }
     >
       <div className="grid gap-4">
-        {to === 'CONFIRMED' && <TermsForm value={terms} onChange={setTerms} order={order} itemsTotal={itemsTotal} />}
+        {accept && <TermsForm value={terms} onChange={changeTerms} order={order} />}
+
+        {offerSave && !blocked && <Callout tone="info">{t('transition.prepayHint')}</Callout>}
 
         {pickupHandover && (
           <FormField label={t('transition.receiver')}>
@@ -125,7 +152,7 @@ export function TransitionDialog({
           </Callout>
         )}
 
-        {(needComment || to !== 'CONFIRMED') && (
+        {(needComment || !accept) && (
           <FormField label={needComment ? t('transition.reasonRequired') : t('common.comment')}>
             {(f) => <Textarea {...f} rows={3} value={comment} onChange={(e) => setComment(e.target.value)} />}
           </FormField>

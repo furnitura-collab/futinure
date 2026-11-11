@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { amountDueNow, attributeLabel, attributeValue, customerStage, type AmountDueInput } from './customer-order.js';
 
 const base: AmountDueInput = {
-  status: 'CONFIRMED',
+  status: 'NEW',
   paymentTerms: 'PREPAID',
   grandTotal: 1_000_000,
   paidTotal: 0,
@@ -12,21 +12,18 @@ const base: AmountDueInput = {
 };
 
 describe('mijoz bosqichlari', () => {
-  it('9 ta status 5 bosqichga tushadi, bekor qilingan — -1', () => {
+  it('7 ta status 4 bosqichga tushadi, bekor qilingan — -1', () => {
     expect(customerStage('NEW')).toBe(0);
-    expect(customerStage('QUOTED')).toBe(0);
-    expect(customerStage('CONFIRMED')).toBe(1);
-    expect(customerStage('PREPARING')).toBe(2);
-    expect(customerStage('READY')).toBe(3);
-    expect(customerStage('OUT_FOR_DELIVERY')).toBe(3);
-    expect(customerStage('COMPLETED')).toBe(4);
+    expect(customerStage('PREPARING')).toBe(1);
+    expect(customerStage('READY')).toBe(2);
+    expect(customerStage('OUT_FOR_DELIVERY')).toBe(2);
+    expect(customerStage('COMPLETED')).toBe(3);
     expect(customerStage('CANCELLED')).toBe(-1);
   });
 });
 
 describe('hozir to\'lanadigan summa', () => {
-  it('kelishilmagan yoki bekor qilingan buyurtmada to\'lov so\'ralmaydi', () => {
-    expect(amountDueNow({ ...base, status: 'QUOTED' })).toBe(0);
+  it('shartlar belgilanmagan yoki bekor qilingan buyurtmada to\'lov so\'ralmaydi', () => {
     expect(amountDueNow({ ...base, status: 'CANCELLED' })).toBe(0);
     expect(amountDueNow({ ...base, paymentTerms: null })).toBe(0);
   });

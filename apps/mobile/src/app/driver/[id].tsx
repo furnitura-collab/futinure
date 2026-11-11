@@ -9,7 +9,7 @@ import { mapUrl, useDriverDelivery } from '@/lib/driver';
 import { useApiMutation } from '@/lib/mutation';
 import { space } from '@/theme';
 
-const WITH_ACTIONS: OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY', 'CONFIRMED', 'PREPARING'];
+const WITH_ACTIONS: OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY', 'PREPARING'];
 
 /** Bitta yetkazish: manzil, mijoz, olinadigan pul, tovarlar va amallar */
 export default function DriverDeliveryScreen() {
@@ -157,7 +157,6 @@ function Actions(props: { status: OrderStatus; starting: boolean; onStart: () =>
           <Button title={t('drvFail')} variant="outline" onPress={props.onFail} />
         </>
       );
-    case 'CONFIRMED':
     case 'PREPARING':
       return (
         <Row gap={6} style={{ justifyContent: 'center' }}>

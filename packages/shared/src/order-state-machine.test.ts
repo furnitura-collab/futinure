@@ -8,27 +8,14 @@ import {
 } from './order-state-machine.js';
 
 describe('order state machine', () => {
-  it('menejer NEW → CONFIRMED qila oladi, mijoz yo\'q', () => {
-    expect(checkTransition({ from: 'NEW', to: 'CONFIRMED', role: 'MANAGER', deliveryType: 'DELIVERY' }).ok).toBe(true);
-    expect(checkTransition({ from: 'NEW', to: 'CONFIRMED', role: 'CUSTOMER', deliveryType: 'DELIVERY' })).toEqual({
-      ok: false,
-      reason: 'FORBIDDEN_ROLE',
-    });
-  });
-
-  it('taklifni faqat mijoz qabul qiladi', () => {
-    expect(checkTransition({ from: 'QUOTED', to: 'CONFIRMED', role: 'CUSTOMER', deliveryType: 'PICKUP' }).ok).toBe(true);
-    expect(checkTransition({ from: 'QUOTED', to: 'CONFIRMED', role: 'MANAGER', deliveryType: 'PICKUP' }).ok).toBe(false);
-  });
-
-  it('taklifni rad etish uchun izoh majburiy', () => {
-    expect(checkTransition({ from: 'QUOTED', to: 'NEW', role: 'CUSTOMER', deliveryType: 'PICKUP', comment: '  ' })).toEqual({
-      ok: false,
-      reason: 'COMMENT_REQUIRED',
-    });
-    expect(
-      checkTransition({ from: 'QUOTED', to: 'NEW', role: 'CUSTOMER', deliveryType: 'PICKUP', comment: 'qimmat' }).ok,
-    ).toBe(true);
+  it('menejer yangi buyurtmani yig\'ishga beradi, mijoz va omborchi yo\'q', () => {
+    expect(checkTransition({ from: 'NEW', to: 'PREPARING', role: 'MANAGER', deliveryType: 'DELIVERY' }).ok).toBe(true);
+    for (const role of ['CUSTOMER', 'WAREHOUSE'] as const) {
+      expect(checkTransition({ from: 'NEW', to: 'PREPARING', role, deliveryType: 'DELIVERY' })).toEqual({
+        ok: false,
+        reason: 'FORBIDDEN_ROLE',
+      });
+    }
   });
 
   it('yetkazish turi bo\'yicha READY dan chiqish', () => {
@@ -43,10 +30,10 @@ describe('order state machine', () => {
     expect(checkTransition({ from: 'READY', to: 'DELIVERED', role: 'WAREHOUSE', deliveryType: 'PICKUP' }).ok).toBe(true);
   });
 
-  it('mijoz faqat NEW va QUOTED da bekor qila oladi', () => {
+  it('mijoz faqat NEW da bekor qila oladi', () => {
     for (const from of ORDER_STATUSES) {
       const r = checkTransition({ from, to: 'CANCELLED', role: 'CUSTOMER', deliveryType: 'DELIVERY', comment: 'x' });
-      expect(r.ok, from).toBe(from === 'NEW' || from === 'QUOTED');
+      expect(r.ok, from).toBe(from === 'NEW');
     }
   });
 
