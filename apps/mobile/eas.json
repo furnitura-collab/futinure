@@ -16,7 +16,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mebel-order.onrender.com"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "extends": "base",
@@ -25,7 +26,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mebel-order.onrender.com"
-      }
+      },
+      "channel": "production"
     }
   }
 }

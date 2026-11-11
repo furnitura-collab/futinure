@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mebel Order",
     "slug": "mebel-order",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mebelorder",
@@ -26,7 +26,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "output": "single",
@@ -91,6 +91,12 @@
         "projectId": "1b8e9b8c-65fd-4473-be59-bddb31bd0960"
       }
     },
-    "owner": "furnitura"
+    "owner": "furnitura",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1b8e9b8c-65fd-4473-be59-bddb31bd0960"
+    }
   }
 }
