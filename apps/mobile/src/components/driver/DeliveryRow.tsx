@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { formatDate } from '@mebel/shared';
-import { Badge, Card, Icon, Row, Text } from '@/components/ui';
+import { Badge, Card, Row, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { DELIVERY_TONE } from '@/lib/catalog';
 import type { DriverDelivery } from '@/lib/types';
@@ -25,7 +25,6 @@ export function DeliveryRow({ d, today }: { d: DriverDelivery; today: string }) 
         {showDelivery ? <Badge label={deliveryStatus(d.status)} tone={DELIVERY_TONE[d.status]} dot /> : <Badge label={status(o.status)} />}
       </Row>
       <Row style={{ alignItems: 'flex-start' }} gap={6}>
-        <Icon name="location-outline" size={16} muted />
         <Text numberOfLines={2} style={{ flex: 1 }}>{o.addressSnapshot?.addressText ?? '—'}</Text>
       </Row>
       <Text v="small" muted numberOfLines={1}>
@@ -37,7 +36,6 @@ export function DeliveryRow({ d, today }: { d: DriverDelivery; today: string }) 
         </Text>
         {o.toCollect > 0 && (
           <Row gap={4}>
-            <Icon name="cash-outline" size={14} tone="warning" />
             <Text v="small" bold tone="warning">{money(o.toCollect)}</Text>
           </Row>
         )}

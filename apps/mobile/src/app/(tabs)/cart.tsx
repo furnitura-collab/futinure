@@ -26,7 +26,7 @@ export default function CartScreen() {
             icon="cart-outline"
             title={t('cartEmpty')}
             hint={t('cartEmptyHint')}
-            action={<Button title={t('goToCatalog')} icon="grid-outline" variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
+            action={<Button title={t('goToCatalog')} variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
           />
         )}
       </Screen>
@@ -44,7 +44,7 @@ export default function CartScreen() {
           <Text v="heading">{money(c.itemsTotal)}</Text>
         </Row>
       )}
-      <Button title={t('checkout')} icon="arrow-forward" block disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
+      <Button title={t('checkout')} block disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
     </>
   );
 

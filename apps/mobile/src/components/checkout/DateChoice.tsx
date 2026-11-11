@@ -38,7 +38,7 @@ export function DateChoice({ value, onChange }: { value: string; onChange: (d: s
             }}
           />
         ))}
-        <Chip label={t('dateOther')} icon="calendar-outline" active={custom || !isQuick} onPress={() => setCustom(true)} />
+        <Chip label={t('dateOther')} active={custom || !isQuick} onPress={() => setCustom(true)} />
       </ScrollView>
       {(custom || !isQuick) && (
         <Input

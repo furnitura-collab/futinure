@@ -7,7 +7,7 @@ import { CheckoutSection } from '@/components/checkout/CheckoutSection';
 import { DateChoice, isValidChoice } from '@/components/checkout/DateChoice';
 import { OptionCard } from '@/components/form/OptionCard';
 import { SumRow } from '@/components/order/SumRow';
-import { Button, Card, Icon, Input, Row, Screen, Skeleton, Text } from '@/components/ui';
+import { Button, Card, Input, Row, Screen, Skeleton, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useCart } from '@/lib/cart';
@@ -65,7 +65,6 @@ export default function Checkout() {
       </Row>
       <Button
         title={t('placeOrder')}
-        icon="paper-plane-outline"
         block
         disabled={loading || !ready || !isValidChoice(date)}
         loading={place.isPending}
@@ -79,14 +78,13 @@ export default function Checkout() {
       <Text v="h2">{t('reviewTitle')}</Text>
       <SumRow label={t('itemsCount', { n: cart.data?.count ?? 0 })} value={money(cart.data?.itemsTotal ?? 0)} />
       <SumRow label={t('deliveryFee')} value={pickup ? t('free') : t('byManager')} />
-      <Button title={t('editCart')} variant="ghost" size="sm" icon="create-outline" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} onPress={() => router.back()} />
+      <Button title={t('editCart')} variant="ghost" size="sm" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} onPress={() => router.back()} />
     </Card>
   );
 
   const whatNext = (
     <Card tone="info" style={{ gap: space(2) }}>
       <Row gap={space(2)}>
-        <Icon name="information-circle" size={20} tone="info" />
         <Text bold tone="info">{t('whatNextTitle')}</Text>
       </Row>
       {(['whatNext1', 'whatNext2', 'whatNext3'] as const).map((k, i) => (
@@ -118,8 +116,8 @@ export default function Checkout() {
     >
       <CheckoutSection n={1} title={t('stepMethod')}>
         <View style={{ gap: space(2) }}>
-          <OptionCard selected={pickup} onPress={() => setType('PICKUP')} icon="storefront-outline" title={t('pickup')} subtitle={t('pickupHint')} />
-          <OptionCard selected={!pickup} onPress={() => setType('DELIVERY')} icon="car-outline" title={t('delivery')} subtitle={t('deliveryHint')} />
+          <OptionCard selected={pickup} onPress={() => setType('PICKUP')} title={t('pickup')} subtitle={t('pickupHint')} />
+          <OptionCard selected={!pickup} onPress={() => setType('DELIVERY')} title={t('delivery')} subtitle={t('deliveryHint')} />
         </View>
       </CheckoutSection>
 
@@ -144,7 +142,7 @@ export default function Checkout() {
               <OptionCard key={a.id} selected={a.id === selectedAddress} onPress={() => setAddressId(a.id)} title={a.label ?? a.addressText} subtitle={a.label ? a.addressText : undefined} />
             ))}
             {!addresses.data?.length && <Text v="small" muted>{t('noAddressesHint')}</Text>}
-            <Button title={t('addAddress')} icon="add" variant="outline" size="md" onPress={() => router.push('/address-new')} />
+            <Button title={t('addAddress')} variant="outline" size="md" onPress={() => router.push('/address-new')} />
           </View>
         )}
       </CheckoutSection>

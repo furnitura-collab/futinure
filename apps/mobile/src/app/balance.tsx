@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { FlatList, View } from 'react-native';
 import { formatDateTime } from '@mebel/shared';
 import { BalanceCard } from '@/components/profile/BalanceCard';
-import { Appear, Button, Card, EmptyState, Icon, Row, Screen, Skeleton, SkeletonList, Text } from '@/components/ui';
+import { Appear, Button, Card, EmptyState, Row, Screen, Skeleton, SkeletonList, Text } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { api } from '@/lib/api';
 import { usePaginated } from '@/lib/query';
@@ -39,7 +39,7 @@ export default function BalanceScreen() {
               {insets.header}
               {b ? (
                 <BalanceCard b={b} history={false}>
-                  {b.balance - b.pendingPayments > 0 && <Button title={t('payDebt')} icon="card-outline" size="md" onPress={() => router.push('/pay')} />}
+                  {b.balance - b.pendingPayments > 0 && <Button title={t('payDebt')} size="md" onPress={() => router.push('/pay')} />}
                 </BalanceCard>
               ) : (
                 <Skeleton height={120} radius={radius.lg} />
@@ -56,9 +56,6 @@ export default function BalanceScreen() {
               <Appear index={index}>
                 <Card style={{ padding: space(3) }}>
                   <Row gap={space(3)} style={{ alignItems: 'flex-start' }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: tc.bg, alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name={debit ? 'receipt-outline' : 'checkmark'} size={18} color={tc.fg} />
-                    </View>
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text v="small" bold>{t(ENTRY[e.type])}</Text>
                       <Text v="caption">{e.order ? `${e.order.number} · ` : ''}{formatDateTime(e.createdAt)}</Text>

@@ -41,7 +41,7 @@ export default function Profile() {
     <Appear key="balance" index={1}>
       {b ? (
         <BalanceCard b={b}>
-          {b.balance - b.pendingPayments > 0 && <Button title={t('payDebt')} icon="card-outline" size="md" onPress={() => router.push('/pay')} />}
+          {b.balance - b.pendingPayments > 0 && <Button title={t('payDebt')} size="md" onPress={() => router.push('/pay')} />}
         </BalanceCard>
       ) : (
         <Skeleton height={120} radius={radius.lg} />
@@ -51,8 +51,8 @@ export default function Profile() {
   const links = (
     <Appear key="links" index={2}>
       <ListGroup title={t('account')}>
-        <ListItem icon="notifications-outline" title={t('notifications')} right={<CountBadge count={unread} />} onPress={() => router.push('/notifications')} />
-        <ListItem icon="location-outline" title={t('addresses')} onPress={() => router.push('/addresses')} />
+        <ListItem title={t('notifications')} right={<CountBadge count={unread} />} onPress={() => router.push('/notifications')} />
+        <ListItem title={t('addresses')} onPress={() => router.push('/addresses')} />
       </ListGroup>
     </Appear>
   );

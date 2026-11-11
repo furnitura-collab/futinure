@@ -1,7 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Linking, View } from 'react-native';
 import { formatDate, formatDateTime, formatPhone, type OrderStatus } from '@mebel/shared';
-import { Appear, Badge, Button, Card, Divider, ErrorState, Icon, Row, Screen, SkeletonList, Text } from '@/components/ui';
+import { Appear, Badge, Button, Card, Divider, ErrorState, Row, Screen, SkeletonList, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { DELIVERY_TONE } from '@/lib/catalog';
@@ -61,7 +61,6 @@ export default function DriverDeliveryScreen() {
         <Appear>
           <Card style={{ gap: space(3) }}>
             <Row style={{ alignItems: 'flex-start' }}>
-              <Icon name="location" size={20} tone="primary" />
               <View style={{ flex: 1, gap: 2 }}>
                 {a.label ? <Text bold>{a.label}</Text> : null}
                 <Text>{a.addressText}</Text>
@@ -72,8 +71,8 @@ export default function DriverDeliveryScreen() {
               </View>
             </Row>
             <Row>
-              <Button title={t('drvMap')} icon="navigate-outline" variant="outline" size="md" style={{ flex: 1 }} onPress={() => void Linking.openURL(mapUrl(a))} />
-              <Button title={t('drvCall')} icon="call-outline" variant="outline" size="md" style={{ flex: 1 }} onPress={call} />
+              <Button title={t('drvMap')} variant="outline" size="md" style={{ flex: 1 }} onPress={() => void Linking.openURL(mapUrl(a))} />
+              <Button title={t('drvCall')} variant="outline" size="md" style={{ flex: 1 }} onPress={call} />
             </Row>
           </Card>
         </Appear>
@@ -101,7 +100,6 @@ export default function DriverDeliveryScreen() {
             </>
           ) : (
             <Row gap={6}>
-              <Icon name="checkmark-circle-outline" size={18} tone="success" />
               <Text muted>{t('drvNoCollect')}</Text>
             </Row>
           )}
@@ -151,19 +149,18 @@ function Actions(props: { status: OrderStatus; starting: boolean; onStart: () =>
   const { t } = useI18n();
   switch (props.status) {
     case 'READY':
-      return <Button title={t('drvStart')} icon="car-outline" loading={props.starting} onPress={props.onStart} />;
+      return <Button title={t('drvStart')} loading={props.starting} onPress={props.onStart} />;
     case 'OUT_FOR_DELIVERY':
       return (
         <>
-          <Button title={t('drvDeliver')} icon="checkmark-circle-outline" onPress={props.onDeliver} />
-          <Button title={t('drvFail')} icon="close-circle-outline" variant="outline" onPress={props.onFail} />
+          <Button title={t('drvDeliver')} onPress={props.onDeliver} />
+          <Button title={t('drvFail')} variant="outline" onPress={props.onFail} />
         </>
       );
     case 'CONFIRMED':
     case 'PREPARING':
       return (
         <Row gap={6} style={{ justifyContent: 'center' }}>
-          <Icon name="time-outline" size={18} muted />
           <Text muted>{t('drvNotReady')}</Text>
         </Row>
       );

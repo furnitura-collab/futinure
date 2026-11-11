@@ -11,7 +11,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       icon={error instanceof ApiError && error.code === 'NETWORK' ? 'cloud-offline-outline' : 'alert-circle-outline'}
       title={t('errorTitle')}
       hint={message}
-      action={onRetry ? <Button title={t('retry')} icon="refresh" variant="outline" size="md" onPress={onRetry} /> : null}
+      action={onRetry ? <Button title={t('retry')} variant="outline" size="md" onPress={onRetry} /> : null}
     />
   );
 }

@@ -85,7 +85,7 @@ export default function Catalog() {
       {active.length > 0 && (
         <Row gap={space(2)} style={{ flexWrap: 'wrap' }}>
           {active.map((a) => (
-            <Chip key={a.key} label={a.label} icon="close" active onPress={a.clear} />
+            <Chip key={a.key} label={a.label} active onPress={a.clear} />
           ))}
         </Row>
       )}
@@ -109,7 +109,7 @@ export default function Catalog() {
       icon="search-outline"
       title={t('noProducts')}
       hint={t('noProductsHint')}
-      action={active.length ? <Button title={t('clearFilters')} variant="outline" size="md" icon="close" onPress={() => setF(INITIAL)} /> : null}
+      action={active.length ? <Button title={t('clearFilters')} variant="outline" size="md" onPress={() => setF(INITIAL)} /> : null}
     />
   );
 
@@ -128,7 +128,7 @@ export default function Catalog() {
             <Row gap={space(2)} style={{ flexWrap: 'wrap', flexShrink: 1 }}>
               <Text v="small" muted>{total !== undefined ? t('resultsCount', { n: total }) : ' '}</Text>
               {active.map((a) => (
-                <Chip key={a.key} label={a.label} icon="close" active onPress={a.clear} />
+                <Chip key={a.key} label={a.label} active onPress={a.clear} />
               ))}
             </Row>
             <Row gap={space(2)}>

@@ -42,7 +42,7 @@ export default function Orders() {
                 icon="receipt-outline"
                 title={tab === 'active' ? t('noActiveOrders') : t('noOrders')}
                 hint={t('noOrdersHint')}
-                action={<Button title={t('goToCatalog')} icon="grid-outline" variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
+                action={<Button title={t('goToCatalog')} variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
               />
             )
           }

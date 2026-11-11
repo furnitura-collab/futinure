@@ -1,18 +1,16 @@
 import { View } from 'react-native';
 import { radius, toneColors, useTheme, type Tone } from '@/theme';
-import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 
 interface BadgeProps {
   label: string;
   tone?: Tone;
-  icon?: IconName;
   dot?: boolean;
   /** md — "harakat kerak" belgisi (kattaroq, ko'zga tashlanadi) */
   size?: 'sm' | 'md';
 }
 
-export function Badge({ label, tone = 'neutral', icon, dot, size = 'sm' }: BadgeProps) {
+export function Badge({ label, tone = 'neutral', dot, size = 'sm' }: BadgeProps) {
   const { colors } = useTheme();
   const { fg, bg } = toneColors(colors, tone);
   const md = size === 'md';
@@ -31,7 +29,6 @@ export function Badge({ label, tone = 'neutral', icon, dot, size = 'sm' }: Badge
       }}
     >
       {dot ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: fg }} /> : null}
-      {icon ? <Icon name={icon} size={md ? 15 : 12} color={fg} /> : null}
       <Text v={md ? 'small' : 'caption'} bold color={fg} numberOfLines={1} style={md ? null : { fontSize: 12, lineHeight: 16 }}>
         {label}
       </Text>

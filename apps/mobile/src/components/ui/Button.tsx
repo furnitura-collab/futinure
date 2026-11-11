@@ -1,7 +1,6 @@
 import { ActivityIndicator, type StyleProp, type ViewStyle } from 'react-native';
 import { useSite } from '@/lib/layout';
 import { font, radius, space, useTheme, type ThemeColors } from '@/theme';
-import { Icon, type IconName } from './Icon';
 import { PressableScale } from './Pressable';
 import { Text } from './Text';
 
@@ -30,7 +29,6 @@ export interface ButtonProps {
   onPress: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  icon?: IconName;
   loading?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -39,7 +37,8 @@ export interface ButtonProps {
   block?: boolean;
 }
 
-export function Button({ title, onPress, variant = 'primary', size = 'lg', icon, loading, disabled, style, accessibilityLabel, block }: ButtonProps) {
+/** Matnli tugma. Ikonka qo'shilmaydi (ikonka yoki matn — biri): faqat ikonka kerak bo'lsa IconButton */
+export function Button({ title, onPress, variant = 'primary', size = 'lg', loading, disabled, style, accessibilityLabel, block }: ButtonProps) {
   const { colors, shadow } = useTheme();
   const { site } = useSite();
   const p = palette(colors, variant);
@@ -70,7 +69,7 @@ export function Button({ title, onPress, variant = 'primary', size = 'lg', icon,
         style,
       ]}
     >
-      {loading ? <ActivityIndicator color={p.fg} /> : icon ? <Icon name={icon} size={size === 'sm' ? 16 : 18} color={p.fg} /> : null}
+      {loading ? <ActivityIndicator color={p.fg} /> : null}
       <Text bold color={p.fg} numberOfLines={1} style={{ fontSize: size === 'sm' ? font.sm : font.base }}>
         {title}
       </Text>

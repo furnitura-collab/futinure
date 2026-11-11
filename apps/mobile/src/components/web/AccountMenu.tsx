@@ -1,49 +1,38 @@
 import { router, type Href } from 'expo-router';
-import { useRef, useState, type ComponentRef } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { formatPhone } from '@mebel/shared';
-import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { ThemeSwitch } from '@/components/ThemeSwitch';
-import { Avatar, Icon, PressableScale, Text, type IconName } from '@/components/ui';
+import { Avatar, Icon, PressableScale, Text } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { radius, space, useTheme } from '@/theme';
+import { PopoverPanel, usePopover } from './Popover';
 
-const MENU_WIDTH = 288;
-
-const LINKS: { href: Href; label: I18nKey; icon: IconName }[] = [
-  { href: '/profile', label: 'tabProfile', icon: 'person-outline' },
-  { href: '/addresses', label: 'addresses', icon: 'location-outline' },
-  { href: '/balance', label: 'paymentsHistory', icon: 'document-text-outline' },
+const LINKS: { href: Href; label: I18nKey }[] = [
+  { href: '/profile', label: 'tabProfile' },
+  { href: '/addresses', label: 'addresses' },
+  { href: '/balance', label: 'paymentsHistory' },
 ];
 
-/**
- * Sarlavhadagi hisob tugmasi va menyusi: profil sahifalari, til, mavzu va chiqish.
- * Kam ishlatiladigan sozlamalar shu yerda — sarlavhaning o'zi faqat asosiy harakatlardan iborat.
- */
+/** Sarlavhadagi hisob menyusi: profil sahifalari, mavzu va chiqish (kam ishlatiladiganlar — sarlavhada joy egallamaydi) */
 export function AccountMenu() {
   const { t } = useI18n();
-  const { colors, shadowLg } = useTheme();
+  const { colors } = useTheme();
   const { me, logout } = useAuth();
-  const anchor = useRef<ComponentRef<typeof View>>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
-
-  const open = () =>
-    anchor.current?.measureInWindow((x, y, width, height) => setPos({ top: y + height + space(2), right: window.innerWidth - (x + width) }));
-  const close = () => setPos(null);
+  const menu = usePopover();
   const go = (href: Href) => {
-    close();
+    menu.close();
     router.navigate(href);
   };
 
   return (
     <>
-      <View ref={anchor} collapsable={false}>
+      <View ref={menu.anchor} collapsable={false}>
         <PressableScale
-          onPress={open}
+          onPress={menu.open}
           accessibilityRole="button"
           accessibilityLabel={t('accountMenu')}
-          accessibilityState={{ expanded: !!pos }}
+          accessibilityState={{ expanded: menu.expanded }}
           scale={0.97}
           hoverStyle={{ backgroundColor: colors.muted }}
           style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: space(1), paddingLeft: 4, paddingRight: space(2), borderRadius: radius.full }}
@@ -53,90 +42,50 @@ export function AccountMenu() {
         </PressableScale>
       </View>
 
-      <Modal transparent visible={!!pos} onRequestClose={close} animationType="none">
-        <Pressable style={{ flex: 1 }} onPress={close} accessibilityLabel={t('close')}>
-          {pos && (
-            // Menyu ichidagi bosish orqa fonga o'tib menyuni yopmasin
-            <Pressable
-              onPress={() => undefined}
-              accessibilityRole="menu"
-              style={[
-                {
-                  position: 'absolute',
-                  top: pos.top,
-                  right: pos.right,
-                  width: MENU_WIDTH,
-                  backgroundColor: colors.card,
-                  borderRadius: radius.lg,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  paddingVertical: space(2),
-                  cursor: 'auto',
-                },
-                shadowLg,
-              ]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3), paddingHorizontal: space(4), paddingVertical: space(2) }}>
-                <Avatar name={me?.fullName} size={40} />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text bold numberOfLines={1}>{me?.fullName}</Text>
-                  {!!me && <Text v="caption" numberOfLines={1}>{formatPhone(me.phone)}</Text>}
-                </View>
-              </View>
-
-              <Separator />
-              {LINKS.map((l) => (
-                <MenuItem key={l.label} icon={l.icon} label={t(l.label)} onPress={() => go(l.href)} />
-              ))}
-
-              <Separator />
-              <View style={{ paddingHorizontal: space(4), paddingVertical: space(2), gap: space(3) }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text v="small" muted>{t('language')}</Text>
-                  <LanguageSwitch />
-                </View>
-                <View style={{ gap: space(2) }}>
-                  <Text v="small" muted>{t('theme')}</Text>
-                  <ThemeSwitch />
-                </View>
-              </View>
-
-              <Separator />
-              <MenuItem
-                icon="log-out-outline"
-                label={t('logout')}
-                destructive
-                onPress={() => {
-                  close();
-                  void logout();
-                }}
-              />
-            </Pressable>
-          )}
-        </Pressable>
-      </Modal>
+      <PopoverPanel pos={menu.pos} onClose={menu.close} width={272}>
+        <View style={{ paddingHorizontal: space(2), paddingVertical: space(2), gap: 2 }}>
+          <Text bold numberOfLines={1}>{me?.fullName}</Text>
+          {!!me && <Text v="caption" numberOfLines={1}>{formatPhone(me.phone)}</Text>}
+        </View>
+        <Separator />
+        {LINKS.map((l) => (
+          <MenuItem key={l.label} label={t(l.label)} onPress={() => go(l.href)} />
+        ))}
+        <Separator />
+        <View style={{ paddingHorizontal: space(2), paddingVertical: space(1), gap: space(2) }}>
+          <Text v="caption">{t('theme')}</Text>
+          <ThemeSwitch />
+        </View>
+        <Separator />
+        <MenuItem
+          label={t('logout')}
+          destructive
+          onPress={() => {
+            menu.close();
+            void logout();
+          }}
+        />
+      </PopoverPanel>
     </>
   );
 }
 
 function Separator() {
   const { colors } = useTheme();
-  return <View style={{ height: 1, backgroundColor: colors.border, marginVertical: space(2) }} />;
+  return <View style={{ height: 1, backgroundColor: colors.border, marginVertical: space(2), marginHorizontal: -space(2) }} />;
 }
 
-function MenuItem({ icon, label, onPress, destructive }: { icon: IconName; label: string; onPress: () => void; destructive?: boolean }) {
+function MenuItem({ label, onPress, destructive }: { label: string; onPress: () => void; destructive?: boolean }) {
   const { colors } = useTheme();
-  const color = destructive ? colors.destructive : colors.foreground;
   return (
     <PressableScale
       onPress={onPress}
       accessibilityRole="menuitem"
       scale={1}
       hoverStyle={{ backgroundColor: colors.muted }}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: space(3), height: 40, marginHorizontal: space(2), paddingHorizontal: space(2), borderRadius: radius.md }}
+      style={{ height: 40, justifyContent: 'center', paddingHorizontal: space(2), borderRadius: radius.md }}
     >
-      <Icon name={icon} size={18} color={color} />
-      <Text v="small" color={color}>{label}</Text>
+      <Text v="small" color={destructive ? colors.destructive : colors.foreground}>{label}</Text>
     </PressableScale>
   );
 }

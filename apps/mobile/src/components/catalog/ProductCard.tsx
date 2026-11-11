@@ -46,7 +46,7 @@ export function ProductCard({ p, width, onQuickAdd }: { p: Product; width: numbe
         )}
         {inCart && (
           <View style={s.inCart}>
-            <Badge label={`${inCart.qty} ${unit(p.unit)}`} tone="primary" icon="cart" />
+            <Badge label={`${inCart.qty} ${unit(p.unit)}`} tone="primary" />
           </View>
         )}
         {/* "+" rasm burchagida — narx uchun to'liq kenglik qoladi */}

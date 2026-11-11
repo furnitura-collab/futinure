@@ -65,7 +65,7 @@ export default function ChangePassword() {
           autoCapitalize="none"
           onSubmitEditing={() => valid && save.mutate(undefined)}
         />
-        <Button title={t('save')} icon="checkmark" block disabled={!valid} loading={save.isPending} onPress={() => save.mutate(undefined)} />
+        <Button title={t('save')} block disabled={!valid} loading={save.isPending} onPress={() => save.mutate(undefined)} />
       </Card>
     </Screen>
   );

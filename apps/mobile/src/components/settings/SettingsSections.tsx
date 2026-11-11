@@ -18,12 +18,12 @@ export function SettingsSections({ passwordChange = true }: { passwordChange?: b
   return (
     <>
       <ListGroup title={t('settings')}>
-        <ListItem icon="language-outline" title={t('language')} right={value(LANGUAGES.find((l) => l.value === locale)!.label)} onPress={() => setSheet('language')} />
-        <ListItem icon="contrast-outline" title={t('theme')} right={value(themes.find((x) => x.value === preference)!.label)} onPress={() => setSheet('theme')} />
-        {passwordChange && <ListItem icon="key-outline" title={t('changePassword')} onPress={() => router.push('/password')} />}
+        <ListItem title={t('language')} right={value(LANGUAGES.find((l) => l.value === locale)!.label)} onPress={() => setSheet('language')} />
+        <ListItem title={t('theme')} right={value(themes.find((x) => x.value === preference)!.label)} onPress={() => setSheet('theme')} />
+        {passwordChange && <ListItem title={t('changePassword')} onPress={() => router.push('/password')} />}
       </ListGroup>
       <ListGroup>
-        <ListItem icon="log-out-outline" title={t('logout')} destructive onPress={() => void logout()} />
+        <ListItem title={t('logout')} destructive onPress={() => void logout()} />
       </ListGroup>
 
       <Sheet open={sheet === 'language'} onClose={() => setSheet(null)} title={t('language')}>

@@ -38,7 +38,6 @@ export function QuickAddSheet({ product, onClose }: { product: ProductCard | nul
               title={t('productDetails')}
               variant="ghost"
               size="sm"
-              icon="open-outline"
               style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }}
               onPress={() => {
                 onClose();

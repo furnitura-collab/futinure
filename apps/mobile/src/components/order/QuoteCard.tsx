@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { formatDate, formatDateTime, type QuoteLineAction } from '@mebel/shared';
-import { Badge, Button, Card, Icon, Input, Row, Text } from '@/components/ui';
+import { Badge, Button, Card, Input, Row, Text } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { api } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
@@ -31,14 +31,12 @@ export function QuoteCard({ orderId, quote: q }: { orderId: string; quote: Quote
     <Card tone="violet" style={{ gap: space(4), borderWidth: 1, borderColor: colors.violet }}>
       <View style={{ gap: space(1) }}>
         <Row gap={6}>
-          <Icon name="sparkles" size={18} tone="violet" />
           <Text v="h2" tone="violet">{t('quoteTitle')}</Text>
         </Row>
         <Text v="caption">{t('quoteValidUntil', { time: formatDateTime(q.expiresAt) })}</Text>
       </View>
       {q.managerNote && (
         <Row style={{ alignItems: 'flex-start' }}>
-          <Icon name="chatbubble-ellipses-outline" size={16} muted />
           <Text style={{ flex: 1 }}>{q.managerNote}</Text>
         </Row>
       )}
@@ -89,7 +87,7 @@ export function QuoteCard({ orderId, quote: q }: { orderId: string; quote: Quote
       ) : (
         <Row>
           <Button title={t('reject')} variant="outline" style={{ flex: 1 }} onPress={() => setRejecting(true)} />
-          <Button title={t('accept')} icon="checkmark" style={{ flex: 1 }} loading={accept.isPending} onPress={() => accept.mutate(undefined)} />
+          <Button title={t('accept')} style={{ flex: 1 }} loading={accept.isPending} onPress={() => accept.mutate(undefined)} />
         </Row>
       )}
     </Card>

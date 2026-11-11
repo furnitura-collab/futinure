@@ -60,12 +60,11 @@ export default function AddressNew() {
       width="form"
       modal
       title={t('addAddress')}
-      footer={<Button title={t('save')} icon="checkmark" block disabled={addressText.trim().length < 5} loading={save.isPending} onPress={() => save.mutate(undefined)} />}
+      footer={<Button title={t('save')} block disabled={addressText.trim().length < 5} loading={save.isPending} onPress={() => save.mutate(undefined)} />}
     >
       <View style={{ gap: space(2) }}>
         <Button
           title={coords ? t('locationSet') : t('useMyLocation')}
-          icon={coords ? 'checkmark-circle' : 'navigate-outline'}
           variant={coords ? 'secondary' : 'outline'}
           block
           loading={locating}

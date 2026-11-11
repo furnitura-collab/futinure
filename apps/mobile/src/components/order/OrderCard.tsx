@@ -31,8 +31,8 @@ export function OrderCard({ o }: { o: OrderListItem }) {
       <StageProgress status={o.status} />
       <Row between style={{ flexWrap: 'wrap', rowGap: space(2) }}>
         <Row gap={space(2)} style={{ flexShrink: 1, flexWrap: 'wrap' }}>
-          {action === 'quote' && <Badge size="md" tone="violet" icon="sparkles" label={t('pillQuote')} />}
-          {action === 'pay' && <Badge size="md" tone="warning" icon="card" label={t('pillPay', { amount: money(o.amountDue) })} />}
+          {action === 'quote' && <Badge size="md" tone="violet" label={t('pillQuote')} />}
+          {action === 'pay' && <Badge size="md" tone="warning" label={t('pillPay', { amount: money(o.amountDue) })} />}
           {o.unreadMessages > 0 && (
             <View accessibilityLabel={t('actMessageTitle', { n: o.unreadMessages })} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Icon name="chatbubble" size={16} tone="info" />

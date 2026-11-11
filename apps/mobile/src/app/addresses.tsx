@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { FlatList, View } from 'react-native';
-import { Appear, Button, Card, EmptyState, Icon, IconButton, Row, Screen, SkeletonList, Text } from '@/components/ui';
+import { Appear, Button, Card, EmptyState, IconButton, Row, Screen, SkeletonList, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useSite } from '@/lib/layout';
@@ -15,7 +15,7 @@ export default function Addresses() {
   const q = useQuery({ queryKey: ['addresses'], queryFn: () => api<Address[]>('/addresses') });
   const remove = useApiMutation((id: string) => api(`/addresses/${id}`, { method: 'DELETE' }), { invalidate: [['addresses']] });
 
-  const add = <Button title={t('addAddress')} icon="add" size={site ? 'md' : 'lg'} onPress={() => router.push('/address-new')} />;
+  const add = <Button title={t('addAddress')} size={site ? 'md' : 'lg'} onPress={() => router.push('/address-new')} />;
 
   return (
     <Screen scroll={false} siteWidth="page" title={t('addresses')} crumbs={[{ label: t('tabProfile'), href: '/profile' }]} actions={site ? add : undefined} footer={site ? undefined : add}>
@@ -31,7 +31,6 @@ export default function Addresses() {
             <Appear index={index}>
               <Card style={{ padding: space(3) }}>
                 <Row style={{ alignItems: 'flex-start' }} gap={space(3)}>
-                  <Icon name="location" size={20} tone="primary" />
                   <View style={{ flex: 1, gap: 2 }}>
                     {a.label ? <Text bold>{a.label}</Text> : null}
                     <Text v="small">{a.addressText}</Text>

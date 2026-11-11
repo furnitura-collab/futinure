@@ -39,7 +39,6 @@ export default function Sku() {
     <Screen width="form" modal title={t('quickSku')}>
       <Card tone="primary" style={{ gap: space(1) }}>
         <Row gap={space(2)}>
-          <Icon name="bulb-outline" size={18} tone="primary" />
           <Text v="small" bold tone="primary">{t('skuHowTitle')}</Text>
         </Row>
         <Text v="small">{t('quickSkuExplain')}</Text>
@@ -77,12 +76,11 @@ export default function Sku() {
               );
             })}
           </Card>
-          <Button title={t('goToCart')} icon="cart" variant={allOk ? 'primary' : 'outline'} block onPress={() => router.navigate('/cart')} />
+          <Button title={t('goToCart')} variant={allOk ? 'primary' : 'outline'} block onPress={() => router.navigate('/cart')} />
         </>
       ) : (
         <Button
           title={items.length ? t('skuAddN', { n: items.length }) : t('addToCart')}
-          icon="cart"
           block
           disabled={!items.length}
           loading={add.isPending}

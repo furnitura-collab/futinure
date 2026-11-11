@@ -47,9 +47,9 @@ export function OrderRow({ o }: { o: OrderListItem }) {
       )}
       <View style={{ width: desktop ? 240 : 180, alignItems: 'flex-end', gap: space(1) }}>
         <Text v="h2" numberOfLines={1}>{money(o.grandTotal)}</Text>
-        {action === 'quote' && <Badge tone="violet" icon="sparkles" label={t('pillQuote')} />}
-        {action === 'pay' && <Badge tone="warning" icon="card" label={t('pillPay', { amount: money(o.amountDue) })} />}
-        {action === 'chat' && <Badge tone="info" icon="chatbubble" label={t('actMessageTitle', { n: o.unreadMessages })} />}
+        {action === 'quote' && <Badge tone="violet" label={t('pillQuote')} />}
+        {action === 'pay' && <Badge tone="warning" label={t('pillPay', { amount: money(o.amountDue) })} />}
+        {action === 'chat' && <Badge tone="info" label={t('actMessageTitle', { n: o.unreadMessages })} />}
       </View>
       <Icon name="chevron-forward" size={18} color={colors.placeholder} />
     </PressableScale>

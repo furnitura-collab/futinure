@@ -54,9 +54,9 @@ export default function Order() {
   // Asosiy harakat (taklif/to'lov) sarlavha kartasida; pastda — doim qo'l ostidagi chat va qayta buyurtma
   const footer = (
     <Row>
-      <Button title={t('chatShort')} accessibilityLabel={t('chat')} icon="chatbubbles-outline" variant="outline" style={{ flex: 1 }} onPress={openChat} />
+      <Button title={t('chatShort')} accessibilityLabel={t('chat')} variant="outline" style={{ flex: 1 }} onPress={openChat} />
       {canReorder && !orderAction(o) && (
-        <Button title={t('buyAgainShort')} icon="repeat" style={{ flex: 1 }} loading={reorder.isPending} onPress={() => reorder.mutate(undefined)} />
+        <Button title={t('buyAgainShort')} style={{ flex: 1 }} loading={reorder.isPending} onPress={() => reorder.mutate(undefined)} />
       )}
     </Row>
   );
@@ -96,7 +96,7 @@ export default function Order() {
         <DeliveryInfo o={o} />
         {!site && payment}
         <ListGroup>
-          <ListItem icon="chatbubbles-outline" title={t('chat')} subtitle={t('chatHint')} onPress={openChat} />
+          <ListItem title={t('chat')} subtitle={t('chatHint')} onPress={openChat} />
         </ListGroup>
       </Appear>
 

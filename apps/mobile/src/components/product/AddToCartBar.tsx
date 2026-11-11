@@ -25,11 +25,10 @@ export function AddToCartBar({ p, buy, onAdded }: { p: ProductDetail; buy: Produ
       </Row>
       {!buy.price.ok && <Text v="caption" tone="destructive">{t('qtyRule', { min: `${p.minQty} ${u}`, step: `${p.qtyStep} ${u}` })}</Text>}
       {buy.inCart && same ? (
-        <Button title={t('inCartOpen', { qty: `${buy.inCart.qty} ${u}` })} icon="cart" variant="secondary" block onPress={() => router.navigate('/cart')} />
+        <Button title={t('inCartOpen', { qty: `${buy.inCart.qty} ${u}` })} variant="secondary" block onPress={() => router.navigate('/cart')} />
       ) : (
         <Button
           title={buy.inCart ? t('inCartUpdate', { qty: `${buy.inCart.qty} ${u}` }) : t('addToCart')}
-          icon="cart"
           block
           disabled={!buy.price.ok}
           loading={buy.pending}

@@ -45,7 +45,6 @@ export default function DriverDeliver() {
       footer={
         <Button
           title={t('drvDeliver')}
-          icon="checkmark-circle-outline"
           disabled={!q.data || receiver.trim().length < 2 || cashNum > toCollect}
           loading={send.isPending}
           onPress={() => send.mutate(undefined)}

@@ -32,9 +32,10 @@ export default function TabsLayout() {
         // Native planshetda — chapda sidebar (ikonka + nom), telefonda — pastda shisha panel
         tabBarPosition: wide ? 'left' : 'bottom',
         tabBarVariant: wide && !desktop ? 'material' : 'uikit',
-        tabBarLabelPosition: desktop ? 'beside-icon' : 'below-icon',
+        // Ikonka yoki matn — biri: ikonkalar mazmunli, nomi (title) ekran o'quvchiga boradi
+        tabBarShowLabel: false,
         tabBarStyle: wide
-          ? { backgroundColor: 'transparent', borderRightColor: colors.glassBorder, ...(desktop && { minWidth: 240, width: 240, paddingTop: space(4) }) }
+          ? { backgroundColor: 'transparent', borderRightColor: colors.glassBorder, paddingTop: space(4) }
           : { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0 },
         tabBarBackground: () => (
           <GlassView
@@ -43,8 +44,7 @@ export default function TabsLayout() {
             style={[StyleSheet.absoluteFill, wide ? null : { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.glassBorder }]}
           />
         ),
-        tabBarItemStyle: desktop ? { justifyContent: 'flex-start', paddingHorizontal: space(3), marginHorizontal: space(2), borderRadius: radius.md, maxHeight: 44 } : undefined,
-        tabBarLabelStyle: { fontWeight: '600' },
+        tabBarItemStyle: desktop ? { marginHorizontal: space(2), borderRadius: radius.md, maxHeight: 44 } : undefined,
         tabBarActiveBackgroundColor: desktop ? colors.primarySoft : undefined,
         tabBarActiveTintColor: colors.accentForeground,
         tabBarInactiveTintColor: colors.mutedForeground,

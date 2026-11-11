@@ -1,9 +1,9 @@
 import { radius, space, useTheme } from '@/theme';
-import { Icon, type IconName } from './Icon';
 import { PressableScale } from './Pressable';
 import { Text } from './Text';
 
-export function Chip({ label, active, onPress, icon }: { label: string; active?: boolean; onPress: () => void; icon?: IconName }) {
+/** Filtr tugmasi — faqat matn */
+export function Chip({ label, active, onPress }: { label: string; active?: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   const fg = active ? colors.primaryForeground : colors.foreground;
   return (
@@ -25,7 +25,6 @@ export function Chip({ label, active, onPress, icon }: { label: string; active?:
         backgroundColor: active ? colors.primary : colors.card,
       }}
     >
-      {icon ? <Icon name={icon} size={14} color={fg} /> : null}
       <Text v="small" bold color={fg} numberOfLines={1}>
         {label}
       </Text>

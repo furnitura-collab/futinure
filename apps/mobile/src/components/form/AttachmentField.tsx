@@ -40,10 +40,10 @@ export function AttachmentField({ label, value, onChange, allowPdf, quality }: A
       ) : (
         <Row style={{ flexWrap: 'wrap' }}>
           {Platform.OS !== 'web' && (
-            <Button title={t('takePhoto')} icon="camera-outline" variant="outline" size="md" style={{ flex: 1 }} onPress={() => void pickImage(true, quality).then(set)} />
+            <Button title={t('takePhoto')} variant="outline" size="md" style={{ flex: 1 }} onPress={() => void pickImage(true, quality).then(set)} />
           )}
-          <Button title={t('pickPhoto')} icon="image-outline" variant="outline" size="md" style={{ flex: 1 }} onPress={() => void pickImage(false, quality).then(set)} />
-          {allowPdf && <Button title={t('pickPdf')} icon="document-outline" variant="outline" size="md" onPress={() => void pickPdf().then(set)} />}
+          <Button title={t('pickPhoto')} variant="outline" size="md" style={{ flex: 1 }} onPress={() => void pickImage(false, quality).then(set)} />
+          {allowPdf && <Button title={t('pickPdf')} variant="outline" size="md" onPress={() => void pickPdf().then(set)} />}
         </Row>
       )}
     </View>

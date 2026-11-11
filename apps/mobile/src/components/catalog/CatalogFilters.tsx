@@ -44,11 +44,11 @@ export function CatalogFilters({ value, onChange, inputRef }: { value: Filters; 
             right={value.q ? <IconButton icon="close-circle" label={t('clear')} size={36} onPress={() => onChange({ q: '' })} /> : null}
           />
         </View>
-        <Button title={t('byCodeShort')} icon="barcode-outline" variant="outline" size="md" accessibilityLabel={t('quickSku')} onPress={() => router.push('/sku')} />
+        <Button title={t('byCodeShort')} variant="outline" size="md" accessibilityLabel={t('quickSku')} onPress={() => router.push('/sku')} />
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space(2), paddingHorizontal: space(4) }} style={{ marginHorizontal: -space(4) }}>
-        <Chip label={sortLabel} icon="swap-vertical" onPress={() => setSorting(true)} />
-        <Chip label={t('inStockOnly')} icon={value.inStock ? 'checkmark-circle' : 'ellipse-outline'} active={value.inStock} onPress={() => onChange({ inStock: !value.inStock })} />
+        <Chip label={sortLabel} onPress={() => setSorting(true)} />
+        <Chip label={t('inStockOnly')} active={value.inStock} onPress={() => onChange({ inStock: !value.inStock })} />
         <Chip label={t('all')} active={!value.categoryId} onPress={() => onChange({ categoryId: null })} />
         {categories.data?.map((c) => (
           <Chip key={c.id} label={name(c)} active={value.categoryId === c.id} onPress={() => onChange({ categoryId: value.categoryId === c.id ? null : c.id })} />

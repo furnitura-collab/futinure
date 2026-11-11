@@ -63,7 +63,6 @@ export default function Pay() {
       footer={
         <Button
           title={t('send')}
-          icon="paper-plane-outline"
           block
           disabled={loading || !file || amountNum <= 0 || amountNum > due}
           loading={send.isPending}
