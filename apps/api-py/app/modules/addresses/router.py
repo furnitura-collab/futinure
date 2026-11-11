@@ -62,6 +62,7 @@ Floor = znumber(-2, 50, integer=True)
 Lat = znumber(37, 46)
 Lng = znumber(55, 74)
 
+
 class AddressInput(Schema):
     label: trimmed(0, 60) | None = None  # type: ignore[valid-type]
     address_text: trimmed(5, 500)  # type: ignore[valid-type]

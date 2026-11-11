@@ -3,10 +3,16 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
 from app.core.timing import track_engine
+
+# Supabase transaction pooler (pgbouncer rejimi) — prepared statement'larni qo'llamaydi
+TRANSACTION_POOLER_PORT = 6543
+# Pooler uzoq turgan ulanishni yopishi mumkin — har so'rovda ping (+1 round-trip) o'rniga vaqti-vaqti bilan yangilanadi
+POOL_RECYCLE_S = 300
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
@@ -15,11 +21,14 @@ _sessionmaker: async_sessionmaker[AsyncSession] | None = None
 def engine() -> AsyncEngine:
     global _engine, _sessionmaker
     if _engine is None:
-        # Supabase pooler (pgbouncer) bilan ham ishlasin — prepared statement keshi o'chiq
+        url = get_settings().async_database_url
+        no_prepared = make_url(url).port == TRANSACTION_POOLER_PORT
         _engine = create_async_engine(
-            get_settings().async_database_url,
-            pool_pre_ping=True,
-            connect_args={"statement_cache_size": 0},
+            url,
+            pool_recycle=POOL_RECYCLE_S,
+            # Kesh bo'lsa takroriy so'rov 1 round-trip; o'chiq bo'lsa har safar qayta prepare (+1)
+            connect_args={"statement_cache_size": 0} if no_prepared else {},
+            **({"prepared_statement_cache_size": 0} if no_prepared else {}),
         )
         track_engine(_engine)
         _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False, autoflush=True)

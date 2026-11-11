@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.errors import AppError
 from app.core.serialize import decimal_str, pick
@@ -124,14 +124,21 @@ async def list_products(db: AsyncSession, query: ProductListQuery, user_id: str 
     }[query.sort]
 
     where_sql = " AND ".join(where)
-    ids = (
+    rows = (
         await db.execute(
-            text(f"SELECT p.id FROM products p WHERE {where_sql} ORDER BY {order_by} LIMIT :limit OFFSET :offset"),
+            text(
+                f"SELECT p.id, COUNT(*) OVER () AS total FROM products p WHERE {where_sql} "
+                f"ORDER BY {order_by} LIMIT :limit OFFSET :offset"
+            ),
             {**params, "limit": query.limit, "offset": (query.page - 1) * query.limit},
         )
-    ).scalars()
-    id_list = [str(i) for i in ids]
-    total = (await db.execute(text(f"SELECT COUNT(*) AS total FROM products p WHERE {where_sql}"), params)).scalar_one()
+    ).all()
+    id_list = [str(r.id) for r in rows]
+    if rows:
+        total = rows[0].total
+    else:
+        # Oxirgi sahifadan keyin qator yo'q — jami sonini alohida so'raymiz
+        total = (await db.execute(text(f"SELECT COUNT(*) FROM products p WHERE {where_sql}"), params)).scalar_one()
 
     items = await cards(db, id_list, user_id)
     return {"items": items, "total": int(total), "page": query.page, "limit": query.limit}
@@ -147,7 +154,7 @@ async def cards(db: AsyncSession, product_ids: list[str], user_id: str | None) -
             select(Product)
             .where(Product.id.in_(product_ids))
             .options(
-                selectinload(Product.brand),
+                joinedload(Product.brand),
                 selectinload(Product.images),
                 *variant_pricing_options(group_id, selectinload(Product.variants.and_(ProductVariant.is_active.is_(True)))),
             )

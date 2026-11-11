@@ -3,5 +3,21 @@
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter @mebel/mobile...",
   "buildCommand": "pnpm --filter @mebel/shared build && pnpm exec expo export --platform web --output-dir dist",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(_expo/static|assets)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
 }
