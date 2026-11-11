@@ -21,10 +21,12 @@ export interface InputProps extends TextInputProps {
   right?: ReactNode;
   /** Parol maydoni: ko'rsatish/yashirish tugmasi bilan */
   password?: boolean;
+  /** 40px — sarlavha kabi zich joylarda yonidagi tugmalar bilan bir balandlikda */
+  compact?: boolean;
   ref?: Ref<ComponentRef<typeof TextInput>>;
 }
 
-export function Input({ label, error, hint, icon, prefix, right, password, style, multiline, onFocus, onBlur, ref, ...rest }: InputProps) {
+export function Input({ label, error, hint, icon, prefix, right, password, compact, style, multiline, onFocus, onBlur, ref, ...rest }: InputProps) {
   const { colors } = useTheme();
   const { t } = useI18n();
   const s = useStyles();
@@ -35,7 +37,7 @@ export function Input({ label, error, hint, icon, prefix, right, password, style
   return (
     <View style={s.root}>
       {label ? <Text v="small" bold>{label}</Text> : null}
-      <View style={[s.field, multiline && s.multiline, { borderColor }, focused && { boxShadow: `0 0 0 3px ${error ? colors.destructiveSoft : colors.ring}` }]}>
+      <View style={[s.field, compact && s.fieldCompact, multiline && s.multiline, { borderColor }, focused && { boxShadow: `0 0 0 3px ${error ? colors.destructiveSoft : colors.ring}` }]}>
         {icon ? <Icon name={icon} size={18} muted /> : null}
         {prefix ? <Text style={s.prefix}>{prefix}</Text> : null}
         <TextInput
@@ -52,7 +54,7 @@ export function Input({ label, error, hint, icon, prefix, right, password, style
             setFocused(false);
             onBlur?.(e);
           }}
-          style={[s.input, NO_OUTLINE, multiline && s.inputMultiline, style]}
+          style={[s.input, compact && s.inputCompact, NO_OUTLINE, multiline && s.inputMultiline, style]}
         />
         {password ? (
           <Pressable onPress={() => setHidden((h) => !h)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('showPassword')}>
@@ -82,6 +84,8 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: space(3),
     backgroundColor: t.colors.card,
   },
+  fieldCompact: { minHeight: 40 },
+  inputCompact: { minHeight: 38, fontSize: font.base },
   multiline: { alignItems: 'flex-start', paddingVertical: space(2) },
   input: {
     flex: 1,

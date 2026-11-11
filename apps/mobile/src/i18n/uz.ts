@@ -337,6 +337,7 @@ export const uz = {
   frVEHICLE: 'Mashina nosoz',
   // sayt (keng ekran)
   mainNav: 'Asosiy menyu',
+  accountMenu: 'Hisob menyusi',
   footerForBuyers: 'Xaridorlarga',
   byCode: "Kod bo'yicha",
   cartButton: 'Savat: {n} ta tovar, {total}',

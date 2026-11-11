@@ -322,6 +322,7 @@ export const en: Dict = {
   priceGroupLine: 'Price group: {name}',
   // website (wide screen)
   mainNav: 'Main menu',
+  accountMenu: 'Account menu',
   footerForBuyers: 'For buyers',
   byCode: 'By code',
   cartButton: 'Cart: {n} item, {total}|Cart: {n} items, {total}',
