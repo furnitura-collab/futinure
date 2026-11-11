@@ -1,4 +1,4 @@
-import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ChevronLeft, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,30 @@ function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: 
         );
       })}
     </nav>
+  );
+}
+
+/** Yuqori panelda joriy bo'lim: ichki sahifada (buyurtma, mahsulot…) — ro'yxatga qaytish havolasi */
+function SectionCrumb() {
+  const { t } = useI18n();
+  const { pathname } = useLocation();
+  const section = NAV.find((n) => pathname === n.to || pathname.startsWith(`${n.to}/`));
+  if (!section) return null;
+  const nested = pathname !== section.to;
+  return (
+    <div className="hidden min-w-0 items-center text-sm lg:flex">
+      {nested ? (
+        <NavLink to={section.to} className="-ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <ChevronLeft className="size-4 shrink-0" />
+          <span className="truncate">{t(section.label)}</span>
+        </NavLink>
+      ) : (
+        <span className="flex items-center gap-2 font-medium">
+          <section.icon className="size-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">{t(section.label)}</span>
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -156,7 +180,8 @@ export function AppShell() {
       </aside>
 
       <div className={cn('transition-[padding] duration-200 ease-out', collapsed ? 'lg:pl-[4.5rem]' : 'lg:pl-64')}>
-        <header className="glass sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-3 sm:px-6">
+        {/* Balandligi yon paneldagi brend qatori (h-16) bilan bir xil — chegaralar bir chiziqda */}
+        <header className="glass sticky top-0 z-20 flex h-16 items-center gap-2 border-b px-3 sm:px-6 lg:px-8">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('common.menu')}>
@@ -175,6 +200,7 @@ export function AppShell() {
           <div className="lg:hidden">
             <Brand compact />
           </div>
+          <SectionCrumb />
           <div className="ml-auto flex items-center gap-1">
             <RealtimeDot />
             <div className="hidden sm:block">

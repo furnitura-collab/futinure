@@ -326,6 +326,7 @@ export const ru: Dict = {
   priceGroupLine: 'Ценовая группа: {name}',
   // сайт (широкий экран)
   mainNav: 'Главное меню',
+  footerForBuyers: 'Покупателям',
   byCode: 'По коду',
   cartButton: 'Корзина: {n} товар, {total}|Корзина: {n} товара, {total}|Корзина: {n} товаров, {total}',
   copyright: '© {year} Mebel Order. Все права защищены.',

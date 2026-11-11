@@ -341,6 +341,7 @@ export const uz = {
   frVEHICLE: 'Mashina nosoz',
   // sayt (keng ekran)
   mainNav: 'Asosiy menyu',
+  footerForBuyers: 'Xaridorlarga',
   byCode: "Kod bo'yicha",
   cartButton: 'Savat: {n} ta tovar, {total}',
   copyright: '© {year} Mebel Order. Barcha huquqlar himoyalangan.',

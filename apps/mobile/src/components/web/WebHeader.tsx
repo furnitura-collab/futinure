@@ -12,6 +12,9 @@ import { useAttentionCount } from '@/lib/orders';
 import { radius, space, useTheme } from '@/theme';
 
 const HEADER_HEIGHT = 64;
+const NAV_ITEM_HEIGHT = 40;
+/** Faol bo'lim chizig'i sarlavhaning pastki chegarasiga yopishadi */
+const INDICATOR_OFFSET = -(HEADER_HEIGHT - NAV_ITEM_HEIGHT) / 2;
 
 interface NavLink {
   href: Href;
@@ -20,8 +23,8 @@ interface NavLink {
   match: (path: string) => boolean;
 }
 
+// Bosh sahifa — logotip orqali (alohida "Bosh sahifa" havolasi takror bo'lardi)
 const LINKS: NavLink[] = [
-  { href: '/', label: 'tabHome', icon: 'home-outline', match: (p) => p === '/' },
   { href: '/catalog', label: 'tabCatalog', icon: 'grid-outline', match: (p) => p.startsWith('/catalog') || p.startsWith('/product') },
   // "/orders" ro'yxati ham, "/order/…" sahifasi ham
   { href: '/orders', label: 'tabOrders', icon: 'receipt-outline', match: (p) => p.startsWith('/order') },
@@ -88,7 +91,7 @@ export function WebHeader() {
                 accessibilityState={{ selected: active }}
                 scale={0.97}
                 hoverStyle={{ backgroundColor: colors.muted }}
-                style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: space(2), paddingHorizontal: desktop ? space(3) : space(2), borderRadius: radius.md }}
+                style={{ height: NAV_ITEM_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: space(2), paddingHorizontal: desktop ? space(3) : space(2), borderRadius: radius.md }}
               >
                 {desktop ? (
                   <Text bold color={active ? colors.foreground : colors.mutedForeground}>{t(l.label)}</Text>
@@ -100,7 +103,7 @@ export function WebHeader() {
                     <CountBadge count={badge} tone="violet" />
                   </View>
                 )}
-                {active && <View style={{ position: 'absolute', left: space(2), right: space(2), bottom: -12, height: 2, borderRadius: 1, backgroundColor: colors.primary }} />}
+                {active && <View style={{ position: 'absolute', left: space(2), right: space(2), bottom: INDICATOR_OFFSET, height: 2, borderRadius: 1, backgroundColor: colors.primary }} />}
               </PressableScale>
             );
           })}
