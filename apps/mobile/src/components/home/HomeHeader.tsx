@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
+import { HeaderControls } from '@/components/nav/HeaderControls';
 import { CountBadge, IconButton, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
@@ -22,6 +23,7 @@ export function HomeHeader() {
         <Text v={site ? 'display' : 'title'} accessibilityRole={site ? 'header' : undefined} numberOfLines={1}>{t('hello', { name: first })}</Text>
         {!!p?.companyName && <Text muted numberOfLines={1}>{p.companyName}</Text>}
       </View>
+      {!site && <HeaderControls />}
       {!site && (
         <View>
           <IconButton icon="notifications-outline" variant="secondary" label={t('notifications')} onPress={() => router.push('/notifications')} />

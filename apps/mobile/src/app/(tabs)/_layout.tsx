@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, type ColorValue } from 'react-native';
+import { HeaderControls } from '@/components/nav/HeaderControls';
 import { useNavChrome } from '@/components/nav/useNavChrome';
 import { GlassView, Icon, type IconName } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -29,6 +30,9 @@ export default function TabsLayout() {
       screenOptions={{
         ...header,
         ...(site && { headerShown: false }),
+        // Til va mavzu har bo'lim sarlavhasida (saytda — umumiy sarlavhada)
+        headerRight: () => <HeaderControls />,
+        headerRightContainerStyle: { paddingRight: space(2) },
         // Native planshetda — chapda sidebar (ikonka + nom), telefonda — pastda shisha panel
         tabBarPosition: wide ? 'left' : 'bottom',
         tabBarVariant: wide && !desktop ? 'material' : 'uikit',
