@@ -48,16 +48,28 @@ function deviceLocale(): Locale {
 }
 
 /**
- * Ko'plik shakllari: matnda "|" bilan ajratiladi, tartibi — shu ro'yxat (CLDR).
- * Masalan en: "{n} product|{n} products", ru: "{n} товар|{n} товара|{n} товаров"
+ * Ko'plik shakli tartib raqami — CLDR qoidalari (butun sonlar uchun).
+ * Intl.PluralRules ishlatilmaydi: Android'dagi Hermes'da u yo'q — ilova til almashganda yiqilardi.
+ *   en: 0 — one, 1 — other ("{n} product|{n} products")
+ *   ru: 0 — one (1, 21), 1 — few (2–4, 22–24), 2 — many ("{n} товар|{n} товара|{n} товаров")
  */
-const PLURAL_FORMS: Record<Locale, Intl.LDMLPluralRule[]> = { uz: ['other'], ru: ['one', 'few', 'many'], en: ['one', 'other'] };
+export function pluralIndex(locale: Locale, n: number): number {
+  const abs = Math.abs(Math.trunc(n));
+  if (locale === 'en') return abs === 1 ? 0 : 1;
+  if (locale === 'ru') {
+    const mod10 = abs % 10;
+    const mod100 = abs % 100;
+    if (mod10 === 1 && mod100 !== 11) return 0;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 1;
+    return 2;
+  }
+  return 0;
+}
 
 function plural(text: string, n: unknown, locale: Locale): string {
   if (typeof n !== 'number' || !text.includes('|')) return text;
   const forms = text.split('|');
-  const i = PLURAL_FORMS[locale].indexOf(new Intl.PluralRules(locale).select(n));
-  return forms[i] ?? forms[forms.length - 1]!;
+  return forms[pluralIndex(locale, n)] ?? forms[forms.length - 1]!;
 }
 
 type Params = Record<string, string | number>;
