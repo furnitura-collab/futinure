@@ -17,6 +17,7 @@ export { Input, type InputProps } from './Input';
 export { ListGroup } from './ListGroup';
 export { ListItem } from './ListItem';
 export { OptionList } from './OptionList';
+export { PopoverPanel, usePopover } from './Popover';
 export { PressableScale } from './Pressable';
 export { QtyStepper } from './QtyStepper';
 export { Row } from './Row';

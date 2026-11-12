@@ -3,8 +3,8 @@ import { Flag } from '@/components/ui/Flag';
 import { LANGUAGES, useI18n } from '@/i18n';
 import { radius, space, useTheme } from '@/theme';
 
-/** Til tanlash — faqat bayroqlar; til nomi ekran o'quvchi uchun (accessibilityLabel). onChange — tanlangandan keyin (masalan panelni yopish) */
-export function LanguageSwitch({ onChange }: { onChange?: () => void }) {
+/** Til tanlash — faqat bayroqlar; til nomi ekran o'quvchi uchun (accessibilityLabel) */
+export function LanguageSwitch() {
   const { t, locale, setLocale } = useI18n();
   const { colors } = useTheme();
   return (
@@ -14,10 +14,7 @@ export function LanguageSwitch({ onChange }: { onChange?: () => void }) {
         return (
           <Pressable
             key={l.value}
-            onPress={() => {
-              setLocale(l.value);
-              onChange?.();
-            }}
+            onPress={() => setLocale(l.value)}
             accessibilityRole="radio"
             accessibilityState={{ checked: active }}
             accessibilityLabel={l.label}

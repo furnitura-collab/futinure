@@ -11,6 +11,8 @@ const FLAGS: Record<Locale, number> = {
   en: require('../../../assets/images/flags/en.png'),
 };
 
-export function Flag({ locale }: { locale: Locale }) {
-  return <Image source={FLAGS[locale]} style={{ width: 24, height: 16, borderRadius: 2 }} contentFit="cover" accessible={false} />;
+/** small — ilova sarlavhasidagi ixcham tugmalar uchun (20×14) */
+export function Flag({ locale, small }: { locale: Locale; small?: boolean }) {
+  const size = small ? { width: 20, height: 14 } : { width: 24, height: 16 };
+  return <Image source={FLAGS[locale]} style={{ ...size, borderRadius: 2 }} contentFit="cover" accessible={false} />;
 }

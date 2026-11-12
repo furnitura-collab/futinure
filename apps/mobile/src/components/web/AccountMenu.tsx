@@ -2,11 +2,10 @@ import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
 import { formatPhone } from '@mebel/shared';
 import { ThemeSwitch } from '@/components/ThemeSwitch';
-import { Avatar, Icon, PressableScale, Text } from '@/components/ui';
+import { Avatar, Icon, PopoverPanel, PressableScale, Text, usePopover } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { radius, space, useTheme } from '@/theme';
-import { PopoverPanel, usePopover } from './Popover';
 
 const LINKS: { href: Href; label: I18nKey }[] = [
   { href: '/profile', label: 'tabProfile' },

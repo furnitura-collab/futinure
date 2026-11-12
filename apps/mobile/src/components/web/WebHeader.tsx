@@ -1,6 +1,7 @@
 import { router, useGlobalSearchParams, usePathname, type Href } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View, type TextInput } from 'react-native';
+import { LanguageMenu } from '@/components/LanguageMenu';
 import { LogoMark } from '@/components/LogoMark';
 import { CountBadge, Icon, IconButton, Input, PressableScale, Text, type IconName } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
@@ -11,7 +12,6 @@ import { useUnreadCount } from '@/lib/notifications';
 import { useAttentionCount } from '@/lib/orders';
 import { radius, space, useTheme } from '@/theme';
 import { AccountMenu } from './AccountMenu';
-import { LanguageMenu } from './LanguageMenu';
 
 const BAR_HEIGHT = 64;
 const NAV_HEIGHT = 44;

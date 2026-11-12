@@ -1,14 +1,18 @@
 import { View } from 'react-native';
-import { Flag, PressableScale } from '@/components/ui';
+import { Flag, PopoverPanel, PressableScale, usePopover } from '@/components/ui';
 import { LANGUAGES, useI18n } from '@/i18n';
 import { radius, space, useTheme } from '@/theme';
-import { PopoverPanel, usePopover } from './Popover';
 
-/** Sarlavhadagi til tanlash: joriy til bayrog'i → popupda hamma bayroqlar (nomi — ekran o'quvchi uchun) */
-export function LanguageMenu() {
+/**
+ * Til tanlash (sayt va ilova sarlavhasi): joriy til bayrog'i → ostida select kabi ochiladigan ro'yxat (bayroqlar ustma-ust).
+ * Faqat bayroq — til nomi ekran o'quvchi uchun. compact — ilova sarlavhasi uchun kichikroq.
+ */
+export function LanguageMenu({ compact }: { compact?: boolean }) {
   const { t, locale, setLocale } = useI18n();
   const { colors } = useTheme();
   const menu = usePopover();
+  const button = compact ? 32 : 40;
+  const option = compact ? 36 : 40;
 
   return (
     <>
@@ -18,16 +22,16 @@ export function LanguageMenu() {
           accessibilityRole="button"
           accessibilityLabel={`${t('language')}: ${LANGUAGES.find((l) => l.value === locale)?.label}`}
           accessibilityState={{ expanded: menu.expanded }}
-          scale={0.97}
+          scale={0.95}
           hoverStyle={{ backgroundColor: colors.muted }}
-          style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md }}
+          style={{ width: button, height: button, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md }}
         >
-          <Flag locale={locale} />
+          <Flag locale={locale} small={compact} />
         </PressableScale>
       </View>
 
       <PopoverPanel pos={menu.pos} onClose={menu.close}>
-        <View accessibilityRole="radiogroup" accessibilityLabel={t('language')} style={{ flexDirection: 'row', gap: space(1) }}>
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('language')} style={{ gap: 2 }}>
           {LANGUAGES.map((l) => {
             const active = l.value === locale;
             return (
@@ -40,11 +44,18 @@ export function LanguageMenu() {
                 accessibilityRole="radio"
                 accessibilityState={{ checked: active }}
                 accessibilityLabel={l.label}
-                scale={0.95}
+                scale={0.97}
                 hoverStyle={{ backgroundColor: colors.muted }}
-                style={{ width: 48, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: active ? colors.muted : 'transparent' }}
+                style={{
+                  width: option + space(4),
+                  height: option,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: radius.md,
+                  backgroundColor: active ? colors.muted : 'transparent',
+                }}
               >
-                <Flag locale={l.value} />
+                <Flag locale={l.value} small={compact} />
               </PressableScale>
             );
           })}

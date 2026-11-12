@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
-import { HeaderControls } from '@/components/nav/HeaderControls';
+import { HEADER_BUTTON, HeaderControls } from '@/components/nav/HeaderControls';
 import { CountBadge, IconButton, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
@@ -18,7 +18,7 @@ export function HomeHeader() {
   const first = me?.fullName?.split(/\s+/)[0] ?? '';
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(1) }}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text v={site ? 'display' : 'title'} accessibilityRole={site ? 'header' : undefined} numberOfLines={1}>{t('hello', { name: first })}</Text>
         {!!p?.companyName && <Text muted numberOfLines={1}>{p.companyName}</Text>}
@@ -26,9 +26,9 @@ export function HomeHeader() {
       {!site && <HeaderControls />}
       {!site && (
         <View>
-          <IconButton icon="notifications-outline" variant="secondary" label={t('notifications')} onPress={() => router.push('/notifications')} />
+          <IconButton icon="notifications-outline" size={HEADER_BUTTON} label={t('notifications')} onPress={() => router.push('/notifications')} />
           {unread > 0 && (
-            <View pointerEvents="none" style={{ position: 'absolute', top: -2, right: -2 }}>
+            <View pointerEvents="none" style={{ position: 'absolute', top: -6, right: -6 }}>
               <CountBadge count={unread} />
             </View>
           )}

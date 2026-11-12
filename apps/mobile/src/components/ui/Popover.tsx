@@ -1,5 +1,5 @@
 import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Dimensions, Modal, Pressable, View } from 'react-native';
 import { useI18n } from '@/i18n';
 import { radius, space, useTheme } from '@/theme';
 
@@ -9,14 +9,14 @@ interface Anchor {
 }
 
 /**
- * Tugma ostida ochiladigan panel (sayt sarlavhasi menyulari).
- * Tashqariga bosish yoki Esc — yopadi. `anchor` tugmani o'rab turgan View'ga beriladi.
+ * Tugma ostida ochiladigan panel (sarlavha menyulari) — sayt va ilovada bir xil.
+ * Tashqariga bosish, Esc yoki Android "orqaga" — yopadi. `anchor` tugmani o'rab turgan View'ga beriladi.
  */
 export function usePopover() {
   const anchor = useRef<ComponentRef<typeof View>>(null);
   const [pos, setPos] = useState<Anchor | null>(null);
   const open = () =>
-    anchor.current?.measureInWindow((x, y, width, height) => setPos({ top: y + height + space(2), right: window.innerWidth - (x + width) }));
+    anchor.current?.measureInWindow((x, y, width, height) => setPos({ top: y + height + space(1), right: Dimensions.get('window').width - (x + width) }));
   const close = () => setPos(null);
   return { anchor, pos, open, close, expanded: !!pos };
 }
@@ -25,7 +25,8 @@ export function PopoverPanel({ pos, onClose, width, children }: { pos: Anchor | 
   const { t } = useI18n();
   const { colors, shadowLg } = useTheme();
   return (
-    <Modal transparent visible={!!pos} onRequestClose={onClose} animationType="none">
+    // statusBarTranslucent: Android'da Modal koordinatalari measureInWindow bilan bir xil bo'lsin (status bar ostidan)
+    <Modal transparent visible={!!pos} onRequestClose={onClose} animationType="none" statusBarTranslucent>
       <Pressable style={{ flex: 1, cursor: 'auto' }} onPress={onClose} accessibilityLabel={t('close')}>
         {pos && (
           // Panel ichidagi bosish orqa fonga o'tib panelni yopmasin
