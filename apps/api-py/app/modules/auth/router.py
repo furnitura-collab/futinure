@@ -5,6 +5,7 @@ from pydantic import Field, StringConstraints
 from sqlalchemy import select
 
 from app.auth import otp, tokens
+from app.auth.apps import ClientApp, can_self_register, ensure_app_role, wrong_app
 from app.auth.password import hash_password, verify_password
 from app.core.errors import AppError
 from app.core.http import api_router
@@ -28,11 +29,14 @@ class OtpRequest(Schema):
 class OtpVerify(Schema):
     phone: Phone
     code: Annotated[str, StringConstraints(pattern=r"^\d{4,6}$")]
+    app: ClientApp = "customer"
 
 
 class PasswordLogin(Schema):
     phone: Phone
     password: Password
+    # Qaysi ilovadan kirilmoqda — rol shu ilovaga mos bo'lishi shart (app/auth/apps.py)
+    app: ClientApp = "customer"
 
 
 class RefreshInput(Schema):
@@ -55,17 +59,20 @@ async def otp_request(body: OtpRequest, request: Request, db: Db):
 @router.post("/otp/verify")
 async def otp_verify(body: OtpVerify, db: Db, user_agent: Annotated[str | None, Header()] = None):
     await otp.verify_otp(db, body.phone, body.code)
-    # Yangi raqam — mijoz sifatida ro'yxatdan o'tadi. Xodimlarni admin yaratadi.
+    # Yangi raqam — mijoz sifatida ro'yxatdan o'tadi (faqat mijoz ilovasida). Xodimlarni admin yaratadi.
     async with transaction(db):
         user = await db.scalar(select(User).where(User.phone == body.phone).with_for_update())
         if user:
+            ensure_app_role(body.app, user.role)
             user.last_login_at = utcnow()
+        elif not can_self_register(body.app):
+            raise wrong_app(body.app)
         else:
             user = User(phone=body.phone, role="CUSTOMER")
             db.add(user)
             await db.flush()
             db.add(CustomerProfile(user_id=user.id))
-    return await _session(db, user, user_agent)
+    return await _session(db, user, user_agent, body.app)
 
 
 @router.post("/login")
@@ -76,6 +83,8 @@ async def login(body: PasswordLogin, db: Db, user_agent: Annotated[str | None, H
     Paroli yo'q mijoz (OTP orqali ro'yxatdan o'tgan) — birinchi kirishda parol o'rnatadi.
     Paroli yo'q xodim — yo'q: xodim parolini faqat super admin o'rnatadi, aks holda
     raqamni bilgan har kim xodim hisobini egallab olardi.
+    Admin panel hisob yaratmaydi va parol o'rnatmaydi — notanish raqam "parol noto'g'ri" oladi
+    (qaysi raqam ro'yxatda borligi bilinmaydi). Rol ilovaga mos kelmasa — token berilmaydi.
     """
     fail_key = f"login:fail:{body.phone}"
     fails = int(await redis().get(fail_key) or 0)
@@ -88,6 +97,9 @@ async def login(body: PasswordLogin, db: Db, user_agent: Annotated[str | None, H
         )
 
     existing = await db.scalar(select(User).where(User.phone == body.phone))
+    if not can_self_register(body.app) and not (existing and existing.password_hash):
+        await _count_fail(fail_key)
+        raise invalid_password()
     if not existing:
         async with transaction(db):
             user = User(phone=body.phone, role="CUSTOMER", password_hash=await hash_password(body.password))
@@ -107,12 +119,9 @@ async def login(body: PasswordLogin, db: Db, user_agent: Annotated[str | None, H
             await redis().delete(fail_key)
         user = existing
     else:
-        async with redis().pipeline(transaction=True) as pipe:
-            pipe.incr(fail_key)
-            pipe.expire(fail_key, LOGIN_FAIL_WINDOW, nx=True)
-            await pipe.execute()
+        await _count_fail(fail_key)
         raise invalid_password()
-    return await _session(db, user, user_agent)
+    return await _session(db, user, user_agent, body.app)
 
 
 @router.post("/refresh")
@@ -125,13 +134,21 @@ async def logout(body: RefreshInput, db: Db):
     await tokens.revoke(db, body.refresh_token)
 
 
-async def _session(db: Db, user: User, user_agent: str | None):
+async def _count_fail(fail_key: str) -> None:
+    async with redis().pipeline(transaction=True) as pipe:
+        pipe.incr(fail_key)
+        pipe.expire(fail_key, LOGIN_FAIL_WINDOW, nx=True)
+        await pipe.execute()
+
+
+async def _session(db: Db, user: User, user_agent: str | None, app: ClientApp):
     """
     Tokenlar va to'liq profil ("me") — ilova kirgach alohida /me so'ramaydi.
     Kutilayotgan o'zgarishlar (last_login_at) token bilan bitta tranzaksiyada saqlanadi.
     """
     if not user.is_active:
         raise AppError.forbidden("Hisob bloklangan")
+    ensure_app_role(app, user.role)
     async with transaction(db):
         pair = await tokens.issue(db, user.id, user.role, user_agent)
     return {

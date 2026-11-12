@@ -40,8 +40,6 @@ export const profile: Pick<Dict, keyof typeof uzPart> = {
   manager: 'Manager',
   attachImage: 'Attach photo',
   pdfFile: 'PDF document',
-  staffTitle: 'Please use the admin panel',
-  staffHint: 'Staff work with orders in the admin panel. The mobile app is for customers and drivers.',
   drvTitle: 'Deliveries',
   drvActive: 'Active',
   drvDone: 'Delivered today',

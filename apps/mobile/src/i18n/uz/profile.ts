@@ -59,8 +59,6 @@ export const profile = {
   attachImage: 'Rasm biriktirish',
   pdfFile: 'PDF hujjat',
   // xodim
-  staffTitle: 'Admin paneldan foydalaning',
-  staffHint: 'Xodimlar buyurtmalar bilan admin panelda ishlaydi. Mobil ilova mijozlar va haydovchilar uchun.',
   // haydovchi
   drvTitle: 'Yetkazishlar',
   drvActive: 'Faol',

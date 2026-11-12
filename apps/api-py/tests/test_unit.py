@@ -83,3 +83,12 @@ def test_shared_enums_match_backend():
     assert set(found) == set(SHARED_NAMES)
     for name, enum in SHARED_NAMES.items():
         assert sorted(found[name]) == sorted(enum.enums), name
+
+
+def test_shared_app_roles_match_backend():
+    from app.auth.apps import APP_ROLES
+
+    body = re.search(r"APP_ROLES[^=]*= \{(.*?)\};", SHARED_ENUMS.read_text(), re.S)
+    assert body
+    found = {app: set(re.findall(r"'([^']+)'", roles)) for app, roles in re.findall(r"(\w+): \[([^\]]*)\]", body.group(1))}
+    assert found == {app: set(roles) for app, roles in APP_ROLES.items()}

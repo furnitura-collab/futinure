@@ -32,9 +32,9 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password } });
+      const res = await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password, app: 'admin' } });
       if (!PANEL_ROLES.includes(res.me.role)) {
-        // Mijoz yoki haydovchi — sessiyani darhol yopamiz
+        // Server ham rad etadi (PANEL_FORBIDDEN); bu — eski server versiyasi uchun ikkinchi himoya
         await api('/auth/logout', { body: { refreshToken: res.refreshToken } }).catch(() => undefined);
         tokenStore.set(null);
         setError(t('auth.staffOnly'));

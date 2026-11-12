@@ -5,7 +5,10 @@ from decimal import Decimal
 from types import SimpleNamespace
 from typing import Any
 
+from sqlalchemy import select
+
 from app.auth import tokens
+from app.auth.apps import APP_ROLES
 from app.models import (
     Address,
     Brand,
@@ -49,10 +52,13 @@ async def user_with_token(ctx: Ctx, role: str, *, price_group_id: str | None = N
 
 
 async def login(ctx: Ctx, phone: str) -> dict[str, Any]:
-    """OTP orqali kirib, javobni qaytaradi ({accessToken, refreshToken, user})"""
+    """OTP orqali kirib, javobni qaytaradi ({accessToken, refreshToken, user}). Ilova — rolga qarab"""
+    role = await ctx.db.scalar(select(User.role).where(User.phone == phone))
+    app = "admin" if role in APP_ROLES["admin"] else "customer"
     res = await ctx.http.post("/api/v1/auth/otp/request", json={"phone": phone})
     assert res.status_code == 200, res.text
-    res = await ctx.http.post("/api/v1/auth/otp/verify", json={"phone": phone, "code": ctx.sms.last_code(phone)})
+    code = ctx.sms.last_code(phone)
+    res = await ctx.http.post("/api/v1/auth/otp/verify", json={"phone": phone, "code": code, "app": app})
     assert res.status_code == 200, res.text
     return res.json()
 

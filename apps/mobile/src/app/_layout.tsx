@@ -72,7 +72,7 @@ function Navigator() {
   const driver = me?.role === 'DRIVER';
   const needsSetup = customer && !me.fullName;
   // Ruxsat yo'q ekranga (masalan, kirgandan keyin "/") tushsa — rolning bosh ekraniga
-  const home = !me ? '/login' : needsSetup ? '/setup' : driver ? '/driver' : !customer ? '/staff' : '/';
+  const home = !me ? '/login' : needsSetup ? '/setup' : driver ? '/driver' : '/';
   // Kompyuter brauzerida mijoz — sayt: umumiy sarlavha, sahifalar o'z sarlavhasini chizadi, modallar — markazdagi oyna
   const site = Platform.OS === 'web' && wide && !!customer && !needsSetup;
   const modal = site ? { presentation: 'transparentModal' as const, contentStyle: { backgroundColor: 'transparent' } } : { presentation: 'modal' as const };
@@ -97,10 +97,6 @@ function Navigator() {
               <Stack.Screen name="driver/deliver" options={{ title: t('drvDeliver'), presentation: 'modal' }} />
               <Stack.Screen name="driver/fail" options={{ title: t('drvFail'), presentation: 'modal' }} />
               <Stack.Screen name="settings" options={{ title: t('settings') }} />
-            </Stack.Protected>
-            {/* Boshqa xodimlar admin paneldan ishlaydi */}
-            <Stack.Protected guard={!!me && !customer && !driver}>
-              <Stack.Screen name="staff" options={{ headerShown: false }} />
             </Stack.Protected>
             <Stack.Protected guard={!!customer && !needsSetup} redirectTo={home}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

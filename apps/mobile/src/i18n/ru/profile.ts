@@ -40,8 +40,6 @@ export const profile: Pick<Dict, keyof typeof uzPart> = {
   manager: 'Менеджер',
   attachImage: 'Прикрепить фото',
   pdfFile: 'PDF-документ',
-  staffTitle: 'Используйте админ-панель',
-  staffHint: 'Сотрудники работают с заказами в админ-панели. Мобильное приложение — для клиентов и водителей.',
   drvTitle: 'Доставки',
   drvActive: 'Активные',
   drvDone: 'Доставлено сегодня',

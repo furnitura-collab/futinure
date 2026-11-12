@@ -28,7 +28,7 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await login(await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password } }));
+      await login(await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password, app: 'customer' } }));
     } catch (e) {
       setError(e instanceof ApiError ? errorText(e.code, e.message) : t('error'));
       setBusy(false);

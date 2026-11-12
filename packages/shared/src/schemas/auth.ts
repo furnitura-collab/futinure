@@ -11,6 +11,9 @@ export const phoneSchema = z.string().transform((v, ctx) => {
   return phone;
 });
 
+/** Qaysi ilovadan kirilmoqda — rol shu ilovaga mos bo'lmasa server token bermaydi (APP_ROLES) */
+const clientAppSchema = z.enum(['customer', 'admin']).default('customer');
+
 export const otpRequestSchema = z.object({
   phone: phoneSchema,
 });
@@ -19,6 +22,7 @@ export type OtpRequest = z.infer<typeof otpRequestSchema>;
 export const otpVerifySchema = z.object({
   phone: phoneSchema,
   code: z.string().regex(/^\d{4,6}$/, 'INVALID_CODE'),
+  app: clientAppSchema,
 });
 export type OtpVerify = z.infer<typeof otpVerifySchema>;
 
@@ -27,6 +31,7 @@ export const PASSWORD_MIN = 6;
 export const passwordLoginSchema = z.object({
   phone: phoneSchema,
   password: z.string().min(PASSWORD_MIN, 'PASSWORD_TOO_SHORT').max(100),
+  app: clientAppSchema,
 });
 export type PasswordLogin = z.infer<typeof passwordLoginSchema>;
 

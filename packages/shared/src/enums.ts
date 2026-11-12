@@ -7,6 +7,14 @@ export const ROLES = values('CUSTOMER', 'MANAGER', 'SUPER_ADMIN', 'WAREHOUSE', '
 export type Role = (typeof ROLES)[number];
 export const STAFF_ROLES: readonly Role[] = ['MANAGER', 'SUPER_ADMIN', 'WAREHOUSE', 'DRIVER'];
 
+/** Ilova (kirish so'rovidagi `app`) → unga kira oladigan rollar. Server ham shu ro'yxat bilan tekshiradi (app/auth/apps.py) */
+export type ClientApp = 'customer' | 'admin';
+export const APP_ROLES: Record<ClientApp, readonly Role[]> = {
+  // Haydovchi ham mobil ilovadan ishlaydi
+  customer: ['CUSTOMER', 'DRIVER'],
+  admin: ['MANAGER', 'SUPER_ADMIN', 'WAREHOUSE'],
+};
+
 export const LOCALES = values('uz', 'ru', 'en');
 export type Locale = (typeof LOCALES)[number];
 

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api, tokens, type Tokens } from './api';
+import { APP_ROLES } from '@mebel/shared';
+import { api, ApiError, tokens, type Tokens } from './api';
 import { useI18n } from '@/i18n';
 import type { Me } from './types';
 
@@ -40,6 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const me = hasTokens ? (meQuery.data ?? null) : null;
 
+  // Avval saqlangan xodim sessiyasi (tekshiruvdan oldingi versiyadan) — yopiladi: xodimlar admin paneldan ishlaydi
+  useEffect(() => {
+    if (me && !APP_ROLES.customer.includes(me.role)) void closeSession();
+  }, [me]);
+
   // Server bildirishnomalarni shu tilda yuboradi — ilova tili bilan bir xil bo'lsin
   useEffect(() => {
     if (me && me.locale !== locale) {
@@ -49,23 +55,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async ({ me: profile, ...t }: Tokens & { me: Me }) => {
+      // Server ham tekshiradi (app: 'customer'); bu — eski server versiyasi uchun ikkinchi himoya
+      if (!APP_ROLES.customer.includes(profile.role)) {
+        await api('/auth/logout', { body: { refreshToken: t.refreshToken } }).catch(() => undefined);
+        throw new ApiError(403, 'USE_ADMIN_PANEL', 'Xodimlar admin paneldan kiradi');
+      }
       qc.setQueryData(['me'], profile);
       await tokens.set({ accessToken: t.accessToken, refreshToken: t.refreshToken });
     },
     [qc],
   );
 
-  const logout = useCallback(async () => {
-    const t = tokens.get();
-    if (t) await api('/auth/logout', { body: { refreshToken: t.refreshToken } }).catch(() => undefined);
-    await tokens.set(null);
-  }, []);
+  const logout = useCallback(closeSession, []);
 
   const value = useMemo<AuthState>(
     () => ({ booting: booting || (hasTokens && meQuery.isPending), me, login, logout }),
     [booting, hasTokens, meQuery.isPending, me, login, logout],
   );
   return <Ctx value={value}>{children}</Ctx>;
+}
+
+async function closeSession() {
+  const t = tokens.get();
+  if (t) await api('/auth/logout', { body: { refreshToken: t.refreshToken } }).catch(() => undefined);
+  await tokens.set(null);
 }
 
 export function useAuth() {

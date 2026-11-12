@@ -16,8 +16,9 @@ async def admin(ctx: Ctx) -> UserCtx:
     return await user_with_token(ctx, "SUPER_ADMIN")
 
 
-async def login_pw(ctx: Ctx, phone: str, password: str):
-    return await ctx.http.post("/api/v1/auth/login", json={"phone": phone, "password": password})
+async def login_pw(ctx: Ctx, phone: str, password: str, app: str = "admin"):
+    """Sukut bo'yicha xodim — admin paneldan"""
+    return await ctx.http.post("/api/v1/auth/login", json={"phone": phone, "password": password, "app": app})
 
 
 async def refresh(ctx: Ctx, refresh_token: str):
@@ -188,7 +189,7 @@ async def test_change_password_checks_current_closes_other_sessions(ctx: Ctx, ad
 async def test_user_without_password_sets_without_current(ctx: Ctx, admin: UserCtx):
     customer = await user_with_token(ctx, "CUSTOMER")
     assert (await change(ctx, customer.auth, {"newPassword": "first-pass"})).status_code == 204
-    assert (await login_pw(ctx, customer.user.phone, "first-pass")).status_code == 200
+    assert (await login_pw(ctx, customer.user.phone, "first-pass", "customer")).status_code == 200
 
 
 async def test_short_new_password_422_no_token_401(ctx: Ctx, admin: UserCtx):
