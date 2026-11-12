@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
+import { LogoMark } from '@/components/LogoMark';
 import { HEADER_BUTTON, HeaderControls } from '@/components/nav/HeaderControls';
 import { CountBadge, IconButton, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -8,7 +9,10 @@ import { useSite } from '@/lib/layout';
 import { useUnreadCount } from '@/lib/notifications';
 import { space } from '@/theme';
 
-/** Salomlashish: ism, firma va bildirishnomalar (saytda qo'ng'iroqcha sarlavhada) */
+/**
+ * Bosh sahifa boshi. Ilovada — brend (logo + nom), til, mavzu va bildirishnomalar;
+ * saytda logo yuqori sarlavhada bor — shuning uchun salomlashish: ism va firma.
+ */
 export function HomeHeader() {
   const { me } = useAuth();
   const { t } = useI18n();
@@ -19,10 +23,17 @@ export function HomeHeader() {
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(1) }}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text v={site ? 'display' : 'title'} accessibilityRole={site ? 'header' : undefined} numberOfLines={1}>{t('hello', { name: first })}</Text>
-        {!!p?.companyName && <Text muted numberOfLines={1}>{p.companyName}</Text>}
-      </View>
+      {site ? (
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text v="display" accessibilityRole="header" numberOfLines={1}>{t('hello', { name: first })}</Text>
+          {!!p?.companyName && <Text muted numberOfLines={1}>{p.companyName}</Text>}
+        </View>
+      ) : (
+        <View accessibilityRole="header" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
+          <LogoMark size={28} />
+          <Text v="heading" bold numberOfLines={1} style={{ flexShrink: 1 }}>{t('appName')}</Text>
+        </View>
+      )}
       {!site && <HeaderControls />}
       {!site && (
         <View>
