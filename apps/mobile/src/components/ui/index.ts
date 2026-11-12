@@ -8,6 +8,7 @@ export { Chip } from './Chip';
 export { CountBadge } from './CountBadge';
 export { Divider } from './Divider';
 export { EmptyState } from './EmptyState';
+export { Flag } from './Flag';
 export { ErrorState } from './ErrorState';
 export { GlassView } from './GlassView';
 export { Icon, type IconName } from './Icon';

@@ -1,6 +1,5 @@
-import { Image } from 'expo-image';
 import { Pressable, View } from 'react-native';
-import { flagUri } from '@mebel/shared';
+import { Flag } from '@/components/ui/Flag';
 import { LANGUAGES, useI18n } from '@/i18n';
 import { radius, space, useTheme } from '@/theme';
 
@@ -28,7 +27,7 @@ export function LanguageSwitch() {
               opacity: active || hovered ? 1 : 0.55,
             })}
           >
-            <Image source={{ uri: flagUri(l.value) }} style={{ width: 24, height: 16, borderRadius: 2 }} contentFit="cover" />
+            <Flag locale={l.value} />
           </Pressable>
         );
       })}

@@ -1,12 +1,8 @@
-import { Image } from 'expo-image';
 import { View } from 'react-native';
-import { flagUri } from '@mebel/shared';
-import { PressableScale } from '@/components/ui';
+import { Flag, PressableScale } from '@/components/ui';
 import { LANGUAGES, useI18n } from '@/i18n';
 import { radius, space, useTheme } from '@/theme';
 import { PopoverPanel, usePopover } from './Popover';
-
-const FLAG = { width: 24, height: 16, borderRadius: 2 } as const;
 
 /** Sarlavhadagi til tanlash: joriy til bayrog'i → popupda hamma bayroqlar (nomi — ekran o'quvchi uchun) */
 export function LanguageMenu() {
@@ -26,7 +22,7 @@ export function LanguageMenu() {
           hoverStyle={{ backgroundColor: colors.muted }}
           style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md }}
         >
-          <Image source={{ uri: flagUri(locale) }} style={FLAG} contentFit="cover" />
+          <Flag locale={locale} />
         </PressableScale>
       </View>
 
@@ -48,7 +44,7 @@ export function LanguageMenu() {
                 hoverStyle={{ backgroundColor: colors.muted }}
                 style={{ width: 48, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: active ? colors.muted : 'transparent' }}
               >
-                <Image source={{ uri: flagUri(l.value) }} style={FLAG} contentFit="cover" />
+                <Flag locale={l.value} />
               </PressableScale>
             );
           })}
