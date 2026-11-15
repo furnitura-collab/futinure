@@ -2,19 +2,18 @@
   "expo": {
     "name": "Mebel Order",
     "slug": "mebel-order",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mebelorder",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "uz.mebelorder.app",
       "infoPlist": {}
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FEF3C7",
+        "backgroundColor": "#321CD2",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -26,7 +25,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "output": "single",
@@ -37,9 +36,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#b45309",
+          "backgroundColor": "#321CD2",
           "image": "./assets/images/icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ],
       "expo-secure-store",
