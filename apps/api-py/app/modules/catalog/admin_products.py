@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import and_, delete, func, or_, select, text, true, update
+from sqlalchemy import and_, delete, func, or_, select, text, true
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,7 +12,7 @@ from app.core.serialize import pick, row
 from app.db import transaction
 from app.models import OrderItem, Product, ProductImage, ProductVariant, StockMovement, utcnow
 from app.modules.catalog.admin_categories import _ensure_category
-from app.modules.catalog.admin_common import _variants_by_product, present_variant, to_db
+from app.modules.catalog.admin_common import _variants_by_product, present_variant, set_sort_order, to_db
 from app.modules.catalog.category_tree import category_with_descendants
 from app.modules.catalog.schemas import AdminProductListQuery, ImageInput, ProductInput, ProductUpdate
 from app.modules.catalog.service import like_pattern
@@ -168,10 +168,7 @@ async def add_image(db: AsyncSession, product_id: str, body: ImageInput) -> Prod
 
 async def reorder_images(db: AsyncSession, product_id: str, image_ids: list[str]) -> None:
     async with transaction(db):
-        for i, id_ in enumerate(image_ids):
-            await db.execute(
-                update(ProductImage).where(ProductImage.id == id_, ProductImage.product_id == product_id).values(sort_order=i)
-            )
+        await set_sort_order(db, ProductImage, image_ids, ProductImage.product_id == product_id)
 
 
 async def delete_image(db: AsyncSession, product_id: str, image_id: str) -> None:

@@ -155,6 +155,10 @@ class ReorderImages(Schema):
     ids: Annotated[list[Uuid], Field(max_length=50)]
 
 
+class ReorderCategories(Schema):
+    ids: Annotated[list[Uuid], Field(min_length=1, max_length=500)]
+
+
 # ───────── Admin: narx va ombor ─────────
 
 

@@ -30,7 +30,7 @@ from app.services.audit import audit
 # ───────────── Batafsil ─────────────
 
 
-def _user_pick(u: User | None, *fields: str) -> dict[str, Any] | None:
+def _user_pick(u: Any, *fields: str) -> dict[str, Any] | None:
     if u is None:
         return None
     return {f: getattr(u, {"id": "id", "fullName": "full_name", "phone": "phone", "role": "role"}[f]) for f in fields}
@@ -51,14 +51,20 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
             fresh(select(OrderItem).where(OrderItem.order_id == order_id).order_by(OrderItem.created_at, OrderItem.id))
         )
     ).all()
-    customer = (await db.scalars(fresh(select(User).where(User.id == order.customer_id)))).one()
-    profile = (await db.scalars(fresh(select(CustomerProfile).where(CustomerProfile.user_id == order.customer_id)))).first()
-    price_group = None
-    if profile and profile.price_group_id:
-        pg = (await db.execute(select(PriceGroup.id, PriceGroup.name).where(PriceGroup.id == profile.price_group_id))).first()
-        price_group = {"id": pg.id, "name": pg.name} if pg else None
-    orders_count = await db.scalar(select(func.count()).select_from(Order).where(Order.customer_id == order.customer_id)) or 0
-    manager = (await db.scalars(fresh(select(User).where(User.id == order.manager_id)))).first() if order.manager_id else None
+    # Profil, narx guruhi va buyurtmalar soni — bitta so'rovda (baza uzoqda)
+    orders_count = select(func.count()).select_from(Order).where(Order.customer_id == order.customer_id).scalar_subquery()
+    profile, pg_id, pg_name, count = (
+        await db.execute(
+            fresh(
+                select(CustomerProfile, PriceGroup.id, PriceGroup.name, orders_count)
+                .select_from(User)
+                .outerjoin(CustomerProfile, CustomerProfile.user_id == User.id)
+                .outerjoin(PriceGroup, PriceGroup.id == CustomerProfile.price_group_id)
+                .where(User.id == order.customer_id)
+            )
+        )
+    ).one()
+    price_group = {"id": pg_id, "name": pg_name} if pg_id else None
     warehouse = (
         (await db.scalars(fresh(select(Warehouse).where(Warehouse.id == order.pickup_warehouse_id)))).first()
         if order.pickup_warehouse_id
@@ -77,12 +83,17 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         await db.scalars(fresh(select(Payment).where(Payment.order_id == order_id).order_by(Payment.created_at.desc())))
     ).all()
     delivery = (await db.scalars(fresh(select(Delivery).where(Delivery.order_id == order_id)))).first()
-    driver = None
-    if delivery and delivery.driver_id:
-        driver = (await db.scalars(fresh(select(User).where(User.id == delivery.driver_id)))).first()
 
-    actor_ids = list({h.actor_id for h in history if h.actor_id})
-    actors = {a.id: a for a in (await db.execute(select(User.id, User.full_name, User.role).where(User.id.in_(actor_ids)))).all()}
+    # Mijoz, menejer, haydovchi va tarixdagi aktyorlar — bitta so'rovda
+    driver_id = delivery.driver_id if delivery else None
+    user_ids = {order.customer_id, order.manager_id, driver_id, *(h.actor_id for h in history)} - {None}
+    users = {
+        u.id: u
+        for u in (await db.execute(select(User.id, User.full_name, User.phone, User.role).where(User.id.in_(user_ids)))).all()
+    }
+    customer = users[order.customer_id]
+    manager = users.get(order.manager_id) if order.manager_id else None
+    driver = users.get(driver_id) if driver_id else None
     variants = {
         v.id: v
         for v in (
@@ -129,7 +140,7 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         }
 
     def actor_json(actor_id: str | None) -> dict[str, Any] | None:
-        a = actors.get(actor_id) if actor_id else None
+        a = users.get(actor_id) if actor_id else None
         return {"id": a.id, "fullName": a.full_name, "role": a.role} if a else None
 
     return {
@@ -140,7 +151,7 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
             "phone": customer.phone,
             "fullName": customer.full_name,
             "customerProfile": row(profile, priceGroup=price_group) if profile else None,
-            "_count": {"orders": orders_count},
+            "_count": {"orders": count or 0},
         },
         "manager": _user_pick(manager, "id", "fullName", "phone"),
         "pickupWarehouse": row(warehouse) if warehouse else None,

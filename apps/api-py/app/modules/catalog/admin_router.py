@@ -28,6 +28,7 @@ from app.modules.catalog.schemas import (
     PriceTierInput,
     ProductInput,
     ProductUpdate,
+    ReorderCategories,
     ReorderImages,
     StockMovementInput,
     VariantInput,
@@ -54,6 +55,11 @@ async def categories(_: Staff, db: Db):
 @router.post("/categories", status_code=201)
 async def create_category(u: Staff, body: CategoryInput, db: Db):
     return await admin.create_category(db, body, u)
+
+
+@router.put("/categories/order", status_code=204)
+async def reorder_categories(_: Staff, body: ReorderCategories, db: Db):
+    await admin.reorder_categories(db, body.ids)
 
 
 @router.patch("/categories/{id}")

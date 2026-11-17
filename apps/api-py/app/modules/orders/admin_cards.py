@@ -32,14 +32,21 @@ def _unread_for_staff(order_ids: list[str]) -> Any:
 async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
     ids = [o.id for o in orders]
     user_ids = {o.customer_id for o in orders} | {o.manager_id for o in orders if o.manager_id}
-    users = {u.id: u for u in (await db.execute(select(User.id, User.phone, User.full_name).where(User.id.in_(user_ids)))).all()}
-    profiles = {
-        p.user_id: p
-        for p in (
+    # Foydalanuvchi va mijoz profili bitta so'rovda (baza uzoqda — har so'rov qimmat)
+    users = {
+        u.id: u
+        for u in (
             await db.execute(
-                select(CustomerProfile.user_id, CustomerProfile.type, CustomerProfile.company_name).where(
-                    CustomerProfile.user_id.in_([o.customer_id for o in orders])
+                select(
+                    User.id,
+                    User.phone,
+                    User.full_name,
+                    CustomerProfile.user_id.label("profile_id"),
+                    CustomerProfile.type,
+                    CustomerProfile.company_name,
                 )
+                .outerjoin(CustomerProfile, CustomerProfile.user_id == User.id)
+                .where(User.id.in_(user_ids))
             )
         ).all()
     }
@@ -57,7 +64,6 @@ async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
     out = []
     for o in orders:
         c = users[o.customer_id]
-        p = profiles.get(o.customer_id)
         m = users.get(o.manager_id) if o.manager_id else None
         out.append(
             {
@@ -75,7 +81,7 @@ async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
                     "id": c.id,
                     "phone": c.phone,
                     "fullName": c.full_name,
-                    "customerProfile": {"type": p.type, "companyName": p.company_name} if p else None,
+                    "customerProfile": {"type": c.type, "companyName": c.company_name} if c.profile_id else None,
                 },
                 "manager": {"id": m.id, "fullName": m.full_name} if m else None,
                 "itemsCount": counts.get(o.id, 0),
@@ -136,11 +142,25 @@ async def list_orders(db: AsyncSession, q: AdminOrderListQuery) -> dict[str, Any
 
 
 async def kanban(db: AsyncSession, q: AdminOrderListQuery) -> list[dict[str, Any]]:
-    """Kanban: har ustunda eng uzoq kutayotganlar birinchi"""
-    base = _where(q)
-    out = []
-    for status in KANBAN_STATUSES:
-        conds = [*base, Order.status == status]
-        orders = await _fetch(db, conds, Order.updated_at.asc(), None, KANBAN_LIMIT)
-        out.append({"status": status, "total": await _count(db, conds), "items": await _cards(db, orders)})
-    return out
+    """Kanban: har ustunda eng uzoq kutayotganlar birinchi; barcha ustunlar va ularning soni — bitta so'rovda"""
+    ranked = (
+        select(
+            Order.id,
+            func.row_number().over(partition_by=Order.status, order_by=Order.updated_at.asc()).label("rn"),
+            func.count().over(partition_by=Order.status).label("total"),
+        )
+        .where(*_where(q), Order.status.in_(KANBAN_STATUSES))
+        .subquery()
+    )
+    rows = (
+        await db.execute(
+            select(Order, ranked.c.total)
+            .join(ranked, ranked.c.id == Order.id)
+            .where(ranked.c.rn <= KANBAN_LIMIT)
+            .order_by(Order.updated_at.asc())
+            .execution_options(populate_existing=True)
+        )
+    ).all()
+    totals = {o.status: total for o, total in rows}
+    cards = await _cards(db, [o for o, _ in rows])
+    return [{"status": s, "total": totals.get(s, 0), "items": [c for c in cards if c["status"] == s]} for s in KANBAN_STATUSES]

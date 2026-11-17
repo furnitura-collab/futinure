@@ -10,9 +10,17 @@ from app.core.errors import AppError
 from app.core.serialize import row
 from app.db import transaction
 from app.models import Brand, Category, CustomerProfile, PriceGroup, Product, VariantGroupPrice, utcnow
-from app.modules.catalog.admin_common import record_not_found
+from app.modules.catalog.admin_common import record_not_found, set_sort_order
 from app.modules.catalog.category_tree import would_create_cycle
-from app.modules.catalog.schemas import BrandInput, BrandUpdate, CategoryInput, CategoryUpdate, PriceGroupInput, PriceGroupUpdate
+from app.modules.catalog.schemas import (
+    BrandInput,
+    BrandUpdate,
+    CategoryInput,
+    CategoryUpdate,
+    PriceGroupInput,
+    PriceGroupUpdate,
+    invalid,
+)
 from app.services.audit import audit
 
 # ───────────── Kategoriyalar ─────────────
@@ -83,6 +91,19 @@ async def delete_category(db: AsyncSession, id_: str, actor: AuthUser) -> None:
     async with transaction(db):
         await db.execute(delete(Category).where(Category.id == id_))
         await audit(db, actor_id=actor.id, entity="category", entity_id=id_, action="delete", before=before)
+
+
+async def reorder_categories(db: AsyncSession, ids: list[str]) -> None:
+    """Bir ota-kategoriya ichidagi tartib: tekshiruv (1 SELECT) + bitta UPDATE"""
+    if len(set(ids)) != len(ids):
+        raise invalid("ids", "DUPLICATE_ID")
+    parents = (await db.scalars(select(Category.parent_id).where(Category.id.in_(ids)))).all()
+    if len(parents) != len(ids):
+        raise AppError.not_found("Kategoriya")
+    if len(set(parents)) > 1:
+        raise AppError("CATEGORY_PARENT_MISMATCH", "Faqat bitta ota-kategoriya ichidagilar tartiblanadi", 400)
+    async with transaction(db):
+        await set_sort_order(db, Category, ids)
 
 
 # ───────────── Brendlar va narx guruhlari ─────────────

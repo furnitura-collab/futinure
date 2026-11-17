@@ -3,13 +3,13 @@
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, case, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.errors import AppError
 from app.core.serialize import pick
-from app.models import ProductVariant, VariantGroupPrice
+from app.models import Category, ProductImage, ProductVariant, VariantGroupPrice
 from app.modules.catalog.pricing import sorted_tiers, variant_stock_level
 
 # Miqdor ustunlari — bazaga Decimal bo'lib yoziladi
@@ -23,6 +23,18 @@ def to_db(data: dict[str, Any]) -> dict[str, Any]:
 def record_not_found() -> AppError:
     """Prisma P2025 (update/delete — yozuv yo'q)"""
     return AppError("NOT_FOUND", "Yozuv topilmadi", 404)
+
+
+async def set_sort_order(
+    db: AsyncSession, model: type[Category] | type[ProductImage], ids: list[str], *where: ColumnElement[bool]
+) -> None:
+    """Tartib bitta UPDATE ... CASE bilan — baza uzoqda, har qatorga alohida so'rov qimmat"""
+    if not ids:
+        return
+    order = case(*((model.id == id_, i) for i, id_ in enumerate(ids)), else_=model.sort_order)
+    await db.execute(
+        update(model).where(model.id.in_(ids), *where).values(sort_order=order).execution_options(synchronize_session=False)
+    )
 
 
 def admin_variant_options() -> list[Any]:
