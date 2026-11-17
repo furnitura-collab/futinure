@@ -14,3 +14,9 @@ export function ago(iso: string, t: I18n['t'], now = Date.now()) {
 export function customerName(c: { fullName: string | null; phone: string; customerProfile?: { companyName: string | null } | null }) {
   return c.customerProfile?.companyName || c.fullName || c.phone;
 }
+
+/** Avatar uchun bosh harflar: ismning 2 so'zi, ism bo'lmasa — telefonning oxirgi 2 raqami */
+export function initials(name: string | null, phone: string) {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  return parts.length ? parts.slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') : phone.slice(-2);
+}

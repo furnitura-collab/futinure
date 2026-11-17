@@ -1,79 +1,80 @@
+import { DndContext, DragOverlay, type Announcements, type DragEndEvent, type DragStartEvent, type UniqueIdentifier } from '@dnd-kit/core';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { MessageCircle, Store, Truck } from 'lucide-react';
-import { Link } from 'react-router';
-import { formatDateTime } from '@mebel/shared';
+import { useState } from 'react';
 import { ErrorState } from '@/components/ErrorState';
-import { StatusBadge } from '@/components/StatusBadge';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n';
-import { ago, customerName } from '@/lib/format';
+import { useAuth } from '@/lib/auth';
+import { useDndSensors } from '@/lib/dnd';
 import type { KanbanColumn, OrderCard } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { BoardCardOverlay } from './BoardCard';
+import { BoardColumn } from './BoardColumn';
+import { canMove, isOrderStatus } from './rules';
+import { useBoardDrop } from './useBoardDrop';
+import { useEdgeFade } from './useEdgeFade';
+import { TransitionDialog } from '../detail/TransitionDialog';
 
-/** Kanban doska: har bir status — alohida ustun */
+// Chetdagi soya: aylantirish mumkinligini bildiradi (mesh fon ustida gradient emas, mask)
+const FADE = {
+  both: '[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]',
+  left: '[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]',
+  right: '[mask-image:linear-gradient(to_left,transparent,black_1.5rem)]',
+};
+
+/** Kanban: har status — ustun; kartani boshqa ustunga sudrash — status o'tishi */
 export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }) {
-  const { t } = useI18n();
+  const { t, label } = useI18n();
+  const role = useAuth().me?.role;
+  const sensors = useDndSensors();
+  const fade = useEdgeFade<HTMLDivElement>(query.data);
+  const { busyId, pending, drop, close } = useBoardDrop();
+  const [active, setActive] = useState<OrderCard | null>(null);
+
+  const findCard = (id: UniqueIdentifier) => query.data?.flatMap((c) => c.items).find((o) => o.id === id);
+  const statusText = (id: UniqueIdentifier | undefined) => (typeof id === 'string' && isOrderStatus(id) ? label('orderStatus', id) : '');
+  const number = (id: UniqueIdentifier) => findCard(id)?.number ?? '';
+  const announcements: Announcements = {
+    onDragStart: ({ active: a }) => t('orders.drag.start', { number: number(a.id) }),
+    onDragOver: ({ active: a, over }) => (over ? t('orders.drag.over', { number: number(a.id), status: statusText(over.id) }) : undefined),
+    onDragEnd: ({ active: a, over }) => (over ? t('orders.drag.over', { number: number(a.id), status: statusText(over.id) }) : t('orders.drag.cancel')),
+    onDragCancel: () => t('orders.drag.cancel'),
+  };
+
+  const onDragStart = ({ active: a }: DragStartEvent) => setActive(findCard(a.id) ?? null);
+  const onDragEnd = ({ over }: DragEndEvent) => {
+    const card = active;
+    setActive(null);
+    const to = over?.id;
+    if (card && typeof to === 'string' && isOrderStatus(to) && canMove(card, to, role)) void drop(card, to);
+  };
+
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
+  const fadeClass = fade.left && fade.right ? FADE.both : fade.left ? FADE.left : fade.right ? FADE.right : undefined;
   return (
-    <div className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:-mx-8 lg:scroll-px-8 lg:px-8">
-      {query.isPending
-        ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-96 w-72 shrink-0 rounded-xl" />)
-        : query.data.map((col) => (
-            <section key={col.status} className="flex max-h-[calc(100dvh-20rem)] min-h-48 w-[17.5rem] shrink-0 snap-start flex-col rounded-xl border bg-muted/40">
-              <header className="flex items-center justify-between px-3 py-2.5">
-                <StatusBadge kind="orderStatus" value={col.status} />
-                <span className="text-xs font-medium text-muted-foreground tabular">{col.total}</span>
-              </header>
-              <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
-                {col.items.map((o) => (
-                  <BoardCard key={o.id} order={o} />
-                ))}
-                {col.items.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">{t('orders.columnEmpty')}</p>}
-                {col.total > col.items.length && (
-                  <p className="py-2 text-center text-xs text-muted-foreground">{t('orders.more', { n: col.total - col.items.length })}</p>
-                )}
-              </div>
-            </section>
-          ))}
-    </div>
-  );
-}
-
-function BoardCard({ order: o }: { order: OrderCard }) {
-  const { t, money, label } = useI18n();
-  // Shartlar saqlangan, oldindan to'lov kutilmoqda (aniq avans summasi faqat tafsilotda)
-  const awaitingPayment =
-    o.status === 'NEW' && (o.paymentTerms === 'PREPAID' ? o.paidTotal < o.grandTotal : o.paymentTerms === 'ADVANCE' && o.paidTotal === 0);
-  return (
-    <Link
-      to={`/orders/${o.id}`}
-      className="block rounded-lg border bg-card p-3 shadow-xs transition-[border-color,box-shadow,transform] duration-150 ease-out outline-none hover:-translate-y-px hover:border-primary/40 hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    <DndContext
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setActive(null)}
+      accessibility={{ announcements, screenReaderInstructions: { draggable: t('orders.drag.instructions') } }}
     >
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-mono font-medium text-foreground">{o.number}</span>
-        <span title={formatDateTime(o.updatedAt)}>{ago(o.updatedAt, t)}</span>
+      <div
+        ref={fade.ref}
+        className={cn(
+          '-mx-3 flex snap-x scroll-px-3 gap-3 overflow-x-auto px-3 pb-3 sm:-mx-5 sm:scroll-px-5 sm:px-5 lg:-mx-6 lg:scroll-px-6 lg:px-6',
+          fadeClass,
+        )}
+      >
+        {query.isPending
+          ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-96 min-w-[13.5rem] flex-1 basis-0 rounded-xl" />)
+          : query.data.map((col) => (
+              <BoardColumn key={col.status} column={col} role={role} busyId={busyId} target={active ? canMove(active, col.status, role) : undefined} />
+            ))}
       </div>
-      <p className="mt-1.5 truncate text-sm font-medium">{customerName(o.customer)}</p>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-sm font-semibold tabular">{money(o.grandTotal)}</span>
-        <span className="flex items-center gap-2 text-muted-foreground">
-          {o.deliveryType === 'DELIVERY' ? <Truck className="size-4" /> : <Store className="size-4" />}
-          {o.unreadMessages > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
-              <MessageCircle className="size-3" /> {o.unreadMessages}
-            </span>
-          )}
-        </span>
-      </div>
-      {(awaitingPayment || o.paymentTerms || (o.balanceDue > 0 && o.paidTotal > 0) || !o.manager) && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {awaitingPayment && <Badge variant="violet">{t('orders.awaitingPayment')}</Badge>}
-          {o.paymentTerms && <Badge>{label('paymentTerms', o.paymentTerms)}</Badge>}
-          {o.balanceDue > 0 && o.paidTotal > 0 && <Badge variant="warning">{t('orders.balance', { amount: money(o.balanceDue) })}</Badge>}
-          {!o.manager && <Badge variant="destructive">{t('orders.noManager')}</Badge>}
-        </div>
-      )}
-    </Link>
+      <DragOverlay dropAnimation={null}>{active && <BoardCardOverlay order={active} />}</DragOverlay>
+      {pending && <TransitionDialog {...pending} onClose={close} />}
+    </DndContext>
   );
 }

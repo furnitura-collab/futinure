@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Paperclip, Send } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { formatDateTime } from '@mebel/shared';
 import { AuthFile } from '@/components/AuthFile';
+import { Hint, IconButton } from '@/components/IconButton';
 import { SectionCard } from '@/components/SectionCard';
+import { Paperclip, Send } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,7 +61,7 @@ export function OrderChat({ orderId }: { orderId: string }) {
 
   return (
     <SectionCard title={t('chat.title')} flush>
-      <div ref={listRef} className="max-h-96 min-h-32 space-y-3 overflow-y-auto p-5 scroll-smooth">
+      <div ref={listRef} className="max-h-96 min-h-32 space-y-2.5 overflow-y-auto p-4 scroll-smooth">
         {isPending && (
           <div className="space-y-3">
             <Skeleton className="h-12 w-2/3" />
@@ -96,7 +97,7 @@ export function OrderChat({ orderId }: { orderId: string }) {
           );
         })}
       </div>
-      <form onSubmit={submit} className="flex gap-2 border-t p-3">
+      <form onSubmit={submit} className="flex gap-2 border-t px-4 py-3">
         <input
           ref={fileRef}
           type="file"
@@ -108,13 +109,13 @@ export function OrderChat({ orderId }: { orderId: string }) {
             e.target.value = '';
           }}
         />
-        <Button variant="outline" size="icon" onClick={() => fileRef.current?.click()} aria-label={t('chat.attach')} title={t('chat.attach')}>
-          <Paperclip />
-        </Button>
+        <IconButton icon={Paperclip} variant="outline" size="icon" label={t('chat.attach')} onClick={() => fileRef.current?.click()} />
         <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={t('chat.placeholder')} aria-label={t('chat.placeholder')} />
-        <Button type="submit" size="icon" loading={send.isPending} disabled={!text.trim()} aria-label={t('chat.send')}>
-          {!send.isPending && <Send />}
-        </Button>
+        <Hint label={t('chat.send')}>
+          <Button type="submit" size="icon" loading={send.isPending} disabled={!text.trim()} aria-label={t('chat.send')}>
+            {!send.isPending && <Send />}
+          </Button>
+        </Hint>
       </form>
     </SectionCard>
   );

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
 import { formatDateTime } from '@mebel/shared';
 import { MoneyInput } from '@/components/MoneyInput';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/IconButton';
+import { Plus, Trash } from '@/components/icons';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useI18n } from '@/i18n';
@@ -14,23 +14,32 @@ export type Tier = { minQty: string; price: number };
 
 const update = <T,>(list: T[], i: number, patch: Partial<T>) => list.map((x, j) => (j === i ? { ...x, ...patch } : x));
 
+function ListHeader({ label, addLabel, onAdd }: { label: string; addLabel: string; onAdd: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <Label>{label}</Label>
+      <IconButton icon={Plus} size="icon-xs" label={addLabel} onClick={onAdd} />
+    </div>
+  );
+}
+
+function RemoveRow({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n();
+  return <IconButton icon={Trash} size="icon" variant="ghost-destructive" label={t('common.delete')} onClick={onClick} />;
+}
+
 export function AttributesEditor({ pairs, onChange }: { pairs: Pair[]; onChange: (p: Pair[]) => void }) {
   const { t } = useI18n();
   return (
     <div className="grid gap-2">
-      <Label>{t('variant.attributes')}</Label>
+      <ListHeader label={t('variant.attributes')} addLabel={t('variant.addAttr')} onAdd={() => onChange([...pairs, { key: '', value: '' }])} />
       {pairs.map((p, i) => (
         <div key={i} className="flex gap-2">
           <Input aria-label={t('variant.attributes')} placeholder={t('variant.attrKey')} value={p.key} onChange={(e) => onChange(update(pairs, i, { key: e.target.value }))} />
           <Input aria-label={t('variant.attributes')} placeholder={t('variant.attrValue')} value={p.value} onChange={(e) => onChange(update(pairs, i, { value: e.target.value }))} />
-          <Button variant="ghost" size="icon" aria-label={t('common.delete')} onClick={() => onChange(pairs.filter((_, j) => j !== i))}>
-            <Trash2 />
-          </Button>
+          <RemoveRow onClick={() => onChange(pairs.filter((_, j) => j !== i))} />
         </div>
       ))}
-      <Button size="sm" variant="ghost" className="w-fit" onClick={() => onChange([...pairs, { key: '', value: '' }])}>
-        <Plus /> {t('variant.addAttr')}
-      </Button>
     </div>
   );
 }
@@ -39,7 +48,7 @@ export function TiersEditor({ tiers, unit, onChange }: { tiers: Tier[]; unit: st
   const { t } = useI18n();
   return (
     <div className="grid gap-2">
-      <Label>{t('variant.tiers')}</Label>
+      <ListHeader label={t('variant.tiers')} addLabel={t('variant.addTier')} onAdd={() => onChange([...tiers, { minQty: '', price: 0 }])} />
       {tiers.map((tier, i) => (
         <div key={i} className="flex items-center gap-2">
           <Input
@@ -52,14 +61,9 @@ export function TiersEditor({ tiers, unit, onChange }: { tiers: Tier[]; unit: st
           />
           <span className="shrink-0 text-sm whitespace-nowrap text-muted-foreground">{t('variant.tierFrom', { unit })}</span>
           <MoneyInput aria-label={t('catalog.price')} className="flex-1" value={tier.price} onChange={(v) => onChange(update(tiers, i, { price: v }))} />
-          <Button variant="ghost" size="icon" aria-label={t('common.delete')} onClick={() => onChange(tiers.filter((_, j) => j !== i))}>
-            <Trash2 />
-          </Button>
+          <RemoveRow onClick={() => onChange(tiers.filter((_, j) => j !== i))} />
         </div>
       ))}
-      <Button size="sm" variant="ghost" className="w-fit" onClick={() => onChange([...tiers, { minQty: '', price: 0 }])}>
-        <Plus /> {t('variant.addTier')}
-      </Button>
     </div>
   );
 }

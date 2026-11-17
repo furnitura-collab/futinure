@@ -1,16 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { formatDateTime, formatPhone } from '@mebel/shared';
+import { formatDateTime, formatPhone, type OrderStatus } from '@mebel/shared';
 import { DataTable, type Column } from '@/components/DataTable';
+import { Hint } from '@/components/IconButton';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
-import { customerName } from '@/lib/format';
+import { ago, customerName } from '@/lib/format';
 import type { OrderCard, Paginated } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { PAY_TONE, payState } from './payment';
 
-export type Filters = { q?: string; managerId?: string };
+export type Filters = { q?: string; managerId?: string; status?: OrderStatus };
 
 export function OrdersTable({ filters }: { filters: Filters }) {
   const { t, money } = useI18n();
@@ -19,7 +21,7 @@ export function OrdersTable({ filters }: { filters: Filters }) {
   const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['orders', 'list', filters, page],
     queryFn: () => api<Paginated<OrderCard>>('/admin/orders', { query: { ...filters, page, limit: 30 } }),
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const columns: Column<OrderCard>[] = [
@@ -49,21 +51,29 @@ export function OrdersTable({ filters }: { filters: Filters }) {
       sortValue: (o) => o.grandTotal,
     },
     {
-      id: 'paid',
-      header: t('orders.paid'),
-      align: 'right',
+      id: 'payment',
+      header: t('orders.payment'),
       hideBelow: 'md',
-      cell: (o) => (
-        <span className={cn('whitespace-nowrap tabular', o.balanceDue > 0 && o.status !== 'CANCELLED' && 'text-warning')}>{money(o.paidTotal)}</span>
-      ),
-      sortValue: (o) => o.paidTotal,
+      cell: (o) => {
+        const state = payState(o);
+        return (
+          <Hint label={t('orders.paidOf', { paid: money(o.paidTotal), total: money(o.grandTotal) })}>
+            <Badge variant={PAY_TONE[state]}>{t(`orders.pay.${state}`)}</Badge>
+          </Hint>
+        );
+      },
+      sortValue: (o) => o.grandTotal - o.paidTotal,
     },
     { id: 'manager', header: t('orders.manager'), hideBelow: 'lg', cell: (o) => <span className="text-muted-foreground">{o.manager?.fullName ?? '—'}</span> },
     {
       id: 'date',
       header: t('orders.createdAt'),
       hideBelow: 'sm',
-      cell: (o) => <span className="whitespace-nowrap text-muted-foreground">{formatDateTime(o.createdAt)}</span>,
+      cell: (o) => (
+        <Hint label={formatDateTime(o.createdAt)}>
+          <span className="whitespace-nowrap text-muted-foreground">{ago(o.createdAt, t)}</span>
+        </Hint>
+      ),
       sortValue: (o) => o.createdAt,
     },
   ];

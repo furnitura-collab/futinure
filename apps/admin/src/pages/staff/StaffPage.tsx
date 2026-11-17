@@ -1,22 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { KeyRound, MoreHorizontal, Pencil, ShieldCheck, ShieldOff, UserPlus, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { formatDateTime, formatPhone, type Role } from '@mebel/shared';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable, type Column } from '@/components/DataTable';
+import { IconButton } from '@/components/IconButton';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
+import { Toolbar } from '@/components/Toolbar';
+import { KeyRound, Pencil, ShieldCheck, ShieldOff, UsersRound } from '@/components/icons';
 import type { Tone } from '@/components/tone';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -87,40 +82,19 @@ export function StaffPage() {
       id: 'actions',
       header: <span className="sr-only">{t('common.actions')}</span>,
       align: 'right',
-      cell: (m) => {
-        const self = m.id === me?.id;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={t('common.actions')} onClick={(e) => e.stopPropagation()}>
-                <MoreHorizontal />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onSelect={() => setEditing(m)}>
-                <Pencil /> {t('common.edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setResetting(m)}>
-                <KeyRound /> {t('staff.resetPassword')}
-              </DropdownMenuItem>
-              {!self && (
-                <>
-                  <DropdownMenuSeparator />
-                  {m.isActive ? (
-                    <DropdownMenuItem variant="destructive" onSelect={() => setBlocking(m)}>
-                      <ShieldOff /> {t('staff.deactivate')}
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onSelect={() => toggle(m, true)}>
-                      <ShieldCheck /> {t('staff.activate')}
-                    </DropdownMenuItem>
-                  )}
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: (m) => (
+        // Qator bosilsa (yoki Enter) tahrir ochiladi — tugmadagi bosish/Enter qatorga o'tmasin
+        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+          <IconButton icon={Pencil} label={t('common.edit')} onClick={() => setEditing(m)} />
+          <IconButton icon={KeyRound} label={t('staff.resetPassword')} onClick={() => setResetting(m)} />
+          {m.id !== me?.id &&
+            (m.isActive ? (
+              <IconButton icon={ShieldOff} label={t('staff.deactivate')} variant="ghost-destructive" onClick={() => setBlocking(m)} />
+            ) : (
+              <IconButton icon={ShieldCheck} label={t('staff.activate')} disabled={setActive.isPending} onClick={() => toggle(m, true)} />
+            ))}
+        </div>
+      ),
     },
   ];
 
@@ -128,10 +102,12 @@ export function StaffPage() {
     <div>
       <PageHeader title={t('staff.title')} description={t('staff.subtitle')}>
         <Button onClick={() => setEditing('new')}>
-          <UserPlus /> {t('staff.add')}
+          {t('staff.add')}
         </Button>
       </PageHeader>
-      <SearchInput className="mb-4" value={q} onChange={setQ} placeholder={t('staff.search')} />
+      <Toolbar className="mb-3">
+        <SearchInput value={q} onChange={setQ} placeholder={t('staff.search')} />
+      </Toolbar>
       <DataTable
         columns={columns}
         rows={rows}

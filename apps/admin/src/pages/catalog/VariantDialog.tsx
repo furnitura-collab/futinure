@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FormDialog } from '@/components/FormDialog';
 import { FormField } from '@/components/FormField';
+import { IconButton } from '@/components/IconButton';
 import { MoneyInput } from '@/components/MoneyInput';
 import { SwitchField } from '@/components/SwitchField';
+import { Trash } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/i18n';
@@ -80,9 +82,7 @@ export function VariantDialog({ product, variant, onClose }: { product: AdminPro
       footer={
         <>
           {variant && can('SUPER_ADMIN') && (
-            <Button variant="ghost-destructive" className="sm:mr-auto" onClick={() => setDeleting(true)}>
-              {t('common.delete')}
-            </Button>
+            <IconButton icon={Trash} variant="ghost-destructive" size="icon" className="sm:mr-auto" label={t('common.delete')} onClick={() => setDeleting(true)} />
           )}
           <Button variant="outline" onClick={onClose}>
             {t('common.cancel')}
@@ -93,7 +93,7 @@ export function VariantDialog({ product, variant, onClose }: { product: AdminPro
         </>
       }
     >
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <div className="grid content-start gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label={t('variant.sku')}>{(f) => <Input {...f} value={sku} onChange={(e) => setSku(e.target.value)} />}</FormField>
@@ -112,7 +112,7 @@ export function VariantDialog({ product, variant, onClose }: { product: AdminPro
           <AttributesEditor pairs={pairs} onChange={setPairs} />
         </div>
 
-        <div className="grid content-start gap-5">
+        <div className="grid content-start gap-4">
           <TiersEditor tiers={tiers} unit={unit} onChange={setTiers} />
           <GroupPricesEditor value={groupPrices} onChange={setGroupPrices} />
           {variant && <PriceHistory variantId={variant.id} />}

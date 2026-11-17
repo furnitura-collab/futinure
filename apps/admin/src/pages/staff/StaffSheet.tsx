@@ -54,11 +54,11 @@ export function StaffSheet({ member, onClose }: { member: StaffMember | null; on
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full gap-0 sm:max-w-md">
         <form onSubmit={submit} className="flex h-full flex-col">
-          <SheetHeader className="border-b p-5">
+          <SheetHeader className="border-b p-4">
             <SheetTitle>{member ? t('staff.editTitle') : t('staff.createTitle')}</SheetTitle>
             <SheetDescription>{member ? (member.fullName ?? member.phone) : t('staff.createHint')}</SheetDescription>
           </SheetHeader>
-          <div className="grid flex-1 content-start gap-4 overflow-y-auto p-5">
+          <div className="grid flex-1 content-start gap-3 overflow-y-auto p-4">
             <FormField label={t('staff.fullName')} error={errorFor('fullName')}>
               {(f) => <Input {...f} autoFocus autoComplete="off" value={fullName} onChange={(e) => setFullName(e.target.value)} />}
             </FormField>

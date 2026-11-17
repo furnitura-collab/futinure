@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { BookOpen } from 'lucide-react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { formatDateTime } from '@mebel/shared';
 import { BalanceText } from '@/components/BalanceText';
 import { DataTable, type Column } from '@/components/DataTable';
+import { BookOpen } from '@/components/icons';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import type { LedgerEntry, Paginated } from '@/lib/types';
@@ -16,7 +16,7 @@ export function LedgerTable({ customerId }: { customerId: string }) {
   const { data, isPending, isFetching, error } = useQuery({
     queryKey: ['ledger', customerId, page],
     queryFn: () => api<Paginated<LedgerEntry>>(`/admin/customers/${customerId}/ledger`, { query: { page, limit: 20 } }),
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const columns: Column<LedgerEntry>[] = [

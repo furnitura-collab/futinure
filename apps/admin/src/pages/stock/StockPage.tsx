@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { PackageCheck, PackagePlus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import type { Unit } from '@mebel/shared';
 import { DataTable, type Column } from '@/components/DataTable';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/IconButton';
+import { PackageCheck, PackagePlus } from '@/components/icons';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import type { AdminProduct, LowStockRow } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { VariantPicker, type PickedVariant } from '../orders/VariantPicker';
+import { VariantPicker, type PickedVariant } from '@/components/VariantPicker';
 import { StockDialog } from './StockDialog';
 
 interface Target {
@@ -70,13 +70,12 @@ export function StockPage() {
       header: <span className="sr-only">{t('common.actions')}</span>,
       align: 'right',
       cell: (r) => (
-        <Button
-          size="sm"
-          variant="outline"
+        <IconButton
+          icon={PackagePlus}
+          label={t('stock.receive')}
+          side="left"
           onClick={() => setTarget({ id: r.variant_id, stockQty: r.stock_qty, reservedQty: r.reserved_qty, unit: r.unit, title: `${r.name_uz} · ${r.sku}` })}
-        >
-          <PackagePlus /> <span className="hidden sm:inline">{t('stock.receive')}</span>
-        </Button>
+        />
       ),
     },
   ];
@@ -84,7 +83,7 @@ export function StockPage() {
   return (
     <div>
       <PageHeader title={t('stock.title')} description={t('stock.subtitle')} />
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-3">
         <SectionCard className="xl:col-span-2" title={t('stock.low')} flush>
           <DataTable
             bare

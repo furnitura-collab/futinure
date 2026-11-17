@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { formatDateTime, type OrderStatus } from '@mebel/shared';
 import { Callout } from '@/components/Callout';
+import { CopyButton } from '@/components/CopyButton';
 import { ErrorState } from '@/components/ErrorState';
 import { MANAGERS } from '@/components/nav';
 import { PageHeader } from '@/components/PageHeader';
@@ -14,16 +15,23 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useOrderRoom } from '@/lib/realtime';
 import type { OrderDetail } from '@/lib/types';
-import { DeliveryCard } from './DeliveryCard';
+import { CustomerCard } from './CustomerCard';
+import { DeliveryAssign } from './DeliveryAssign';
+import { DeliverySection } from './DeliverySection';
+import { HistoryCard } from './HistoryCard';
+import { ManagerSelect } from './ManagerSelect';
 import { OrderChat } from './OrderChat';
 import { OrderItemsCard } from './OrderItemsCard';
-import { CustomerCard, DeliveryInfoCard, HistoryCard, ManagerCard, PaymentsCard, PaymentTermsCard } from './OrderSideCards';
+import { OrderProgress } from './OrderProgress';
+import { PaymentCard } from './PaymentCard';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { requiredPrepayment } from './TermsForm';
 import { TransitionDialog } from './TransitionDialog';
 
 /** Haydovchi faqat qabul qilingan buyurtmaga */
 const NOT_ACCEPTED: OrderStatus[] = ['NEW', 'CANCELLED'];
+
+type Transition = OrderDetail['availableTransitions'][number];
 
 export function OrderDetailPage() {
   const { t, money } = useI18n();
@@ -34,7 +42,7 @@ export function OrderDetailPage() {
     queryKey: ['order', id],
     queryFn: () => api<OrderDetail>(`/admin/orders/${id}`),
   });
-  const [transition, setTransition] = useState<{ to: OrderStatus; requiresComment: boolean } | null>(null);
+  const [transition, setTransition] = useState<Transition | null>(null);
   const [paying, setPaying] = useState(false);
 
   if (isPending) return <PageSkeleton />;
@@ -58,53 +66,57 @@ export function OrderDetailPage() {
         : t(`order.action.${to}`);
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         back={{ to: '/orders', label: t('order.back') }}
         title={<span className="font-mono">{order.number}</span>}
         meta={
           <>
+            <CopyButton value={order.number} label={t('order.copyNumber')} />
             <StatusBadge kind="orderStatus" value={order.status} />
-            <span className="text-sm text-muted-foreground">{formatDateTime(order.createdAt)}</span>
+            <span className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</span>
           </>
         }
       >
-        {forward.map((tr) => (
-          <Button key={tr.to} onClick={() => setTransition(tr)}>
-            {actionText(tr.to)}
-          </Button>
-        ))}
         {cancel && (
           <Button variant="ghost-destructive" onClick={() => setTransition(cancel)}>
             {t('order.action.CANCELLED')}
           </Button>
         )}
+        {forward.map((tr) => (
+          <Button key={tr.to} onClick={() => setTransition(tr)}>
+            {actionText(tr.to)}
+          </Button>
+        ))}
       </PageHeader>
 
-      <div className="space-y-3 empty:hidden">
+      {(order.status !== 'CANCELLED' || isManager) && (
+        <div className="surface flex flex-col gap-3 rounded-xl border px-4 py-3 lg:flex-row lg:items-center">
+          <OrderProgress order={order} />
+          {isManager && <ManagerSelect order={order} />}
+        </div>
+      )}
+
+      <div className="space-y-2 empty:hidden">
         {shortage && order.canSetTerms && <Callout tone="warning">{t('order.shortage')}</Callout>}
-        {awaitingPayment && (
-          <Callout tone="info">{t('order.termsAwaitPayment', { required: money(required), paid: money(order.paidTotal) })}</Callout>
-        )}
+        {awaitingPayment && <Callout tone="info">{t('order.termsAwaitPayment', { required: money(required), paid: money(order.paidTotal) })}</Callout>}
         {order.cancelReason && <Callout tone="destructive">{t('order.cancelReason', { reason: order.cancelReason })}</Callout>}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 space-y-6 lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <OrderItemsCard order={order} />
           {isManager && <OrderChat orderId={order.id} />}
         </div>
-
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-4">
           <CustomerCard order={order} />
-          <DeliveryInfoCard order={order} />
-          {isManager && order.deliveryType === 'DELIVERY' && accepted && (
-            // Server qiymati o'zgarsa (boshqa menejer) — forma qayta boshlanadi
-            <DeliveryCard key={`${order.delivery?.driverId}-${order.delivery?.scheduledDate}`} order={order} />
-          )}
-          {order.paymentTerms && <PaymentTermsCard order={order} />}
-          <PaymentsCard order={order} onRecord={isManager && order.balanceDue > 0 && payable ? () => setPaying(true) : undefined} />
-          {isManager && <ManagerCard order={order} />}
+          <DeliverySection order={order}>
+            {isManager && order.deliveryType === 'DELIVERY' && accepted && (
+              // Server qiymati o'zgarsa (boshqa menejer) — forma qayta boshlanadi
+              <DeliveryAssign key={`${order.delivery?.driverId}-${order.delivery?.scheduledDate}`} order={order} />
+            )}
+          </DeliverySection>
+          <PaymentCard order={order} onRecord={isManager && order.balanceDue > 0 && payable ? () => setPaying(true) : undefined} />
           <HistoryCard order={order} />
         </div>
       </div>

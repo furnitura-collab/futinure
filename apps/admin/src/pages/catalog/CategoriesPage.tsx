@@ -1,20 +1,15 @@
-import { FolderTree, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from '@/components/IconButton';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Plus, Trash } from '@/components/icons';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { flattenCategories, useBrands, useCategories, usePriceGroups } from '@/lib/catalog';
+import { useBrands, usePriceGroups } from '@/lib/catalog';
 import { useApiMutation } from '@/lib/mutation';
-import type { Category } from '@/lib/types';
-import { CategoryDialog } from './CategoryDialog';
+import { CategoryTree } from './CategoryTree';
 
 export function CategoriesPage() {
   const { t } = useI18n();
@@ -22,92 +17,14 @@ export function CategoriesPage() {
   return (
     <div>
       <PageHeader back={{ to: '/catalog', label: t('catalog.title') }} title={t('categories.title')} description={t('categories.subtitle')} />
-      <div className="grid gap-6 xl:grid-cols-3">
-        <CategoriesCard />
-        <div className="min-w-0 space-y-6">
+      <div className="grid gap-4 xl:grid-cols-3">
+        <CategoryTree />
+        <div className="min-w-0 space-y-4">
           <BrandsCard />
           <PriceGroupsCard editable={can('SUPER_ADMIN')} />
         </div>
       </div>
     </div>
-  );
-}
-
-function CategoriesCard() {
-  const { t } = useI18n();
-  const categories = useCategories();
-  const [editing, setEditing] = useState<Category | 'new' | null>(null);
-  const [deleting, setDeleting] = useState<Category | null>(null);
-  const remove = useApiMutation((id: string) => api(`/admin/categories/${id}`, { method: 'DELETE' }), {
-    invalidate: [['categories']],
-    success: t('common.deleted'),
-    onSuccess: () => setDeleting(null),
-  });
-  const rows = flattenCategories(categories.data ?? []);
-
-  return (
-    <SectionCard
-      className="xl:col-span-2"
-      title={t('catalog.categories')}
-      flush
-      actions={
-        <Button size="sm" onClick={() => setEditing('new')}>
-          <Plus /> {t('categories.add')}
-        </Button>
-      }
-    >
-      {categories.isPending ? (
-        <div className="space-y-2 p-5">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-9" />
-          ))}
-        </div>
-      ) : rows.length === 0 ? (
-        <EmptyState icon={FolderTree} title={t('categories.empty')} />
-      ) : (
-        <ul className="divide-y">
-          {rows.map((c) => {
-            const busy = c._count.products > 0 || c._count.children > 0;
-            return (
-              <li key={c.id} className="flex items-center gap-3 py-2 pr-3 transition-colors hover:bg-muted/40" style={{ paddingLeft: 20 + c.depth * 24 }}>
-                <span className="min-w-0 flex-1 text-sm">
-                  <span className="font-medium">{c.nameUz}</span>
-                  <span className="ml-2 hidden text-muted-foreground sm:inline">
-                    {c.nameRu} · /{c.slug}
-                  </span>
-                </span>
-                {!c.isActive && <Badge>{t('common.inactive')}</Badge>}
-                <span className="hidden text-xs text-muted-foreground sm:inline">{t('categories.productsCount', { n: c._count.products })}</span>
-                <Button size="icon-sm" variant="ghost" aria-label={t('common.edit')} title={t('common.edit')} onClick={() => setEditing(c)}>
-                  <Pencil />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="ghost-destructive"
-                  disabled={busy}
-                  aria-label={t('common.delete')}
-                  title={busy ? t('categories.notEmpty') : t('common.delete')}
-                  onClick={() => setDeleting(c)}
-                >
-                  <Trash2 />
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {editing && <CategoryDialog category={editing === 'new' ? null : editing} all={categories.data ?? []} onClose={() => setEditing(null)} />}
-      <ConfirmDialog
-        open={!!deleting}
-        onOpenChange={(o) => !o && setDeleting(null)}
-        title={t('common.delete')}
-        description={deleting?.nameUz}
-        confirmLabel={t('common.delete')}
-        destructive
-        loading={remove.isPending}
-        onConfirm={() => deleting && remove.mutate(deleting.id)}
-      />
-    </SectionCard>
   );
 }
 
@@ -121,9 +38,7 @@ function AddForm({ placeholder, onAdd, loading }: { placeholder: string; onAdd: 
   return (
     <form className="mb-3 flex gap-2" onSubmit={submit}>
       <Input aria-label={placeholder} placeholder={placeholder} value={name} onChange={(e) => setName(e.target.value)} />
-      <Button type="submit" size="icon" loading={loading} disabled={!name.trim()} aria-label={t('common.add')}>
-        {!loading && <Plus />}
-      </Button>
+      <IconButton type="submit" icon={Plus} size="icon" variant="default" label={t('common.add')} disabled={!name.trim() || loading} />
     </form>
   );
 }
@@ -142,15 +57,13 @@ function BrandsCard() {
             <span>
               {b.name} <span className="text-xs text-muted-foreground tabular">{b._count.products}</span>
             </span>
-            <Button
-              size="icon-sm"
+            <IconButton
+              icon={Trash}
               variant="ghost-destructive"
               disabled={b._count.products > 0}
-              aria-label={t('common.delete')}
+              label={t('common.delete')}
               onClick={() => remove.mutate(b.id)}
-            >
-              <Trash2 />
-            </Button>
+            />
           </li>
         ))}
       </ul>

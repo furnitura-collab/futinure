@@ -1,16 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
-import { Download, FolderTree, ImageOff, PackageSearch, Percent, Plus, Upload } from 'lucide-react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { DataTable, type Column } from '@/components/DataTable';
+import { IconButton } from '@/components/IconButton';
 import { OptionSelect } from '@/components/OptionSelect';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { SwitchField } from '@/components/SwitchField';
+import { Toolbar } from '@/components/Toolbar';
+import { Download, FolderTree, PackageSearch, Percent, Upload } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
-import { api, apiDownload, fileUrl } from '@/lib/api';
+import { api, apiDownload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { flattenCategories, useBrands, useCategories } from '@/lib/catalog';
 import { useDebounced } from '@/lib/hooks';
@@ -18,6 +20,7 @@ import type { AdminProduct, Paginated } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { BulkPriceDialog } from './BulkPriceDialog';
 import { ImportDialog } from './ImportDialog';
+import { ProductThumb } from './ProductThumb';
 
 type ActiveFilter = '' | 'true' | 'false';
 const isActiveFilter = (v: string): v is ActiveFilter => v === '' || v === 'true' || v === 'false';
@@ -55,7 +58,7 @@ export function CatalogPage() {
   const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['products', filters, page],
     queryFn: () => api<Paginated<AdminProduct>>('/admin/products', { query: { ...filters, page, limit: 25 } }),
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
   const resetPage =
     <T,>(set: (v: T) => void) =>
@@ -68,23 +71,16 @@ export function CatalogPage() {
     {
       id: 'image',
       header: '',
-      className: 'w-14 pr-0',
+      className: 'w-12 pr-0',
       hideBelow: 'sm',
-      cell: (p) =>
-        p.images[0] ? (
-          <img src={fileUrl(p.images[0].url)} alt="" loading="lazy" className="size-10 rounded-md object-cover ring-1 ring-border" />
-        ) : (
-          <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
-            <ImageOff className="size-4" />
-          </div>
-        ),
+      cell: (p) => <ProductThumb name={p.nameUz} url={p.images[0]?.url} />,
     },
     {
       id: 'name',
       header: t('catalog.product'),
       sortValue: (p) => p.nameUz,
       cell: (p) => (
-        <div className="min-w-44">
+        <div className="min-w-44 leading-tight">
           <p className="font-medium">{p.nameUz}</p>
           <p className="text-xs text-muted-foreground">{[p.code, p.brand?.name].filter(Boolean).join(' · ')}</p>
         </div>
@@ -116,34 +112,27 @@ export function CatalogPage() {
   return (
     <div>
       <PageHeader title={t('catalog.title')} description={t('catalog.subtitle')}>
-        <Button variant="ghost" asChild>
-          <Link to="/catalog/categories">
-            <FolderTree /> {t('catalog.categories')}
-          </Link>
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('catalog.exportFile', { date: new Date().toISOString().slice(0, 10) }))}
-        >
-          <Download /> {t('catalog.export')}
-        </Button>
-        <Button variant="outline" onClick={() => setDialog('import')}>
-          <Upload /> {t('catalog.import')}
-        </Button>
-        {can('SUPER_ADMIN') && (
-          <Button variant="outline" onClick={() => setDialog('bulk')}>
-            <Percent /> {t('catalog.bulkPrice')}
-          </Button>
-        )}
-        <Button onClick={() => navigate('/catalog/new')}>
-          <Plus /> {t('catalog.newProduct')}
-        </Button>
+        <Button onClick={() => navigate('/catalog/new')}>{t('catalog.newProduct')}</Button>
       </PageHeader>
 
-      <div className="mb-4 flex flex-col flex-wrap gap-3 sm:flex-row sm:items-center">
+      <Toolbar
+        className="mb-3"
+        actions={
+          <>
+            <IconButton icon={FolderTree} label={t('catalog.categories')} to="/catalog/categories" />
+            <IconButton
+              icon={Download}
+              label={t('catalog.export')}
+              onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('catalog.exportFile', { date: new Date().toISOString().slice(0, 10) }))}
+            />
+            <IconButton icon={Upload} label={t('catalog.import')} onClick={() => setDialog('import')} />
+            {can('SUPER_ADMIN') && <IconButton icon={Percent} label={t('catalog.bulkPrice')} onClick={() => setDialog('bulk')} />}
+          </>
+        }
+      >
         <SearchInput value={q} onChange={resetPage(setQ)} placeholder={t('catalog.search')} loading={isFetching && !!query} />
         <OptionSelect
-          className="sm:w-56"
+          className="sm:w-52"
           aria-label={t('catalog.category')}
           value={categoryId}
           onValueChange={resetPage(setCategoryId)}
@@ -151,7 +140,7 @@ export function CatalogPage() {
           options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
         />
         <OptionSelect
-          className="sm:w-44"
+          className="sm:w-40"
           aria-label={t('product.brand')}
           value={brandId}
           onValueChange={resetPage(setBrandId)}
@@ -159,7 +148,7 @@ export function CatalogPage() {
           options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
         />
         <OptionSelect
-          className="sm:w-36"
+          className="sm:w-32"
           aria-label={t('common.status')}
           value={active}
           onValueChange={(v) => isActiveFilter(v) && resetPage(setActive)(v)}
@@ -170,7 +159,7 @@ export function CatalogPage() {
           ]}
         />
         <SwitchField checked={lowStock} onCheckedChange={resetPage(setLowStock)} label={t('catalog.lowStock')} />
-      </div>
+      </Toolbar>
 
       <DataTable
         columns={columns}

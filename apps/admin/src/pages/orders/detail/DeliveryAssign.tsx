@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Banknote, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate, formatDateTime, formatPhone, type OrderStatus } from '@mebel/shared';
 import { AuthFile } from '@/components/AuthFile';
 import { Callout } from '@/components/Callout';
 import { FormField } from '@/components/FormField';
 import { OptionSelect } from '@/components/OptionSelect';
-import { SectionCard } from '@/components/SectionCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,12 +12,13 @@ import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
 import type { Driver, OrderDetail } from '@/lib/types';
+import { PhoneLine } from '@/components/PhoneLine';
 
 /** Yo'lga chiqqunga qadar haydovchini almashtirish mumkin (API'dagi qoida bilan bir xil) */
 const ASSIGNABLE: OrderStatus[] = ['PREPARING', 'READY'];
 
-/** Yetkazish: haydovchi biriktirish va topshirish natijasi (surat, qabul qilgan, naqd) */
-export function DeliveryCard({ order }: { order: OrderDetail }) {
+/** Yetkazish kartasi ichida: haydovchi biriktirish va topshirish natijasi (surat, qabul qilgan, naqd) */
+export function DeliveryAssign({ order }: { order: OrderDetail }) {
   const { t, money } = useI18n();
   const d = order.delivery;
   const editable = ASSIGNABLE.includes(order.status);
@@ -40,14 +39,18 @@ export function DeliveryCard({ order }: { order: OrderDetail }) {
   const changed = driverId !== (d?.driverId ?? '') || day !== initialDay;
 
   return (
-    <SectionCard title={t('delivery.title')} actions={d?.driver && <StatusBadge kind="deliveryStatus" value={d.status} />} contentClassName="space-y-3 text-sm">
-      {d?.driver && (
+    <div className="space-y-3 border-t pt-3">
+      {d?.driver && !editable && (
         <div className="space-y-1">
-          <p className="font-medium">{d.driver.fullName ?? '—'}</p>
-          <a href={`tel:${d.driver.phone}`} className="inline-flex items-center gap-1.5 text-primary hover:underline">
-            <Phone className="size-3.5" /> {formatPhone(d.driver.phone)}
-          </a>
-          {d.scheduledDate && <p className="text-muted-foreground">{t('delivery.plan', { date: formatDate(d.scheduledDate) })}</p>}
+          <div className="flex items-center justify-between gap-2">
+            <p>
+              <span className="text-muted-foreground">{t('delivery.title')}: </span>
+              <span className="font-medium">{d.driver.fullName ?? '—'}</span>
+            </p>
+            <StatusBadge kind="deliveryStatus" value={d.status} />
+          </div>
+          <PhoneLine phone={d.driver.phone} />
+          {d.scheduledDate && <p className="text-xs text-muted-foreground">{t('delivery.plan', { date: formatDate(d.scheduledDate) })}</p>}
         </div>
       )}
 
@@ -59,9 +62,7 @@ export function DeliveryCard({ order }: { order: OrderDetail }) {
             <p>{t('delivery.received', { name: d.receiverName ?? '—' })}</p>
             {d.deliveredAt && <p className="text-xs text-muted-foreground">{formatDateTime(d.deliveredAt)}</p>}
             {d.cashCollected !== null && (
-              <p className="flex items-center gap-1.5">
-                <Banknote className="size-4 text-success" /> {t('delivery.cash', { amount: money(d.cashCollected) })}
-              </p>
+              <p>{t('delivery.cash', { amount: money(d.cashCollected) })}</p>
             )}
             {d.proofUploadId && <AuthFile path={`/admin/orders/${order.id}/delivery/proof`} mimeType="image/jpeg" className="max-h-48" />}
           </div>
@@ -69,27 +70,39 @@ export function DeliveryCard({ order }: { order: OrderDetail }) {
       )}
 
       {editable && (
-        <div className="grid gap-3">
-          <FormField label={t('delivery.driver')}>
-            {(f) => (
-              <OptionSelect
-                {...f}
-                value={driverId}
-                onValueChange={setDriverId}
-                emptyLabel={t('common.unassigned')}
-                options={(drivers ?? []).map((x) => ({
-                  value: x.id,
-                  label: `${x.fullName ?? formatPhone(x.phone)} · ${t('delivery.activeCount', { n: x._count.deliveries })}`,
-                }))}
-              />
-            )}
-          </FormField>
-          <FormField label={t('delivery.date')}>{(f) => <Input {...f} type="date" value={day} onChange={(e) => setDay(e.target.value)} />}</FormField>
-          <Button size="sm" className="w-full" disabled={!changed} loading={save.isPending} onClick={() => save.mutate(undefined)}>
-            {t('common.save')}
-          </Button>
+        <div className="space-y-2">
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <FormField label={t('delivery.driver')}>
+              {(f) => (
+                <OptionSelect
+                  {...f}
+                  value={driverId}
+                  onValueChange={setDriverId}
+                  emptyLabel={t('common.unassigned')}
+                  options={(drivers ?? []).map((x) => ({
+                    value: x.id,
+                    label: `${x.fullName ?? formatPhone(x.phone)} · ${t('delivery.activeCount', { n: x._count.deliveries })}`,
+                  }))}
+                />
+              )}
+            </FormField>
+            <FormField label={t('delivery.date')}>
+              {(f) => <Input {...f} type="date" className="w-36" value={day} onChange={(e) => setDay(e.target.value)} />}
+            </FormField>
+          </div>
+          {d?.driver && !changed && (
+            <div className="flex items-center justify-between gap-2">
+              <PhoneLine phone={d.driver.phone} />
+              <StatusBadge kind="deliveryStatus" value={d.status} />
+            </div>
+          )}
+          {changed && (
+            <Button size="sm" className="w-full" loading={save.isPending} onClick={() => save.mutate(undefined)}>
+              {t('common.save')}
+            </Button>
+          )}
         </div>
       )}
-    </SectionCard>
+    </div>
   );
 }

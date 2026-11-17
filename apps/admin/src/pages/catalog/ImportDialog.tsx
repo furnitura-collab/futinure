@@ -1,10 +1,11 @@
-import { Download, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { Callout } from '@/components/Callout';
+import { DropZone } from '@/components/dnd/DropZone';
 import { FormDialog } from '@/components/FormDialog';
+import { IconButton } from '@/components/IconButton';
+import { Download } from '@/components/icons';
 import { TONE_TEXT } from '@/components/tone';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useI18n, type TKey } from '@/i18n';
 import { api, apiDownload } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
@@ -88,24 +89,25 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="grid gap-4">
-        <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center">
-          <FileSpreadsheet className="size-8 shrink-0 text-success" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Input
-              type="file"
-              accept=".xlsx"
-              aria-label={t('import.chooseFile')}
-              onChange={(e) => {
-                setFile(e.target.files?.[0] ?? null);
-                setResult(null);
-              }}
-            />
-            <p className="text-xs text-muted-foreground">{t('import.formatHint')}</p>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('import.templateFile'))}>
-            <Download /> {t('import.currentCatalog')}
-          </Button>
+        <div className="flex items-start gap-2">
+          <p className="flex-1 text-xs text-muted-foreground">{t('import.formatHint')}</p>
+          <IconButton
+            icon={Download}
+            label={t('import.currentCatalog')}
+            side="left"
+            onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('import.templateFile'))}
+          />
         </div>
+        <DropZone
+          accept=".xlsx"
+          onFiles={([f]) => {
+            setFile(f ?? null);
+            setResult(null);
+          }}
+          hint={file ? t('import.replaceFile') : '.xlsx'}
+        >
+          {file ? <span className="font-medium break-all">{file.name}</span> : undefined}
+        </DropZone>
 
         {result && s && (
           <div className="grid animate-fade-up gap-4">

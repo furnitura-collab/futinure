@@ -1,12 +1,12 @@
 import { lazy, StrictMode, Suspense, type ComponentType, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ShieldOff, SearchX } from 'lucide-react';
 import { createBrowserRouter, Link, Navigate, RouterProvider } from 'react-router';
 import { Toaster } from 'sonner';
 import type { Role } from '@mebel/shared';
 import { AppShell } from '@/components/AppShell';
 import { EmptyState } from '@/components/EmptyState';
+import { ShieldOff, SearchX } from '@/components/icons';
 import { MANAGERS } from '@/components/nav';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,14 @@ import { ApiError } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { RealtimeProvider } from '@/lib/realtime';
 import { ThemeProvider, useTheme } from '@/lib/theme';
+import { PAGES, type PageKey } from '@/lib/pages';
 import { LoginPage } from '@/pages/Login';
+import '@fontsource-variable/inter/index.css';
 import './index.css';
 
 /** Sahifalar alohida yuklanadi — birinchi ochilish tezroq */
-function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
-  const Component: ComponentType = lazy(() => load().then((m) => ({ default: m[name] as ComponentType })));
+function page(key: PageKey) {
+  const Component: ComponentType = lazy(() => PAGES[key]().then((c) => ({ default: c })));
   return (
     <Suspense fallback={<PageSkeleton />}>
       <Component />
@@ -55,7 +57,8 @@ const managers = (node: ReactNode) => <RequireRole roles={MANAGERS}>{node}</Requ
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 15_000,
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
       // 4xx — qayta urinish foydasiz
       retry: (count, err) => !(err instanceof ApiError && err.status < 500) && count < 2,
       refetchOnWindowFocus: true,
@@ -70,19 +73,19 @@ const router = createBrowserRouter(
       element: <AppShell />,
       children: [
         { index: true, element: <Navigate to="/orders" replace /> },
-        { path: 'orders', element: page(() => import('./pages/orders/OrdersPage'), 'OrdersPage') },
-        { path: 'orders/:id', element: page(() => import('./pages/orders/OrderDetailPage'), 'OrderDetailPage') },
-        { path: 'payments', element: managers(page(() => import('./pages/payments/PaymentsPage'), 'PaymentsPage')) },
-        { path: 'catalog', element: managers(page(() => import('./pages/catalog/CatalogPage'), 'CatalogPage')) },
-        { path: 'catalog/categories', element: managers(page(() => import('./pages/catalog/CategoriesPage'), 'CategoriesPage')) },
-        { path: 'catalog/:id', element: managers(page(() => import('./pages/catalog/ProductEditPage'), 'ProductEditPage')) },
-        { path: 'stock', element: page(() => import('./pages/stock/StockPage'), 'StockPage') },
-        { path: 'customers', element: managers(page(() => import('./pages/customers/CustomersPage'), 'CustomersPage')) },
-        { path: 'customers/:id', element: managers(page(() => import('./pages/customers/CustomerDetailPage'), 'CustomerDetailPage')) },
-        { path: 'reports/receivables', element: managers(page(() => import('./pages/reports/ReceivablesPage'), 'ReceivablesPage')) },
+        { path: 'orders', element: page('orders') },
+        { path: 'orders/:id', element: page('order') },
+        { path: 'payments', element: managers(page('payments')) },
+        { path: 'catalog', element: managers(page('catalog')) },
+        { path: 'catalog/categories', element: managers(page('categories')) },
+        { path: 'catalog/:id', element: managers(page('product')) },
+        { path: 'stock', element: page('stock') },
+        { path: 'customers', element: managers(page('customers')) },
+        { path: 'customers/:id', element: managers(page('customer')) },
+        { path: 'reports/receivables', element: managers(page('receivables')) },
         {
           path: 'staff',
-          element: <RequireRole roles={['SUPER_ADMIN']}>{page(() => import('./pages/staff/StaffPage'), 'StaffPage')}</RequireRole>,
+          element: <RequireRole roles={['SUPER_ADMIN']}>{page('staff')}</RequireRole>,
         },
         { path: '*', element: <NotFound /> },
       ],
@@ -93,7 +96,7 @@ const router = createBrowserRouter(
 
 function ThemedToaster() {
   const { resolved } = useTheme();
-  return <Toaster theme={resolved} position="top-right" richColors closeButton toastOptions={{ className: 'backdrop-blur-xl' }} />;
+  return <Toaster theme={resolved} position="bottom-right" richColors closeButton toastOptions={{ className: 'backdrop-blur-xl' }} />;
 }
 
 createRoot(document.getElementById('root')!).render(

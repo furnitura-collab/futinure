@@ -26,7 +26,7 @@ export function FormField({
   const noteId = `${id}-note`;
   const note = error || hint;
   return (
-    <div className={cn('grid gap-1.5', className)}>
+    <div className={cn('grid content-start gap-1.5', className)}>
       <Label htmlFor={id}>{label}</Label>
       {children({ id, 'aria-invalid': error ? true : undefined, 'aria-describedby': note ? noteId : undefined })}
       {note && (

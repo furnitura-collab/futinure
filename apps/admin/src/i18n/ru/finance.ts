@@ -4,9 +4,11 @@ import type { finance as uzPart } from '../uz/finance';
 export const finance: Pick<Dictionary, keyof typeof uzPart> = {
   customers: {
     title: 'Клиенты',
-    subtitle: 'Клиенты, баланс и условия кредита',
     search: 'Имя, фирма, ИНН, телефон',
     allGroups: 'Все группы',
+    debtAll: 'Все',
+    debtFilter: 'Долг',
+    inactive: 'Неактивен',
     debtors: 'Должники',
     overdue: 'Просроченные',
     empty: 'Клиенты не найдены',
@@ -18,6 +20,9 @@ export const finance: Pick<Dictionary, keyof typeof uzPart> = {
     lastLogin: 'Последний вход',
   },
   customer: {
+    available: 'Свободно: {amount}',
+    orders: 'Заказы',
+    phone: 'Телефон',
     back: 'К клиентам',
     adjust: 'Корректировка',
     refund: 'Возврат денег',
@@ -97,6 +102,7 @@ export const finance: Pick<Dictionary, keyof typeof uzPart> = {
     confirm: 'Деньги поступили — подтвердить',
     reject: 'Отклонить',
     showReceipt: 'Показать чек',
+    receiptTitle: 'Чек — {amount}',
     confirmedToast: '{amount} подтверждено',
     rejectTitle: '{amount} — отклонить',
     reasonLabel: 'Причина (увидит клиент)',

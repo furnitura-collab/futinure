@@ -1,6 +1,6 @@
+import { DataTable, type Column } from '@/components/DataTable';
 import { SectionCard } from '@/components/SectionCard';
 import { TotalsList } from '@/components/TotalsList';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useI18n } from '@/i18n';
 import { attrsText } from '@/lib/catalog';
 import type { OrderDetail, OrderItem } from '@/lib/types';
@@ -24,39 +24,41 @@ export function OrderItemsCard({ order }: { order: OrderDetail }) {
   const removed = order.items.filter((i) => i.status === 'REMOVED');
   const open = order.status !== 'CANCELLED';
 
+  const columns: Column<OrderItem>[] = [
+    {
+      id: 'item',
+      header: t('order.item'),
+      cell: (i) => (
+        <>
+          <p className="font-medium">{i.nameUz}</p>
+          <p className="text-xs text-muted-foreground">
+            {i.sku}
+            {Object.keys(i.attributes).length > 0 && ` · ${attrsText(i.attributes)}`}
+          </p>
+          <StockNote item={i} />
+        </>
+      ),
+    },
+    {
+      id: 'qty',
+      header: t('order.qty'),
+      align: 'right',
+      className: 'whitespace-nowrap tabular',
+      cell: (i) => (
+        <>
+          {i.qty} {label('unit', i.unit)}
+          {i.requestedQty !== i.qty && <p className="text-xs text-muted-foreground line-through">{i.requestedQty}</p>}
+        </>
+      ),
+    },
+    { id: 'price', header: t('order.price'), align: 'right', hideBelow: 'sm', className: 'whitespace-nowrap tabular', cell: (i) => money(i.unitPrice) },
+    { id: 'sum', header: t('order.sum'), align: 'right', className: 'font-medium whitespace-nowrap tabular', cell: (i) => money(i.lineTotal) },
+  ];
+
   return (
     <SectionCard title={t('order.items', { n: active.length })} flush>
-      <Table>
-        <TableHeader className="bg-muted/40">
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="px-5 text-xs text-muted-foreground uppercase">{t('order.item')}</TableHead>
-            <TableHead className="text-right text-xs text-muted-foreground uppercase">{t('order.qty')}</TableHead>
-            <TableHead className="hidden text-right text-xs text-muted-foreground uppercase sm:table-cell">{t('order.price')}</TableHead>
-            <TableHead className="px-5 text-right text-xs text-muted-foreground uppercase">{t('order.sum')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {active.map((i) => (
-            <TableRow key={i.id}>
-              <TableCell className="px-5 py-3 whitespace-normal">
-                <p className="font-medium">{i.nameUz}</p>
-                <p className="text-xs text-muted-foreground">
-                  {i.sku}
-                  {Object.keys(i.attributes).length > 0 && ` · ${attrsText(i.attributes)}`}
-                </p>
-                <StockNote item={i} />
-              </TableCell>
-              <TableCell className="py-3 text-right whitespace-nowrap tabular">
-                {i.qty} {label('unit', i.unit)}
-                {i.requestedQty !== i.qty && <p className="text-xs text-muted-foreground line-through">{i.requestedQty}</p>}
-              </TableCell>
-              <TableCell className="hidden py-3 text-right whitespace-nowrap tabular sm:table-cell">{money(i.unitPrice)}</TableCell>
-              <TableCell className="px-5 py-3 text-right font-medium whitespace-nowrap tabular">{money(i.lineTotal)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="flex flex-col gap-4 border-t p-5 sm:flex-row sm:items-end sm:justify-between">
+      <DataTable bare columns={columns} rows={active} rowKey={(i) => i.id} empty={{ title: t('order.items', { n: 0 }) }} />
+      <div className="flex flex-col gap-4 border-t px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
         <p className="text-xs text-muted-foreground">
           {removed.length > 0 && t('order.removed', { list: removed.map((i) => `${i.sku} × ${i.requestedQty}`).join(', ') })}
         </p>

@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { ArrowDown, ArrowUp, ChevronsUpDown } from '@/components/icons';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -76,8 +76,9 @@ export function DataTable<T>({
   const toggleSort = (id: string) =>
     setSort((s) => (s?.id !== id ? { id, dir: 'asc' } : s.dir === 'asc' ? { id, dir: 'desc' } : null));
 
+  // Qator ichidagi tugma/havolada bosilgan tugma qatorni ochmasin
   const onKey = (row: T) => (e: KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       onRowClick?.(row);
     }
@@ -109,7 +110,7 @@ export function DataTable<T>({
   } else {
     body = (
       <Table>
-        <TableHeader className="bg-muted/40">
+        <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent">
             {columns.map((c) => {
               const active = sort?.id === c.id ? sort.dir : null;
@@ -117,20 +118,20 @@ export function DataTable<T>({
                 <TableHead
                   key={c.id}
                   aria-sort={active === 'asc' ? 'ascending' : active === 'desc' ? 'descending' : undefined}
-                  className={cn('h-10 px-4 text-xs font-medium tracking-wide text-muted-foreground uppercase', cellCls(c))}
+                  className={cn('h-9 px-4 text-[11px] font-medium tracking-wide text-muted-foreground uppercase', cellCls(c))}
                 >
                   {c.sortValue ? (
                     <button
                       type="button"
                       onClick={() => toggleSort(c.id)}
-                      title={t('common.sort')}
+                      aria-label={`${typeof c.header === 'string' ? c.header : ''} — ${t('common.sort')}`}
                       className={cn(
-                        'inline-flex items-center gap-1 rounded-sm uppercase transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                        'group/sort inline-flex items-center gap-1 rounded-sm uppercase transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
                         c.align === 'right' && 'flex-row-reverse',
                       )}
                     >
                       {c.header}
-                      {active === 'asc' ? <ArrowUp className="size-3" /> : active === 'desc' ? <ArrowDown className="size-3" /> : <ChevronsUpDown className="size-3 opacity-50" />}
+                      {active === 'asc' ? <ArrowUp className="size-3" /> : active === 'desc' ? <ArrowDown className="size-3" /> : <ChevronsUpDown className="size-3 opacity-0 transition-opacity group-hover/sort:opacity-60 group-focus-visible/sort:opacity-60" />}
                     </button>
                   ) : (
                     c.header
@@ -148,12 +149,12 @@ export function DataTable<T>({
               onClick={onRowClick && (() => onRowClick(row))}
               onKeyDown={onRowClick && onKey(row)}
               className={cn(
-                onRowClick && 'cursor-pointer focus-visible:bg-muted/60 focus-visible:outline-none',
+                onRowClick && 'cursor-pointer hover:bg-primary/4 focus-visible:bg-primary/6 focus-visible:outline-none',
                 rowClassName?.(row),
               )}
             >
               {columns.map((c) => (
-                <TableCell key={c.id} className={cn('px-4 py-3 whitespace-normal', cellCls(c))}>
+                <TableCell key={c.id} className={cn('px-4 py-2.5 whitespace-normal', cellCls(c))}>
                   {c.cell(row)}
                 </TableCell>
               ))}

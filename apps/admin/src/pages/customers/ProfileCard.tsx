@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CUSTOMER_TYPES, formatDateTime, formatPhone, PAYMENT_METHODS, type CustomerType, type PaymentMethod } from '@mebel/shared';
+import { CUSTOMER_TYPES, formatDateTime, PAYMENT_METHODS, type CustomerType, type PaymentMethod } from '@mebel/shared';
 import { ChipGroup } from '@/components/ChipGroup';
 import { FormField } from '@/components/FormField';
 import { MoneyInput } from '@/components/MoneyInput';
@@ -34,35 +34,29 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
   const [isActive, setIsActive] = useState(c.isActive);
   const admin = can('SUPER_ADMIN');
 
-  const save = useApiMutation(
-    () =>
-      api(`/admin/customers/${c.id}`, {
-        method: 'PATCH',
-        body: {
-          fullName: fullName.trim() || undefined,
-          type,
-          companyName: companyName.trim() || null,
-          inn: inn.trim() || null,
-          priceGroupId: priceGroupId || null,
-          allowedPaymentMethods: methods,
-          isActive,
-          ...(admin && { creditLimit, paymentTermDays: Number(termDays) || 0 }),
-        },
-      }),
-    { invalidate: [['customer', c.id], ['customers']], success: t('common.saved') },
-  );
+  const body = {
+    fullName: fullName.trim() || undefined,
+    type,
+    companyName: companyName.trim() || null,
+    inn: inn.trim() || null,
+    priceGroupId: priceGroupId || null,
+    allowedPaymentMethods: methods,
+    isActive,
+    ...(admin && { creditLimit, paymentTermDays: Number(termDays) || 0 }),
+  };
+  // Boshlang'ich holat bilan solishtiriladi — o'zgarish bo'lmasa saqlash tugmasi o'chiq
+  const [initial] = useState(() => JSON.stringify(body));
+  const dirty = JSON.stringify(body) !== initial;
+  const save = useApiMutation(() => api(`/admin/customers/${c.id}`, { method: 'PATCH', body }), {
+    invalidate: [['customer', c.id], ['customers']],
+    success: t('common.saved'),
+  });
   const innInvalid = type === 'COMPANY' && inn !== '' && inn.length !== 9;
 
   return (
-    <SectionCard title={t('customer.profile')} className="self-start" contentClassName="grid gap-4">
-      <p className="text-sm">
-        <a href={`tel:${c.phone}`} className="font-medium text-primary hover:underline">
-          {formatPhone(c.phone)}
-        </a>
-        <span className="text-muted-foreground">
-          {' '}
-          · {LOCALE_NAMES[c.locale]} · {t('common.since', { date: formatDateTime(c.createdAt) })}
-        </span>
+    <SectionCard title={t('customer.profile')} className="self-start" contentClassName="grid gap-3">
+      <p className="text-xs text-muted-foreground">
+        {LOCALE_NAMES[c.locale]} · {t('common.since', { date: formatDateTime(c.createdAt) })}
       </p>
       <FormField label={t('customer.fullName')}>{(f) => <Input {...f} value={fullName} onChange={(e) => setFullName(e.target.value)} />}</FormField>
       <div className="grid grid-cols-2 gap-3">
@@ -114,7 +108,7 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
         />
       </div>
       <SwitchField checked={isActive} onCheckedChange={setIsActive} label={isActive ? t('common.active') : t('customer.blocked')} />
-      <Button className="w-full" loading={save.isPending} disabled={!methods.length || innInvalid} onClick={() => save.mutate(undefined)}>
+      <Button className="w-full" loading={save.isPending} disabled={!dirty || !methods.length || innInvalid} onClick={() => save.mutate(undefined)}>
         {t('common.save')}
       </Button>
     </SectionCard>

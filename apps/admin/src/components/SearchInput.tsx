@@ -1,4 +1,4 @@
-import { Loader2, Search, X } from 'lucide-react';
+import { Spinner, Search, X } from '@/components/icons';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ export function SearchInput({
         className="pr-9 pl-9 [&::-webkit-search-cancel-button]:hidden"
       />
       {loading ? (
-        <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+        <Spinner className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
       ) : (
         value && (
           <button

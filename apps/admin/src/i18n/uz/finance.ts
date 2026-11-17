@@ -2,9 +2,11 @@
 export const finance = {
   customers: {
     title: 'Mijozlar',
-    subtitle: 'Mijozlar, balans va kredit shartlari',
     search: 'Ism, firma, STIR, telefon',
     allGroups: 'Barcha guruhlar',
+    debtAll: 'Hammasi',
+    debtFilter: 'Qarz holati',
+    inactive: 'Nofaol',
     debtors: 'Qarzdorlar',
     overdue: "Muddati o'tgan",
     empty: 'Mijoz topilmadi',
@@ -16,6 +18,9 @@ export const finance = {
     lastLogin: 'Oxirgi kirish',
   },
   customer: {
+    available: "Bo'sh: {amount}",
+    orders: 'Buyurtmalar',
+    phone: 'Telefon',
     back: 'Mijozlarga',
     adjust: "Qo'lda tuzatish",
     refund: 'Pul qaytarish',
@@ -95,6 +100,7 @@ export const finance = {
     confirm: 'Pul tushdi — tasdiqlash',
     reject: 'Rad etish',
     showReceipt: "Chekni ko'rish",
+    receiptTitle: 'Chek — {amount}',
     confirmedToast: '{amount} tasdiqlandi',
     rejectTitle: '{amount} — rad etish',
     reasonLabel: "Sabab (mijozga ko'rinadi)",

@@ -1,4 +1,4 @@
-import { AlertTriangle, RotateCw } from 'lucide-react';
+import { AlertTriangle } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
       <p className="text-sm font-medium">{errorText(error)}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          <RotateCw /> {t('common.retry')}
+          {t('common.retry')}
         </Button>
       )}
     </div>

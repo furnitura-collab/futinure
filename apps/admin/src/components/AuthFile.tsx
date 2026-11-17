@@ -1,4 +1,3 @@
-import { FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n';
@@ -34,7 +33,7 @@ export function AuthFile({ path, mimeType, className }: { path: string; mimeType
   if (mimeType === 'application/pdf') {
     return (
       <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
-        <FileText className="size-4" /> {t('common.openPdf')}
+        {t('common.openPdf')}
       </a>
     );
   }

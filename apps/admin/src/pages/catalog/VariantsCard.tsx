@@ -1,9 +1,9 @@
-import { PackagePlus, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { DataTable, type Column } from '@/components/DataTable';
 import { SectionCard } from '@/components/SectionCard';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/IconButton';
+import { PackagePlus, Pencil, Plus } from '@/components/icons';
 import { useI18n } from '@/i18n';
 import { attrsText } from '@/lib/catalog';
 import type { AdminProduct, AdminVariant } from '@/lib/types';
@@ -55,13 +55,9 @@ export function VariantsCard({ product }: { product: AdminProduct }) {
       header: <span className="sr-only">{t('common.actions')}</span>,
       align: 'right',
       cell: (v) => (
-        <div className="flex justify-end gap-1">
-          <Button size="icon-sm" variant="ghost" title={t('product.stockAction')} aria-label={t('product.stockAction')} onClick={() => setStockFor(v)}>
-            <PackagePlus />
-          </Button>
-          <Button size="icon-sm" variant="ghost" title={t('common.edit')} aria-label={t('common.edit')} onClick={() => setEditing(v)}>
-            <Pencil />
-          </Button>
+        <div className="flex justify-end gap-0.5">
+          <IconButton icon={PackagePlus} label={t('product.stockAction')} onClick={() => setStockFor(v)} />
+          <IconButton icon={Pencil} label={t('common.edit')} onClick={() => setEditing(v)} />
         </div>
       ),
     },
@@ -71,11 +67,7 @@ export function VariantsCard({ product }: { product: AdminProduct }) {
     <SectionCard
       flush
       title={t('product.variants', { n: product.variants.length })}
-      actions={
-        <Button size="sm" variant="outline" onClick={() => setEditing('new')}>
-          <Plus /> {t('product.addVariant')}
-        </Button>
-      }
+      actions={<IconButton icon={Plus} variant="outline" label={t('product.addVariant')} onClick={() => setEditing('new')} />}
     >
       <DataTable
         bare

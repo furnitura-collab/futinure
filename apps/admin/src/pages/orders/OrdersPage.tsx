@@ -1,38 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import { Columns3, List } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { OptionSelect } from '@/components/OptionSelect';
+import { ORDER_STATUSES } from '@mebel/shared';
+import { Board, List } from '@/components/icons';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Segmented } from '@/components/Segmented';
+import { Toolbar } from '@/components/Toolbar';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useDebounced } from '@/lib/hooks';
 import type { KanbanColumn } from '@/lib/types';
-import { OrdersBoard } from './OrdersBoard';
-import { OrderStats } from './OrderStats';
+import { isOrderStatus } from './board/rules';
+import { OrdersBoard } from './board/OrdersBoard';
 import { OrdersTable, type Filters } from './OrdersTable';
 
-type Scope = 'all' | 'mine' | 'none';
+const SCOPES = ['all', 'mine', 'none'] as const;
+type Scope = (typeof SCOPES)[number];
+const isScope = (v: string | null): v is Scope => SCOPES.includes(v as Scope);
 
-const isScope = (v: string | null): v is Scope => v === 'all' || v === 'mine' || v === 'none';
-
-function useKanban(filters: Filters) {
-  return useQuery({
-    queryKey: ['orders', 'kanban', filters],
-    queryFn: () => api<KanbanColumn[]>('/admin/orders/kanban', { query: filters }),
-  });
-}
-
+/** Buyurtmalar: kanban (sudrab status o'zgartirish) yoki jadval; filtrlar URL'da — havola bilan ulashiladi */
 export function OrdersPage() {
-  const { t } = useI18n();
+  const { t, label } = useI18n();
   const { me } = useAuth();
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'list' ? 'list' : 'board';
   const scopeParam = params.get('scope');
   const scope: Scope = isScope(scopeParam) ? scopeParam : 'all';
+  const statusParam = params.get('status');
+  const status = isOrderStatus(statusParam) ? statusParam : undefined;
   const [q, setQ] = useState(params.get('q') ?? '');
   const query = useDebounced(q.trim());
 
@@ -46,41 +43,52 @@ export function OrdersPage() {
       else p.delete(k);
       return p;
     });
-  const kanban = useKanban(filters);
+
+  // Ustunlar soni jadvaldagi status filtrida ham ishlatiladi — bitta so'rov
+  const kanban = useQuery({
+    queryKey: ['orders', 'kanban', filters],
+    queryFn: () => api<KanbanColumn[]>('/admin/orders/kanban', { query: filters }),
+  });
+  const counts = new Map(kanban.data?.map((c) => [c.status, c.total]));
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('orders.title')} description={t('orders.subtitle')} className="mb-0">
-        <Tabs value={view} onValueChange={(v) => set('view', v === 'list' ? 'list' : null)}>
-          <TabsList>
-            <TabsTrigger value="board" className="px-3">
-              <Columns3 /> {t('orders.board')}
-            </TabsTrigger>
-            <TabsTrigger value="list" className="px-3">
-              <List /> {t('orders.table')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="space-y-4">
+      <PageHeader title={t('orders.title')}>
+        <Segmented
+          label={t('orders.view')}
+          value={view}
+          onChange={(v) => set('view', v === 'list' ? 'list' : null)}
+          options={[
+            { value: 'board', label: t('orders.board'), icon: Board },
+            { value: 'list', label: t('orders.table'), icon: List },
+          ]}
+        />
       </PageHeader>
-
-      <OrderStats columns={kanban.data} loading={kanban.isPending} />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <Toolbar>
         <SearchInput value={q} onChange={setQ} placeholder={t('orders.search')} loading={kanban.isFetching && !!filters.q} />
-        <OptionSelect
-          className="sm:w-56"
-          aria-label={t('orders.manager')}
+        <Segmented
+          label={t('orders.manager')}
           value={scope}
-          onValueChange={(v) => set('scope', v === 'all' ? null : v)}
+          onChange={(v) => set('scope', v === 'all' ? null : v)}
           options={[
             { value: 'all', label: t('orders.scopeAll') },
             { value: 'mine', label: t('orders.scopeMine') },
             { value: 'none', label: t('orders.scopeNone') },
           ]}
         />
-      </div>
-
-      {view === 'board' ? <OrdersBoard query={kanban} /> : <OrdersTable filters={filters} />}
+        {view === 'list' && (
+          <Segmented
+            label={t('orders.statusFilter')}
+            value={status ?? 'all'}
+            onChange={(v) => set('status', v === 'all' ? null : v)}
+            options={[
+              { value: 'all', label: t('orders.statusAll') },
+              ...ORDER_STATUSES.map((s) => ({ value: s, label: label('orderStatus', s), count: counts.get(s) })),
+            ]}
+          />
+        )}
+      </Toolbar>
+      {view === 'board' ? <OrdersBoard query={kanban} /> : <OrdersTable filters={{ ...filters, status }} />}
     </div>
   );
 }

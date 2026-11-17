@@ -1,9 +1,9 @@
-import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { AlertTriangle, CheckCircle, Info, XCircle } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { TONE_SOFT, TONE_TEXT } from './tone';
 
-const ICONS = { info: Info, warning: AlertTriangle, success: CheckCircle2, destructive: XCircle } as const;
+const ICONS = { info: Info, warning: AlertTriangle, success: CheckCircle, destructive: XCircle } as const;
 
 /** Sahifa ichidagi ogohlantirish / ma'lumot bloki */
 export function Callout({

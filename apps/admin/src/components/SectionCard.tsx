@@ -23,15 +23,15 @@ export function SectionCard({
   return (
     <Card className={cn('gap-0 overflow-hidden py-0', className)}>
       {(title || actions) && (
-        <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-5 py-3.5">
+        <header className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b px-4 py-1.5">
           <div className="min-w-0">
-            {title && <h2 className="text-base font-semibold">{title}</h2>}
+            {title && <h2 className="text-sm font-semibold">{title}</h2>}
             {description && <p className="text-xs text-muted-foreground">{description}</p>}
           </div>
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
+          {actions && <div className="flex items-center gap-1">{actions}</div>}
         </header>
       )}
-      <div className={cn(!flush && 'p-5', contentClassName)}>{children}</div>
+      <div className={cn(!flush && 'p-4', contentClassName)}>{children}</div>
     </Card>
   );
 }

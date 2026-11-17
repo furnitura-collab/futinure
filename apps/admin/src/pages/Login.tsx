@@ -1,11 +1,12 @@
-import { Eye, EyeOff, LockKeyhole, Phone } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router';
 import { formatUzPhoneInput, normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
 import { Callout } from '@/components/Callout';
 import { FormField } from '@/components/FormField';
+import { IconButton } from '@/components/IconButton';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Eye, EyeOff } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/i18n';
@@ -54,23 +55,24 @@ export function LoginPage() {
         <LanguageSwitcher />
         <ThemeToggle />
       </div>
-      <div className="glass w-full max-w-sm animate-fade-up rounded-2xl border p-6 shadow-xl shadow-black/5 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-10" />
-          <p className="font-semibold">Mebel Order</p>
+      <div className="glass w-full max-w-sm animate-fade-up rounded-2xl border border-primary/15 p-6 shadow-2xl shadow-primary/15">
+        <div className="mb-5 flex items-center gap-2.5">
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-9 rounded-lg" />
+          <div className="leading-tight">
+            <p className="text-sm font-semibold">Mebel Order</p>
+            <h1 className="text-xs text-muted-foreground">{t('auth.subtitle')}</h1>
+          </div>
         </div>
-        <h1 className="mb-6 text-xl font-semibold tracking-tight">{t('auth.subtitle')}</h1>
 
-        <form onSubmit={submit} className="grid gap-4" noValidate>
+        <form onSubmit={submit} className="grid gap-3.5" noValidate>
           <FormField label={t('auth.phone')}>
             {(f) => (
               <div className="relative">
-                <Phone className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 {/* "+998" o'zgarmaydi — faqat 9 raqam yoziladi va "90 123 45 67" ko'rinishida guruhlanadi */}
-                <span className="pointer-events-none absolute top-1/2 left-9 -translate-y-1/2 text-base">+998</span>
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-base text-muted-foreground">+998</span>
                 <Input
                   {...f}
-                  className="h-11 pl-[4.75rem] text-base md:text-base"
+                  className="h-10 pl-[3.6rem] text-base md:text-base"
                   autoFocus
                   type="tel"
                   inputMode="tel"
@@ -85,31 +87,26 @@ export function LoginPage() {
           <FormField label={t('auth.password')}>
             {(f) => (
               <div className="relative">
-                <LockKeyhole className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   {...f}
-                  className="h-11 pr-11 pl-9 text-base md:text-base"
+                  className="h-10 pr-10 text-base md:text-base"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1/2 right-1 size-9 -translate-y-1/2 text-muted-foreground"
-                  aria-label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+                <IconButton
+                  icon={showPassword ? EyeOff : Eye}
+                  label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
                   aria-pressed={showPassword}
+                  className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground"
                   onClick={() => setShowPassword((v) => !v)}
-                >
-                  {showPassword ? <EyeOff /> : <Eye />}
-                </Button>
+                />
               </div>
             )}
           </FormField>
           {error && <Callout tone="destructive">{error}</Callout>}
-          <Button type="submit" size="lg" className="w-full" loading={busy} disabled={!normalized || password.length < PASSWORD_MIN}>
+          <Button type="submit" className="mt-1 h-10 w-full" loading={busy} disabled={!normalized || password.length < PASSWORD_MIN}>
             {t('auth.submit')}
           </Button>
         </form>

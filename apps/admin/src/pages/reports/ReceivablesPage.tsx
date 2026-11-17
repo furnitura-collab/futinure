@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlarmClock, HandCoins, UsersRound, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { formatDate, formatPhone } from '@mebel/shared';
 import { DataTable, type Column } from '@/components/DataTable';
 import { PageHeader } from '@/components/PageHeader';
 import { StatCard } from '@/components/StatCard';
+import { SealCheck } from '@/components/icons';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import type { Receivables } from '@/lib/types';
@@ -71,17 +71,16 @@ export function ReceivablesPage() {
   return (
     <div>
       <PageHeader title={t('receivables.title')} description={t('receivables.subtitle')} />
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-        <StatCard label={t('receivables.total')} value={money(data?.totalReceivable ?? 0)} icon={Wallet} tone="warning" loading={isPending} />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <StatCard label={t('receivables.total')} value={money(data?.totalReceivable ?? 0)} tone="warning" emphasize={!!data?.totalReceivable} loading={isPending} />
         <StatCard
           label={t('receivables.overdue')}
           value={money(data?.totalOverdue ?? 0)}
-          icon={AlarmClock}
           tone="destructive"
           emphasize={!!data?.totalOverdue}
           loading={isPending}
         />
-        <StatCard label={t('receivables.debtors')} value={data?.customers.length ?? 0} icon={UsersRound} tone="info" loading={isPending} />
+        <StatCard label={t('receivables.debtors')} value={data?.customers.length ?? 0} loading={isPending} />
       </div>
       <DataTable
         columns={columns}
@@ -91,7 +90,8 @@ export function ReceivablesPage() {
         error={error}
         onRetry={() => void refetch()}
         onRowClick={(r) => navigate(`/customers/${r.customer_id}`)}
-        empty={{ icon: HandCoins, title: t('receivables.empty') }}
+        rowClassName={(r) => r.overdue > 0 && 'bg-destructive/[0.04]'}
+        empty={{ icon: SealCheck, title: t('receivables.empty') }}
       />
     </div>
   );

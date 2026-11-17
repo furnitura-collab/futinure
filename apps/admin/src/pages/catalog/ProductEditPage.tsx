@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState } from '@/components/ErrorState';
+import { IconButton } from '@/components/IconButton';
 import { PageHeader } from '@/components/PageHeader';
 import { PageSkeleton } from '@/components/PageSkeleton';
+import { Trash } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
@@ -62,22 +63,20 @@ function ProductEditor({ product }: { product?: AdminProduct }) {
     <div>
       <PageHeader back={{ to: '/catalog', label: t('catalog.title') }} title={product ? product.nameUz : t('product.newTitle')}>
         {product && can('SUPER_ADMIN') && (
-          <Button variant="ghost-destructive" onClick={() => setDeleting(true)}>
-            <Trash2 /> {t('common.delete')}
-          </Button>
+          <IconButton icon={Trash} variant="ghost-destructive" size="icon" label={t('product.deleteTitle')} onClick={() => setDeleting(true)} />
         )}
         <Button loading={save.isPending} disabled={!isFormValid(form)} onClick={() => save.mutate(undefined)}>
           {t('common.save')}
         </Button>
       </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="min-w-0 space-y-6 xl:col-span-2">
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="min-w-0 space-y-4 xl:col-span-2">
           <BasicsCard form={form} set={set} />
           <SalesRulesCard form={form} set={set} />
           {product && <VariantsCard product={product} />}
         </div>
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-4">
           {product && <ImagesCard product={product} />}
           <DescriptionCard form={form} set={set} />
         </div>

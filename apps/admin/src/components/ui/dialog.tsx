@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { XIcon } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
+import { X } from '@/components/icons';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 
@@ -60,7 +60,7 @@ function DialogContent({
             data-slot="dialog-close"
             className="absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
-            <XIcon />
+            <X />
             <span className="sr-only">{t('common.close')}</span>
           </DialogPrimitive.Close>
         )}

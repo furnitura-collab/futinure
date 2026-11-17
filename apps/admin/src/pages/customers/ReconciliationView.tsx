@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { Printer } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '@mebel/shared';
 import { BalanceText } from '@/components/BalanceText';
 import { Callout } from '@/components/Callout';
 import { ErrorState } from '@/components/ErrorState';
 import { FormField } from '@/components/FormField';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/IconButton';
+import { Toolbar } from '@/components/Toolbar';
+import { Printer } from '@/components/icons';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,14 +31,14 @@ export function ReconciliationView({ customerId }: { customerId: string }) {
   const row = 'border-b border-border print:border-black/20';
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3 print:hidden">
+    <div className="space-y-3">
+      <Toolbar
+        className="items-end print:hidden"
+        actions={<IconButton icon={Printer} label={t('common.print')} variant="outline" size="icon" onClick={() => window.print()} disabled={!data} />}
+      >
         <FormField label={t('common.from')}>{(f) => <Input {...f} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</FormField>
         <FormField label={t('common.to')}>{(f) => <Input {...f} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</FormField>
-        <Button variant="outline" onClick={() => window.print()} disabled={!data}>
-          <Printer /> {t('common.print')}
-        </Button>
-      </div>
+      </Toolbar>
       {from > to ? (
         <Callout tone="destructive">{t('recon.invalidRange')}</Callout>
       ) : error ? (
@@ -45,7 +46,7 @@ export function ReconciliationView({ customerId }: { customerId: string }) {
       ) : isPending || !data ? (
         <Skeleton className="h-72 rounded-xl" />
       ) : (
-        <Card id="print-area" className="gap-0 p-6 text-sm">
+        <Card id="print-area" className="gap-0 p-4 text-sm">
           <h3 className="text-center text-base font-semibold">{t('recon.title')}</h3>
           <p className="mt-1 text-center text-muted-foreground">
             {customer?.customerProfile?.companyName || customer?.fullName}

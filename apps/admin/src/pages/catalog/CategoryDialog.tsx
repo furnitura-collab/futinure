@@ -11,19 +11,34 @@ import { flattenCategories, slugify } from '@/lib/catalog';
 import { useApiMutation } from '@/lib/mutation';
 import type { Category } from '@/lib/types';
 
-export function CategoryDialog({ category, all, onClose }: { category: Category | null; all: Category[]; onClose: () => void }) {
+export function CategoryDialog({
+  category,
+  defaultParentId = null,
+  all,
+  onClose,
+}: {
+  category: Category | null;
+  defaultParentId?: string | null;
+  all: Category[];
+  onClose: () => void;
+}) {
   const { t } = useI18n();
   const [nameUz, setNameUz] = useState(category?.nameUz ?? '');
   const [nameRu, setNameRu] = useState(category?.nameRu ?? '');
   const [slug, setSlug] = useState(category?.slug ?? '');
   const [slugTouched, setSlugTouched] = useState(!!category);
-  const [parentId, setParentId] = useState(category?.parentId ?? '');
-  const [sortOrder, setSortOrder] = useState(category?.sortOrder ?? 0);
+  const [parentId, setParentId] = useState(category?.parentId ?? defaultParentId ?? '');
   const [isActive, setIsActive] = useState(category?.isActive ?? true);
 
   const save = useApiMutation(
     () => {
-      const body = { nameUz: nameUz.trim(), nameRu: nameRu.trim(), slug, parentId: parentId || null, sortOrder, isActive };
+      const parent = parentId || null;
+      // Tartib sudrab o'zgartiriladi; yangi yoki boshqa otaga ko'chgan kategoriya ro'yxat oxiriga tushadi
+      const sortOrder =
+        category && category.parentId === parent
+          ? category.sortOrder
+          : all.filter((c) => c.parentId === parent && c.id !== category?.id).reduce((m, c) => Math.max(m, c.sortOrder + 1), 0);
+      const body = { nameUz: nameUz.trim(), nameRu: nameRu.trim(), slug, parentId: parent, sortOrder, isActive };
       return category ? api(`/admin/categories/${category.id}`, { method: 'PATCH', body }) : api('/admin/categories', { body });
     },
     { invalidate: [['categories']], success: t('common.saved'), onSuccess: onClose },
@@ -61,23 +76,18 @@ export function CategoryDialog({ category, all, onClose }: { category: Category 
           )}
         </FormField>
         <FormField label={t('product.nameRu')}>{(f) => <Input {...f} value={nameRu} onChange={(e) => setNameRu(e.target.value)} />}</FormField>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label={t('categories.slug')}>
-            {(f) => (
-              <Input
-                {...f}
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(slugify(e.target.value));
-                }}
-              />
-            )}
-          </FormField>
-          <FormField label={t('categories.sortOrder')}>
-            {(f) => <Input {...f} type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />}
-          </FormField>
-        </div>
+        <FormField label={t('categories.slug')}>
+          {(f) => (
+            <Input
+              {...f}
+              value={slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setSlug(slugify(e.target.value));
+              }}
+            />
+          )}
+        </FormField>
         <FormField label={t('categories.parent')}>
           {(f) => (
             <OptionSelect
