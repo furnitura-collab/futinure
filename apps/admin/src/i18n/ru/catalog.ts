@@ -113,6 +113,7 @@ export const catalog: Pick<Dictionary, keyof typeof uzPart> = {
     slug: 'Slug (ссылка)',
     addChild: 'Добавить подкатегорию',
     dragHint: 'Порядок меняется перетаскиванием (внутри одного родителя)',
+    dragHintTouch: 'Чтобы изменить порядок, зажмите ручку и перетащите',
     parent: 'Родительская категория',
     topLevel: 'Верхний уровень',
     activeLabel: 'Активна (видна клиентам)',

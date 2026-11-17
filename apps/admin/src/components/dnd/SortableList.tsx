@@ -19,7 +19,7 @@ function SortableItem({ id, disabled, children }: { id: string; disabled?: boole
       ref={setActivatorNodeRef}
       aria-label={t('common.dragHandle')}
       title={t('common.dragHandle')}
-      className="flex size-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground/60 transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing"
+      className="flex size-7 shrink-0 cursor-grab touch-none pointer-coarse:size-10 items-center justify-center rounded-md text-muted-foreground/60 transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 active:cursor-grabbing"
       {...attributes}
       {...listeners}
     >

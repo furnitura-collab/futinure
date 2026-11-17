@@ -2,6 +2,7 @@
  * API client: Bearer token, 401 da refresh token bilan bir marta yangilab qayta urinish.
  * Bir vaqtda kelgan bir nechta 401 — bitta refresh so'rovi (single-flight).
  */
+import { saveBlob } from './native';
 
 /** API serveri. Bo'sh — bitta origin (dev proxy yoki API web'ni o'zi beradi); Vercel'da — Render manzili */
 export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
@@ -149,12 +150,8 @@ export async function apiBlobUrl(path: string): Promise<string> {
   return URL.createObjectURL(await res.blob());
 }
 
-/** Excel kabi fayllarni yuklab olish */
+/** Excel kabi fayllarni yuklab olish (xodim ilovasida — native ulashish oynasi) */
 export async function apiDownload(path: string, filename: string) {
-  const url = await apiBlobUrl(path);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const res = await request(path, {});
+  await saveBlob(await res.blob(), filename);
 }

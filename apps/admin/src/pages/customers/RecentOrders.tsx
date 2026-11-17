@@ -18,7 +18,7 @@ export function RecentOrders({ orders }: { orders: CustomerDetail['recentOrders'
             <li key={o.id}>
               <Link
                 to={`/orders/${o.id}`}
-                className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm transition-colors outline-none hover:bg-primary/4 focus-visible:bg-primary/6 sm:grid-cols-[9rem_1fr_auto_6rem]"
+                className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm max-sm:py-3 transition-colors outline-none hover:bg-primary/4 focus-visible:bg-primary/6 sm:grid-cols-[9rem_1fr_auto_6rem]"
               >
                 <span className="font-mono font-medium text-primary">{o.number}</span>
                 <span>

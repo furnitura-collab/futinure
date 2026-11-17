@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import type { KanbanColumn } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { COLUMN_WIDTH } from '../scroll';
 import { BoardCard } from './BoardCard';
 import { isMovable } from './rules';
 
@@ -16,7 +17,9 @@ export function BoardColumn({ column: col, role, target, busyId }: { column: Kan
       ref={setNodeRef}
       aria-label={label('orderStatus', col.status)}
       className={cn(
-        'surface flex max-h-[calc(100dvh-12rem)] min-h-48 min-w-[13.5rem] flex-1 basis-0 snap-start flex-col rounded-xl border transition-[opacity,box-shadow,background-color] duration-150',
+        // Telefonda yuqori panel, filtrlar va pastki tab bar hisobga olinadi
+        'surface flex max-h-[calc(100dvh-12rem)] min-h-48 snap-start flex-col rounded-xl border transition-[opacity,box-shadow,background-color] duration-150 max-lg:max-h-[calc(100dvh-17rem)] max-sm:max-h-[calc(100dvh-19.5rem)]',
+        COLUMN_WIDTH,
         target === false && 'opacity-45',
         target && 'ring-1 ring-primary/30',
         target && isOver && 'bg-primary/8 ring-2 ring-primary/60',

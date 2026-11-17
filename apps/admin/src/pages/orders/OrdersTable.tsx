@@ -14,6 +14,26 @@ import { PAY_TONE, payState } from './payment';
 
 export type Filters = { q?: string; managerId?: string; status?: OrderStatus };
 
+function Customer({ order: o, className }: { order: OrderCard; className?: string }) {
+  return (
+    <div className={className}>
+      <p className="font-medium">{customerName(o.customer)}</p>
+      <p className="text-xs text-muted-foreground">{formatPhone(o.customer.phone)}</p>
+    </div>
+  );
+}
+
+/** To'lov holati; to'langan/jami — tooltip'da */
+function PayBadge({ order: o }: { order: OrderCard }) {
+  const { t, money } = useI18n();
+  const state = payState(o);
+  return (
+    <Hint label={t('orders.paidOf', { paid: money(o.paidTotal), total: money(o.grandTotal) })}>
+      <Badge variant={PAY_TONE[state]}>{t(`orders.pay.${state}`)}</Badge>
+    </Hint>
+  );
+}
+
 export function OrdersTable({ filters }: { filters: Filters }) {
   const { t, money } = useI18n();
   const navigate = useNavigate();
@@ -24,44 +44,54 @@ export function OrdersTable({ filters }: { filters: Filters }) {
     placeholderData: keepPreviousData,
   });
 
+  // Telefonda (karta) birinchi qator: raqam + holat, ostida mijoz; keyin jami + to'lov. Qolgan ustunlar yashirin
   const columns: Column<OrderCard>[] = [
     {
       id: 'number',
       header: t('orders.number'),
-      cell: (o) => <span className="font-mono font-medium text-primary">{o.number}</span>,
+      cell: (o) => (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono font-medium text-primary">{o.number}</span>
+            <span className="sm:hidden">
+              <StatusBadge kind="orderStatus" value={o.status} />
+            </span>
+          </div>
+          <div className="sm:hidden">
+            <Customer order={o} />
+          </div>
+        </div>
+      ),
       sortValue: (o) => o.number,
     },
     {
       id: 'customer',
       header: t('orders.customer'),
-      cell: (o) => (
-        <div className="min-w-40">
-          <p className="font-medium">{customerName(o.customer)}</p>
-          <p className="text-xs text-muted-foreground">{formatPhone(o.customer.phone)}</p>
-        </div>
-      ),
+      hideBelow: 'sm',
+      cell: (o) => <Customer order={o} className="min-w-40" />,
       sortValue: (o) => customerName(o.customer),
     },
-    { id: 'status', header: t('common.status'), cell: (o) => <StatusBadge kind="orderStatus" value={o.status} /> },
+    { id: 'status', header: t('common.status'), hideBelow: 'sm', cell: (o) => <StatusBadge kind="orderStatus" value={o.status} /> },
     {
       id: 'total',
       header: t('orders.grandTotal'),
       align: 'right',
-      cell: (o) => <span className="font-medium whitespace-nowrap tabular">{money(o.grandTotal)}</span>,
+      cell: (o) => (
+        <span className="inline-flex items-center gap-2">
+          {/* To'lov ustuni md dan kichikda yashirin — holati shu yerda */}
+          <span className="md:hidden">
+            <PayBadge order={o} />
+          </span>
+          <span className="font-medium whitespace-nowrap tabular">{money(o.grandTotal)}</span>
+        </span>
+      ),
       sortValue: (o) => o.grandTotal,
     },
     {
       id: 'payment',
       header: t('orders.payment'),
       hideBelow: 'md',
-      cell: (o) => {
-        const state = payState(o);
-        return (
-          <Hint label={t('orders.paidOf', { paid: money(o.paidTotal), total: money(o.grandTotal) })}>
-            <Badge variant={PAY_TONE[state]}>{t(`orders.pay.${state}`)}</Badge>
-          </Hint>
-        );
-      },
+      cell: (o) => <PayBadge order={o} />,
       sortValue: (o) => o.grandTotal - o.paidTotal,
     },
     { id: 'manager', header: t('orders.manager'), hideBelow: 'lg', cell: (o) => <span className="text-muted-foreground">{o.manager?.fullName ?? '—'}</span> },

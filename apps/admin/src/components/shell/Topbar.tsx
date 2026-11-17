@@ -1,14 +1,12 @@
-import { useState } from 'react';
 import { IconButton } from '@/components/IconButton';
-import { Menu, Search } from '@/components/icons';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Search } from '@/components/icons';
 import { useI18n } from '@/i18n';
 import { useRealtime } from '@/lib/realtime';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { ProfileMenu } from '../ProfileMenu';
 import { ThemeToggle } from '../ThemeToggle';
-import { Brand, NavList } from './Sidebar';
+import { Brand } from './Sidebar';
 
 const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
@@ -44,21 +42,12 @@ function SearchTrigger({ onOpen }: { onOpen: () => void }) {
 }
 
 export function Topbar({ onSearch }: { onSearch: () => void }) {
-  const { t } = useI18n();
-  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <header className="glass sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-3 sm:px-5 lg:px-6">
-      <IconButton icon={Menu} label={t('common.menu')} size="icon" className="lg:hidden" onClick={() => setMenuOpen(true)} />
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-64 gap-0 p-0">
-          <SheetTitle className="flex h-14 items-center px-4">
-            <Brand />
-          </SheetTitle>
-          <div className="px-2.5 py-2">
-            <NavList onNavigate={() => setMenuOpen(false)} />
-          </div>
-        </SheetContent>
-      </Sheet>
+    // Telefonda bo'limlar pastki tab bar'da (BottomNav); yuqorida — brend, qidiruv va sozlamalar
+    <header className="glass sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center gap-2 border-b px-3 pt-[env(safe-area-inset-top)] sm:px-5 lg:px-6">
+      <div className="lg:hidden">
+        <Brand compact />
+      </div>
       <SearchTrigger onOpen={onSearch} />
       <div className="ml-auto flex items-center gap-0.5">
         <RealtimeDot />

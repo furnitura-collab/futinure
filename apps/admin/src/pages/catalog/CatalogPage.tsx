@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { DataTable, type Column } from '@/components/DataTable';
+import { DataTable } from '@/components/DataTable';
 import { IconButton } from '@/components/IconButton';
 import { OptionSelect } from '@/components/OptionSelect';
 import { PageHeader } from '@/components/PageHeader';
@@ -9,8 +9,8 @@ import { SearchInput } from '@/components/SearchInput';
 import { SwitchField } from '@/components/SwitchField';
 import { Toolbar } from '@/components/Toolbar';
 import { Download, FolderTree, PackageSearch, Percent, Upload } from '@/components/icons';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SCROLL_ROW } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api, apiDownload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -20,21 +20,13 @@ import type { AdminProduct, Paginated } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { BulkPriceDialog } from './BulkPriceDialog';
 import { ImportDialog } from './ImportDialog';
-import { ProductThumb } from './ProductThumb';
+import { useProductColumns } from './productColumns';
 
 type ActiveFilter = '' | 'true' | 'false';
 const isActiveFilter = (v: string): v is ActiveFilter => v === '' || v === 'true' || v === 'false';
 
-function priceRange(p: AdminProduct, money: (n: number) => string) {
-  if (!p.variants.length) return '—';
-  const prices = p.variants.map((v) => v.basePrice);
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  return min === max ? money(min) : `${money(min)} – ${money(max)}`;
-}
-
 export function CatalogPage() {
-  const { t, money, label } = useI18n();
+  const { t } = useI18n();
   const { can } = useAuth();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
@@ -67,47 +59,7 @@ export function CatalogPage() {
       setPage(1);
     };
 
-  const columns: Column<AdminProduct>[] = [
-    {
-      id: 'image',
-      header: '',
-      className: 'w-12 pr-0',
-      hideBelow: 'sm',
-      cell: (p) => <ProductThumb name={p.nameUz} url={p.images[0]?.url} />,
-    },
-    {
-      id: 'name',
-      header: t('catalog.product'),
-      sortValue: (p) => p.nameUz,
-      cell: (p) => (
-        <div className="min-w-44 leading-tight">
-          <p className="font-medium">{p.nameUz}</p>
-          <p className="text-xs text-muted-foreground">{[p.code, p.brand?.name].filter(Boolean).join(' · ')}</p>
-        </div>
-      ),
-    },
-    { id: 'category', header: t('catalog.category'), hideBelow: 'md', cell: (p) => <span className="text-muted-foreground">{p.category.nameUz}</span> },
-    { id: 'variants', header: t('catalog.variants'), hideBelow: 'lg', align: 'right', sortValue: (p) => p.variants.length, cell: (p) => p.variants.length },
-    { id: 'price', header: t('catalog.price'), align: 'right', cell: (p) => <span className="whitespace-nowrap tabular">{priceRange(p, money)}</span> },
-    {
-      id: 'available',
-      header: t('catalog.available'),
-      align: 'right',
-      hideBelow: 'sm',
-      sortValue: (p) => p.variants.reduce((s, v) => s + Number(v.availableQty), 0),
-      cell: (p) => {
-        const low = p.variants.filter((v) => v.isActive && (v.stockLevel === 'LOW' || v.stockLevel === 'OUT_OF_STOCK')).length;
-        const available = p.variants.reduce((s, v) => s + Number(v.availableQty), 0);
-        return (
-          <div className={cn('whitespace-nowrap tabular', low > 0 && 'text-warning')}>
-            {available} {label('unit', p.unit)}
-            {low > 0 && <p className="text-xs">{t('catalog.lowVariants', { n: low })}</p>}
-          </div>
-        );
-      },
-    },
-    { id: 'state', header: '', align: 'right', cell: (p) => !p.isActive && <Badge>{t('common.inactive')}</Badge> },
-  ];
+  const columns = useProductColumns();
 
   return (
     <div>
@@ -130,35 +82,38 @@ export function CatalogPage() {
           </>
         }
       >
-        <SearchInput value={q} onChange={resetPage(setQ)} placeholder={t('catalog.search')} loading={isFetching && !!query} />
-        <OptionSelect
-          className="sm:w-52"
-          aria-label={t('catalog.category')}
-          value={categoryId}
-          onValueChange={resetPage(setCategoryId)}
-          emptyLabel={t('catalog.allCategories')}
-          options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
-        />
-        <OptionSelect
-          className="sm:w-40"
-          aria-label={t('product.brand')}
-          value={brandId}
-          onValueChange={resetPage(setBrandId)}
-          emptyLabel={t('catalog.allBrands')}
-          options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
-        />
-        <OptionSelect
-          className="sm:w-32"
-          aria-label={t('common.status')}
-          value={active}
-          onValueChange={(v) => isActiveFilter(v) && resetPage(setActive)(v)}
-          emptyLabel={t('common.all')}
-          options={[
-            { value: 'true', label: t('catalog.onSale') },
-            { value: 'false', label: t('common.inactive') },
-          ]}
-        />
-        <SwitchField checked={lowStock} onCheckedChange={resetPage(setLowStock)} label={t('catalog.lowStock')} />
+        <SearchInput className="max-sm:min-w-0 max-sm:flex-1" value={q} onChange={resetPage(setQ)} placeholder={t('catalog.search')} loading={isFetching && !!query} />
+        {/* Telefonda filtrlar bitta gorizontal aylanadigan qatorda; kattaroq ekranda — asboblar qatorining qismi */}
+        <div className={cn(SCROLL_ROW, 'order-last')}>
+          <OptionSelect
+            className="max-sm:w-auto max-sm:max-w-52 max-sm:shrink-0 sm:w-52"
+            aria-label={t('catalog.category')}
+            value={categoryId}
+            onValueChange={resetPage(setCategoryId)}
+            emptyLabel={t('catalog.allCategories')}
+            options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
+          />
+          <OptionSelect
+            className="max-sm:w-auto max-sm:max-w-52 max-sm:shrink-0 sm:w-40"
+            aria-label={t('product.brand')}
+            value={brandId}
+            onValueChange={resetPage(setBrandId)}
+            emptyLabel={t('catalog.allBrands')}
+            options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
+          />
+          <OptionSelect
+            className="max-sm:w-auto max-sm:max-w-52 max-sm:shrink-0 sm:w-32"
+            aria-label={t('common.status')}
+            value={active}
+            onValueChange={(v) => isActiveFilter(v) && resetPage(setActive)(v)}
+            emptyLabel={t('common.all')}
+            options={[
+              { value: 'true', label: t('catalog.onSale') },
+              { value: 'false', label: t('common.inactive') },
+            ]}
+          />
+          <SwitchField className="shrink-0 whitespace-nowrap" checked={lowStock} onCheckedChange={resetPage(setLowStock)} label={t('catalog.lowStock')} />
+        </div>
       </Toolbar>
 
       <DataTable

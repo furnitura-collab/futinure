@@ -11,12 +11,14 @@ import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { Segmented } from '@/components/Segmented';
 import { Toolbar } from '@/components/Toolbar';
+import { SCROLL_ROW_FLEX } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { usePriceGroups } from '@/lib/catalog';
 import { ago } from '@/lib/format';
 import { useDebounced } from '@/lib/hooks';
 import type { CustomerRow, Paginated } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { CustomerTags } from './CustomerTags';
 
 const DEBTS = ['all', 'debtors', 'overdue'] as const;
@@ -55,6 +57,7 @@ export function CustomersPage() {
     placeholderData: keepPreviousData,
   });
 
+  const balance = (c: CustomerRow) => <BalanceText value={c.customerProfile?.balanceCached ?? 0} />;
   const columns: Column<CustomerRow>[] = [
     {
       id: 'customer',
@@ -63,13 +66,17 @@ export function CustomersPage() {
       cell: (c) => {
         const company = c.customerProfile?.companyName;
         return (
-          <Identity
-            className="min-w-48"
-            name={company || c.fullName}
-            phone={c.phone}
-            muted={!c.isActive}
-            subtitle={`${company && c.fullName ? `${c.fullName} · ` : ''}${formatPhone(c.phone)}`}
-          />
+          // Telefon kartasi ixcham: bitta qatorda shaxs va balans (balans ustuni telefonda yashirin)
+          <div className="flex items-center justify-between gap-3">
+            <Identity
+              className="sm:min-w-48"
+              name={company || c.fullName}
+              phone={c.phone}
+              muted={!c.isActive}
+              subtitle={`${company && c.fullName ? `${c.fullName} · ` : ''}${formatPhone(c.phone)}`}
+            />
+            <span className="shrink-0 text-right text-sm whitespace-nowrap tabular sm:hidden">{balance(c)}</span>
+          </div>
         );
       },
     },
@@ -87,12 +94,9 @@ export function CustomersPage() {
       id: 'balance',
       header: t('customers.balance'),
       align: 'right',
+      hideBelow: 'sm',
       sortValue: (c) => c.customerProfile?.balanceCached ?? 0,
-      cell: (c) => (
-        <span className="whitespace-nowrap tabular">
-          <BalanceText value={c.customerProfile?.balanceCached ?? 0} />
-        </span>
-      ),
+      cell: (c) => <span className="whitespace-nowrap tabular">{balance(c)}</span>,
     },
     {
       id: 'limit',
@@ -140,25 +144,32 @@ export function CustomersPage() {
             setQ(v);
             if (page > 1) set('page', null);
           }}
-          placeholder={t('customers.search')} loading={isFetching && !!filters.q} />
-        <Segmented
-          label={t('customers.debtFilter')}
-          value={debt}
-          onChange={(v) => set('debt', v === 'all' ? null : v)}
-          options={[
-            { value: 'all', label: t('customers.debtAll') },
-            { value: 'debtors', label: t('customers.debtors') },
-            { value: 'overdue', label: t('customers.overdue') },
-          ]}
+          placeholder={t('customers.search')}
+          loading={isFetching && !!filters.q}
         />
-        {!!groups.data?.length && (
+        {/* Filtrlar bitta qatorda: telefonda ekran chetigacha gorizontal aylanadi */}
+        <div className={cn(SCROLL_ROW_FLEX, '-my-1 py-1')}>
           <Segmented
-            label={t('customer.priceGroup')}
-            value={group}
-            onChange={(v) => set('group', v === 'all' ? null : v)}
-            options={[{ value: 'all', label: t('customers.allGroups') }, ...groups.data.map((g) => ({ value: g.id, label: g.name }))]}
+            className="max-w-none shrink-0"
+            label={t('customers.debtFilter')}
+            value={debt}
+            onChange={(v) => set('debt', v === 'all' ? null : v)}
+            options={[
+              { value: 'all', label: t('customers.debtAll') },
+              { value: 'debtors', label: t('customers.debtors') },
+              { value: 'overdue', label: t('customers.overdue') },
+            ]}
           />
-        )}
+          {!!groups.data?.length && (
+            <Segmented
+              className="max-w-none shrink-0"
+              label={t('customer.priceGroup')}
+              value={group}
+              onChange={(v) => set('group', v === 'all' ? null : v)}
+              options={[{ value: 'all', label: t('customers.allGroups') }, ...groups.data.map((g) => ({ value: g.id, label: g.name }))]}
+            />
+          )}
+        </div>
       </Toolbar>
       <DataTable
         columns={columns}

@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
+import { printElement } from '@/lib/native';
 import type { Reconciliation } from '@/lib/types';
 
 /** Akt-sverka: davr bo'yicha debet/kredit va qoldiqlar. Chop etishda faqat shu blok chiqadi (#print-area) */
@@ -34,10 +35,13 @@ export function ReconciliationView({ customerId }: { customerId: string }) {
     <div className="space-y-3">
       <Toolbar
         className="items-end print:hidden"
-        actions={<IconButton icon={Printer} label={t('common.print')} variant="outline" size="icon" onClick={() => window.print()} disabled={!data} />}
+        actions={<IconButton icon={Printer} label={t('common.print')} variant="outline" size="icon" onClick={() => printElement('print-area')} disabled={!data} />}
       >
-        <FormField label={t('common.from')}>{(f) => <Input {...f} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</FormField>
-        <FormField label={t('common.to')}>{(f) => <Input {...f} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</FormField>
+        {/* Telefonda ikki sana yonma-yon, chop etish tugmasi shu qatorda qoladi */}
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:flex sm:flex-none sm:gap-3">
+          <FormField className="min-w-0" label={t('common.from')}>{(f) => <Input {...f} type="date" className="min-w-0" value={from} onChange={(e) => setFrom(e.target.value)} />}</FormField>
+          <FormField className="min-w-0" label={t('common.to')}>{(f) => <Input {...f} type="date" className="min-w-0" value={to} onChange={(e) => setTo(e.target.value)} />}</FormField>
+        </div>
       </Toolbar>
       {from > to ? (
         <Callout tone="destructive">{t('recon.invalidRange')}</Callout>
@@ -46,15 +50,16 @@ export function ReconciliationView({ customerId }: { customerId: string }) {
       ) : isPending || !data ? (
         <Skeleton className="h-72 rounded-xl" />
       ) : (
-        <Card id="print-area" className="gap-0 p-4 text-sm">
+        <Card id="print-area" className="gap-0 p-4 text-sm max-sm:px-3">
           <h3 className="text-center text-base font-semibold">{t('recon.title')}</h3>
           <p className="mt-1 text-center text-muted-foreground">
             {customer?.customerProfile?.companyName || customer?.fullName}
             {customer?.customerProfile?.inn && `, ${t('recon.inn', { inn: customer.customerProfile.inn })}`} · {formatDate(data.period.from)} —{' '}
             {formatDate(data.period.to)}
           </p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[32rem]">
+          {/* Jadval karta ichida gorizontal aylanadi — sahifa kengaymaydi */}
+          <div className="-mx-3 mt-4 overflow-x-auto overscroll-x-contain px-3 sm:mx-0 sm:px-0 print:overflow-visible">
+            <table className="w-full min-w-[32rem] print:min-w-0">
               <thead className="text-left text-xs text-muted-foreground">
                 <tr className={row}>
                   <th className="py-2 font-medium">{t('common.date')}</th>

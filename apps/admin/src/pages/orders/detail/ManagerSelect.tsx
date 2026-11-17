@@ -19,10 +19,11 @@ export function ManagerSelect({ order }: { order: OrderDetail }) {
     { invalidate: [['order', order.id], ['orders']], success: t('order.managerAssigned') },
   );
   return (
-    <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+    // Telefonda tanlov qatorning qolgan kengligini egallaydi
+    <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground max-sm:w-full">
       {t('order.manager')}
       <OptionSelect
-        className="w-48"
+        className="w-48 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
         aria-label={t('order.manager')}
         value={order.managerId ?? ''}
         disabled={assign.isPending}

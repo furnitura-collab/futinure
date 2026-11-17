@@ -55,7 +55,8 @@
   --color-glass: var(--glass);
   --color-glass-border: var(--glass-border);
 
-  --animate-fade-up: fade-up 220ms ease-out both;
+  /* backwards: tugagach transform qolmaydi — aks holda ichidagi position:fixed (pastki panel) sahifaga bog'lanib qoladi */
+  --animate-fade-up: fade-up 220ms ease-out backwards;
 
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(6px); }
@@ -195,4 +196,11 @@
   body * { visibility: hidden; }
   #print-area, #print-area * { visibility: visible; color: #000 !important; }
   #print-area { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; box-shadow: none; background: #fff !important; }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

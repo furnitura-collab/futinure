@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CUSTOMER_TYPES, formatDateTime, PAYMENT_METHODS, type CustomerType, type PaymentMethod } from '@mebel/shared';
 import { ChipGroup } from '@/components/ChipGroup';
 import { FormField } from '@/components/FormField';
@@ -15,6 +16,7 @@ import { useAuth } from '@/lib/auth';
 import { usePriceGroups } from '@/lib/catalog';
 import { useApiMutation } from '@/lib/mutation';
 import type { CustomerDetail } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 const isCustomerType = (v: string): v is CustomerType => (CUSTOMER_TYPES as readonly string[]).includes(v);
 
@@ -52,6 +54,7 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
     success: t('common.saved'),
   });
   const innInvalid = type === 'COMPANY' && inn !== '' && inn.length !== 9;
+  const saveProps = { loading: save.isPending, disabled: !dirty || !methods.length || innInvalid, onClick: () => save.mutate(undefined) };
 
   return (
     <SectionCard title={t('customer.profile')} className="self-start" contentClassName="grid gap-3">
@@ -108,9 +111,21 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
         />
       </div>
       <SwitchField checked={isActive} onCheckedChange={setIsActive} label={isActive ? t('common.active') : t('customer.blocked')} />
-      <Button className="w-full" loading={save.isPending} disabled={!dirty || !methods.length || innInvalid} onClick={() => save.mutate(undefined)}>
+      {/* < lg: o'zgarish bo'lsa tugma pastki yopishgan panelga ko'chadi — forma qayerda bo'lsa ham bir bosishda saqlanadi */}
+      <Button className={cn('w-full', dirty && 'max-lg:hidden')} {...saveProps}>
         {t('common.save')}
       </Button>
+      {dirty &&
+        createPortal(
+          <div className="glass fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-20 animate-fade-up border-t px-3 py-2 sm:px-5 lg:hidden">
+            <Button className="h-11 w-full" {...saveProps}>
+              {t('common.save')}
+            </Button>
+          </div>,
+          document.body,
+        )}
+      {/* Panel sahifa oxirini yopmasin */}
+      {dirty && <div aria-hidden className="h-12 lg:hidden" />}
     </SectionCard>
   );
 }

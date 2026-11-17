@@ -45,6 +45,7 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
   },
   order: {
     progress: 'Order progress',
+    actions: 'Order actions',
     back: 'Orders',
     copyNumber: 'Copy number',
     accept: 'Accept',

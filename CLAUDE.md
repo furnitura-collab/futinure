@@ -21,6 +21,9 @@
   `app.json` da `version` (runtimeVersion = appVersion) va `android.versionCode` oshiriladi, keyin
   `npx eas-cli@latest build -p android --profile preview`. Versiya oshsa eski APK'lar yangi OTA'ni olmaydi — shuning uchun faqat shunda oshiriladi.
 - `EXPO_PUBLIC_API_URL` — EAS muhitlarida (preview, production); `eas update` `eas.json` dagi `env`ni o'qimaydi.
+- **Xodim ilovasi** (`apps/staff`, "Mebel Xodim") — admin panelning o'zi (WebView) + native qobiq (orqaga tugmasi, fayl
+  ulashish, chop etish: `apps/admin/src/lib/native.ts` ↔ `apps/staff/src/bridge.ts`). Admin o'zgarishi ilovaga darhol yetadi
+  (deploy yetarli); faqat qobiq o'zgarsa — `apps/staff` da EAS build. Admin telefon dizayni: `< lg` — pastki tab bar.
 - Android'da JS dvigateli Hermes: brauzerdagi hamma API yo'q (masalan `Intl.PluralRules`). Webda ishlashi telefonda ishlashini
   kafolatlamaydi — yangi `Intl`/brauzer API'sidan oldin Hermes'da borligini tekshir, yo'q bo'lsa o'zing yoz.
 

@@ -27,9 +27,13 @@ export function ReceivablesPage() {
       header: t('receivables.customer'),
       sortValue: (r) => r.company_name || r.full_name || r.phone,
       cell: (r) => (
-        <div className="min-w-40">
+        <div className="min-w-0 sm:min-w-40">
           <p className="font-medium">{r.company_name || r.full_name || '—'}</p>
-          <p className="text-xs text-muted-foreground">{formatPhone(r.phone)}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatPhone(r.phone)}
+            {/* "Eng eski muddat" ustuni telefonda yashirin — muddati o'tgan bo'lsa shu yerda */}
+            {r.overdue > 0 && r.oldest_due && <span className="text-destructive sm:hidden"> · {formatDate(r.oldest_due)}</span>}
+          </p>
         </div>
       ),
     },
@@ -71,11 +75,12 @@ export function ReceivablesPage() {
   return (
     <div>
       <PageHeader title={t('receivables.title')} description={t('receivables.subtitle')} />
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard label={t('receivables.total')} value={money(data?.totalReceivable ?? 0)} tone="warning" emphasize={!!data?.totalReceivable} loading={isPending} />
+      {/* Telefonda 2 tadan, raqamlar kichikroq — uzun summa kartaga sig'adi */}
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+        <StatCard label={t('receivables.total')} value={<span className="max-sm:text-base">{money(data?.totalReceivable ?? 0)}</span>} tone="warning" emphasize={!!data?.totalReceivable} loading={isPending} />
         <StatCard
           label={t('receivables.overdue')}
-          value={money(data?.totalOverdue ?? 0)}
+          value={<span className="max-sm:text-base">{money(data?.totalOverdue ?? 0)}</span>}
           tone="destructive"
           emphasize={!!data?.totalOverdue}
           loading={isPending}
@@ -90,7 +95,8 @@ export function ReceivablesPage() {
         error={error}
         onRetry={() => void refetch()}
         onRowClick={(r) => navigate(`/customers/${r.customer_id}`)}
-        rowClassName={(r) => r.overdue > 0 && 'bg-destructive/[0.04]'}
+        // Telefon kartasida muddati o'tgan qarz chap chiziq bilan ajraladi
+        rowClassName={(r) => r.overdue > 0 && 'bg-destructive/[0.04] max-sm:border-l-2 max-sm:border-l-destructive'}
         empty={{ icon: SealCheck, title: t('receivables.empty') }}
       />
     </div>

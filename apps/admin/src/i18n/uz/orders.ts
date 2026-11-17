@@ -43,6 +43,7 @@ export const orders = {
   },
   order: {
     progress: 'Buyurtma bosqichlari',
+    actions: 'Buyurtma amallari',
     back: 'Buyurtmalarga',
     copyNumber: 'Raqamdan nusxa olish',
     accept: 'Qabul qilish',

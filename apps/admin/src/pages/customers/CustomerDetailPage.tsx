@@ -9,6 +9,7 @@ import { PageSkeleton } from '@/components/PageSkeleton';
 import { PhoneLine } from '@/components/PhoneLine';
 import { StatCard } from '@/components/StatCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SCROLL_TABS } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -63,33 +64,34 @@ function CustomerView({ customer: c }: { customer: CustomerDetail }) {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4 xl:col-span-2">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {/* Telefonda 2×2, raqamlar kichikroq — uzun summa kartaga sig'adi */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
             <StatCard
               label={t('customer.balance')}
-              value={money(Math.abs(f.balance))}
+              value={<span className="max-sm:text-base">{money(Math.abs(f.balance))}</span>}
               hint={t(f.balance > 0 ? 'balance.debtState' : f.balance < 0 ? 'balance.creditState' : 'balance.settled')}
               tone={f.balance > 0 ? 'warning' : 'success'}
               emphasize={f.balance !== 0}
             />
             <StatCard
               label={t('customer.creditLimit')}
-              value={money(f.creditLimit)}
+              value={<span className="max-sm:text-base">{money(f.creditLimit)}</span>}
               hint={f.creditLimit > 0 ? t('customer.available', { amount: money(f.availableCredit) }) : undefined}
             />
-            <StatCard label={t('customer.overdue')} value={money(f.overdueAmount)} tone="destructive" emphasize={f.overdueAmount > 0} />
-            <StatCard label={t('customer.turnover')} value={money(c.stats.turnover)} hint={t('order.ordersCount', { n: c.stats.orders })} />
+            <StatCard label={t('customer.overdue')} value={<span className="max-sm:text-base">{money(f.overdueAmount)}</span>} tone="destructive" emphasize={f.overdueAmount > 0} />
+            <StatCard label={t('customer.turnover')} value={<span className="max-sm:text-base">{money(c.stats.turnover)}</span>} hint={t('order.ordersCount', { n: c.stats.orders })} />
           </div>
 
           <Tabs defaultValue="ledger" className="gap-3">
-            <TabsList variant="line" className="w-full justify-start border-b">
-              <TabsTrigger value="ledger" className="flex-none">
+            <TabsList variant="line" className={SCROLL_TABS}>
+              <TabsTrigger value="ledger" className="h-8 flex-none">
                 {t('customer.ledger')}
               </TabsTrigger>
-              <TabsTrigger value="orders" className="flex-none">
+              <TabsTrigger value="orders" className="h-8 flex-none">
                 {t('customer.orders')}
                 <span className="text-xs text-muted-foreground tabular">{c.recentOrders.length}</span>
               </TabsTrigger>
-              <TabsTrigger value="reconciliation" className="flex-none">
+              <TabsTrigger value="reconciliation" className="h-8 flex-none">
                 {t('customer.reconciliation')}
               </TabsTrigger>
             </TabsList>

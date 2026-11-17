@@ -96,7 +96,8 @@ export function StockPage() {
             empty={{ icon: PackageCheck, title: t('stock.allGood'), description: t('stock.allGoodHint') }}
           />
         </SectionCard>
-        <SectionCard title={t('stock.findTitle')} description={t('stock.findHint')} className="self-start">
+        {/* Telefon/planshetda qidiruv (kirim, inventarizatsiya) ro'yxatdan oldin — asosiy ish shu */}
+        <SectionCard title={t('stock.findTitle')} description={t('stock.findHint')} className="order-first self-start xl:order-none">
           <VariantPicker onPick={(v) => void fromPicker(v)} />
         </SectionCard>
       </div>

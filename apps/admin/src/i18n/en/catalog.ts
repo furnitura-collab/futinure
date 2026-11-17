@@ -113,6 +113,7 @@ export const catalog: Pick<Dictionary, keyof typeof uzPart> = {
     slug: 'Slug (link)',
     addChild: 'Add subcategory',
     dragHint: 'Drag to reorder (within one parent)',
+    dragHintTouch: 'Press and hold the handle, then drag to reorder',
     parent: 'Parent category',
     topLevel: 'Top level',
     activeLabel: 'Active (visible to customers)',

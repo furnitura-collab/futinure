@@ -111,6 +111,7 @@ export const catalog = {
     slug: 'Slug (havola)',
     addChild: "Ichki kategoriya qo'shish",
     dragHint: "Tartibni sudrab o'zgartiring (bir ota ichida)",
+    dragHintTouch: "Tartibni o'zgartirish uchun tutqichni bosib turing va suring",
     parent: 'Ota kategoriya',
     topLevel: 'Yuqori daraja',
     activeLabel: "Faol (mijozlarga ko'rinadi)",

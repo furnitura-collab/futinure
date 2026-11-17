@@ -37,8 +37,8 @@ export function Segmented<T extends string>({
             aria-label={o.icon ? o.label : undefined}
             onClick={() => onChange(o.value)}
             className={cn(
-              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
-              o.icon ? 'w-8 justify-center' : 'px-3',
+              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md pointer-coarse:h-9 text-sm font-medium whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+              o.icon ? 'w-8 justify-center pointer-coarse:w-9' : 'px-3',
               on ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
           >

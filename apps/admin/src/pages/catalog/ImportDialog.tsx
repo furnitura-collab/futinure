@@ -28,7 +28,8 @@ function IssueList({ title, issues, tone }: { title: string; issues: ImportIssue
   return (
     <div>
       <h3 className="mb-1.5 text-sm font-semibold">{title}</h3>
-      <ul className="max-h-64 divide-y overflow-y-auto rounded-lg border bg-card text-sm">
+      {/* Telefonda (varaqda) ichma-ich aylantirish yo'q — varaq tanasi aylanadi */}
+      <ul className="divide-y rounded-lg border bg-card text-sm sm:max-h-64 sm:overflow-y-auto">
         {issues.map((e, i) => (
           <li key={i} className="flex flex-wrap gap-x-3 px-3 py-1.5">
             <span className="w-20 text-muted-foreground">{t('import.row', { n: e.row })}</span>

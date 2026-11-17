@@ -72,7 +72,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="top-[18%] translate-y-0 gap-0 p-0 sm:max-w-xl">
+      <DialogContent showCloseButton={false} className="gap-0 p-0 sm:top-[18%] sm:translate-y-0 sm:max-w-xl">
         <DialogTitle className="sr-only">{t('palette.open')}</DialogTitle>
         <Command shouldFilter={false} loop className="flex flex-col">
           <div className="flex items-center gap-2.5 border-b px-4">

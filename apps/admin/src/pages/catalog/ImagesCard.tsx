@@ -33,6 +33,7 @@ export function ImagesCard({ product }: { product: AdminProduct }) {
   const remove = useApiMutation((imageId: string) => api(`/admin/products/${product.id}/images/${imageId}`, { method: 'DELETE' }), { invalidate });
 
   return (
+    // Sensorli ekranda hover yo'q — rasm amallari doim ko'rinadi (pointer-fine'da hover bilan)
     <SectionCard title={t('product.images')} contentClassName="grid gap-3">
       {product.images.length > 0 && (
         <SortableList
@@ -51,8 +52,10 @@ export function ImagesCard({ product }: { product: AdminProduct }) {
                   draggable={false}
                   className={cn('aspect-square w-full rounded-lg object-cover ring-1', main ? 'ring-2 ring-primary' : 'ring-border')}
                 />
-                <div className="absolute top-1 left-1 rounded-md bg-background/80">{handle}</div>
-                <div className="absolute inset-x-1 bottom-1 flex justify-between opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">
+                <div className="absolute top-1 left-1 rounded-md bg-background/80">
+                  {handle}
+                </div>
+                <div className="absolute inset-x-1 bottom-1 flex justify-between transition-opacity duration-150 pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
                   {main ? (
                     <span />
                   ) : (

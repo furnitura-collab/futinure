@@ -83,7 +83,7 @@ export function StockDialog({
           </TabsList>
         </Tabs>
         <FormField label={mode === 'IN' ? t('stock.qtyIn', { unit: unitText }) : t('stock.qtyAdjust', { unit: unitText })}>
-          {(f) => <Input {...f} autoFocus inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} />}
+          {(f) => <Input {...f} autoFocus inputMode="decimal" enterKeyHint="next" value={qty} onChange={(e) => setQty(e.target.value)} />}
         </FormField>
         <FormField label={mode === 'IN' ? t('stock.reasonIn') : t('stock.reasonAdjust')}>
           {(f) => <Input {...f} value={reason} onChange={(e) => setReason(e.target.value)} />}
@@ -92,7 +92,7 @@ export function StockDialog({
         {!!movements.data?.items.length && (
           <div className="grid gap-1.5">
             <Label>{t('stock.movements')}</Label>
-            <ul className="max-h-48 divide-y overflow-y-auto rounded-lg border bg-card px-3 text-xs">
+            <ul className="divide-y rounded-lg border bg-card px-3 text-xs sm:max-h-48 sm:overflow-y-auto">
               {movements.data.items.map((m) => (
                 <li key={m.id} className="flex justify-between gap-3 py-1.5">
                   <span className="shrink-0 text-muted-foreground">{formatDateTime(m.createdAt)}</span>

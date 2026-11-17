@@ -51,9 +51,13 @@ export function StaffPage() {
       header: t('staff.fullName'),
       sortValue: (m) => m.fullName ?? m.phone,
       cell: (m) => (
-        <div className="flex min-w-40 items-center gap-2">
-          <span className="font-medium">{m.fullName ?? '—'}</span>
-          {m.id === me?.id && <Badge variant="outline">{t('staff.you')}</Badge>}
+        <div className="min-w-0 sm:min-w-40">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{m.fullName ?? '—'}</span>
+            {m.id === me?.id && <Badge variant="outline">{t('staff.you')}</Badge>}
+          </div>
+          {/* Telefon ustuni telefonda yashirin — raqam ism ostida */}
+          <p className="text-xs text-muted-foreground tabular sm:hidden">{formatPhone(m.phone)}</p>
         </div>
       ),
     },
@@ -83,8 +87,9 @@ export function StaffPage() {
       header: <span className="sr-only">{t('common.actions')}</span>,
       align: 'right',
       cell: (m) => (
-        // Qator bosilsa (yoki Enter) tahrir ochiladi — tugmadagi bosish/Enter qatorga o'tmasin
-        <div className="flex justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+        // Qator bosilsa (yoki Enter) tahrir ochiladi — tugmadagi bosish/Enter qatorga o'tmasin.
+        // Tugmalar orasidagi va atrofidagi bo'shliq ham to'xtatadi (barmoq adashsa qator ochilmaydi)
+        <div className="-m-1 flex justify-end gap-1 p-1" onClick={(e) => e.stopPropagation()}>
           <IconButton icon={Pencil} label={t('common.edit')} onClick={() => setEditing(m)} />
           <IconButton icon={KeyRound} label={t('staff.resetPassword')} onClick={() => setResetting(m)} />
           {m.id !== me?.id &&

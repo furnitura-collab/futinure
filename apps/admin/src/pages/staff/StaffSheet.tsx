@@ -52,7 +52,8 @@ export function StaffSheet({ member, onClose }: { member: StaffMember | null; on
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full gap-0 sm:max-w-md">
+      {/* Telefonda to'liq ekran varaq: xavfsiz hududlar hisobga olinadi, klaviatura ochilsa tana aylanadi */}
+      <SheetContent className="h-dvh w-full gap-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:max-w-md">
         <form onSubmit={submit} className="flex h-full flex-col">
           <SheetHeader className="border-b p-4">
             <SheetTitle>{member ? t('staff.editTitle') : t('staff.createTitle')}</SheetTitle>
@@ -94,10 +95,10 @@ export function StaffSheet({ member, onClose }: { member: StaffMember | null; on
             {member && !self && <SwitchField checked={isActive} onCheckedChange={setIsActive} label={isActive ? t('staff.active') : t('staff.blocked')} />}
           </div>
           <SheetFooter className="flex-row justify-end border-t p-4">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" className="max-sm:flex-1" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" loading={save.isPending}>
+            <Button type="submit" className="max-sm:flex-1" loading={save.isPending}>
               {t('common.save')}
             </Button>
           </SheetFooter>

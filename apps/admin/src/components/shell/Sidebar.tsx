@@ -63,14 +63,14 @@ function NavItem({ item: n, count, collapsed, onNavigate }: { item: NavItemDef; 
   );
 }
 
-export function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
+export function NavList({ collapsed, onNavigate, items }: { collapsed?: boolean; onNavigate?: () => void; items?: NavItemDef[] }) {
   const { me, can } = useAuth();
   const pending = usePendingPayments(can(...MANAGERS));
   if (!me) return null;
 
   return (
     <nav className="flex flex-col gap-0.5">
-      {NAV.filter((n) => n.roles.includes(me.role)).map((n) => (
+      {(items ?? NAV.filter((n) => n.roles.includes(me.role))).map((n) => (
         <NavItem
           key={n.to}
           item={n}

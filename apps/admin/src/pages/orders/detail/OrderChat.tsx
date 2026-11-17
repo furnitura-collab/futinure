@@ -61,7 +61,7 @@ export function OrderChat({ orderId }: { orderId: string }) {
 
   return (
     <SectionCard title={t('chat.title')} flush>
-      <div ref={listRef} className="max-h-96 min-h-32 space-y-2.5 overflow-y-auto p-4 scroll-smooth">
+      <div ref={listRef} className="max-h-96 min-h-32 space-y-2.5 overflow-y-auto overscroll-contain p-4 scroll-smooth max-sm:max-h-[55dvh] max-sm:px-3">
         {isPending && (
           <div className="space-y-3">
             <Skeleton className="h-12 w-2/3" />
@@ -97,7 +97,7 @@ export function OrderChat({ orderId }: { orderId: string }) {
           );
         })}
       </div>
-      <form onSubmit={submit} className="flex gap-2 border-t px-4 py-3">
+      <form onSubmit={submit} className="flex gap-2 border-t px-4 py-3 max-sm:px-3">
         <input
           ref={fileRef}
           type="file"
@@ -110,7 +110,15 @@ export function OrderChat({ orderId }: { orderId: string }) {
           }}
         />
         <IconButton icon={Paperclip} variant="outline" size="icon" label={t('chat.attach')} onClick={() => fileRef.current?.click()} />
-        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={t('chat.placeholder')} aria-label={t('chat.placeholder')} />
+        {/* Ekran klaviaturasi ochilganda maydon pastki tab bar ostida qolmasin; klaviaturada "Yuborish" tugmasi */}
+        <Input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={t('chat.placeholder')}
+          aria-label={t('chat.placeholder')}
+          enterKeyHint="send"
+          className="max-lg:scroll-mb-[calc(5rem+env(safe-area-inset-bottom))]"
+        />
         <Hint label={t('chat.send')}>
           <Button type="submit" size="icon" loading={send.isPending} disabled={!text.trim()} aria-label={t('chat.send')}>
             {!send.isPending && <Send />}

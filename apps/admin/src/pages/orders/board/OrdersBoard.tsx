@@ -14,13 +14,7 @@ import { canMove, isOrderStatus } from './rules';
 import { useBoardDrop } from './useBoardDrop';
 import { useEdgeFade } from './useEdgeFade';
 import { TransitionDialog } from '../detail/TransitionDialog';
-
-// Chetdagi soya: aylantirish mumkinligini bildiradi (mesh fon ustida gradient emas, mask)
-const FADE = {
-  both: '[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]',
-  left: '[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]',
-  right: '[mask-image:linear-gradient(to_left,transparent,black_1.5rem)]',
-};
+import { COLUMN_WIDTH, fadeClass } from '../scroll';
 
 /** Kanban: har status — ustun; kartani boshqa ustunga sudrash — status o'tishi */
 export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }) {
@@ -51,7 +45,6 @@ export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }
 
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
 
-  const fadeClass = fade.left && fade.right ? FADE.both : fade.left ? FADE.left : fade.right ? FADE.right : undefined;
   return (
     <DndContext
       sensors={sensors}
@@ -63,12 +56,12 @@ export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }
       <div
         ref={fade.ref}
         className={cn(
-          '-mx-3 flex snap-x scroll-px-3 gap-3 overflow-x-auto px-3 pb-3 sm:-mx-5 sm:scroll-px-5 sm:px-5 lg:-mx-6 lg:scroll-px-6 lg:px-6',
-          fadeClass,
+          '-mx-3 flex snap-x scroll-px-3 gap-3 overflow-x-auto px-3 pb-3 max-sm:snap-mandatory sm:-mx-5 sm:scroll-px-5 sm:px-5 lg:-mx-6 lg:scroll-px-6 lg:px-6',
+          fadeClass(fade),
         )}
       >
         {query.isPending
-          ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-96 min-w-[13.5rem] flex-1 basis-0 rounded-xl" />)
+          ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className={cn(COLUMN_WIDTH, 'h-96 rounded-xl')} />)
           : query.data.map((col) => (
               <BoardColumn key={col.status} column={col} role={role} busyId={busyId} target={active ? canMove(active, col.status, role) : undefined} />
             ))}

@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { Segmented } from '@/components/Segmented';
 import { Toolbar } from '@/components/Toolbar';
+import { SCROLL_ROW } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -15,6 +16,8 @@ import type { KanbanColumn } from '@/lib/types';
 import { isOrderStatus } from './board/rules';
 import { OrdersBoard } from './board/OrdersBoard';
 import { OrdersTable, type Filters } from './OrdersTable';
+
+const SEGMENT = 'shrink-0 snap-start max-sm:max-w-none';
 
 const SCOPES = ['all', 'mine', 'none'] as const;
 type Scope = (typeof SCOPES)[number];
@@ -53,7 +56,8 @@ export function OrdersPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t('orders.title')}>
+      {/* Telefonda ham sarlavha va ko'rinish tugmasi bitta qatorda */}
+      <PageHeader title={t('orders.title')} className="max-sm:flex-row max-sm:items-center max-sm:justify-between">
         <Segmented
           label={t('orders.view')}
           value={view}
@@ -66,27 +70,31 @@ export function OrdersPage() {
       </PageHeader>
       <Toolbar>
         <SearchInput value={q} onChange={setQ} placeholder={t('orders.search')} loading={kanban.isFetching && !!filters.q} />
-        <Segmented
-          label={t('orders.manager')}
-          value={scope}
-          onChange={(v) => set('scope', v === 'all' ? null : v)}
-          options={[
-            { value: 'all', label: t('orders.scopeAll') },
-            { value: 'mine', label: t('orders.scopeMine') },
-            { value: 'none', label: t('orders.scopeNone') },
-          ]}
-        />
-        {view === 'list' && (
+        <div className={SCROLL_ROW}>
           <Segmented
-            label={t('orders.statusFilter')}
-            value={status ?? 'all'}
-            onChange={(v) => set('status', v === 'all' ? null : v)}
+            className={SEGMENT}
+            label={t('orders.manager')}
+            value={scope}
+            onChange={(v) => set('scope', v === 'all' ? null : v)}
             options={[
-              { value: 'all', label: t('orders.statusAll') },
-              ...ORDER_STATUSES.map((s) => ({ value: s, label: label('orderStatus', s), count: counts.get(s) })),
+              { value: 'all', label: t('orders.scopeAll') },
+              { value: 'mine', label: t('orders.scopeMine') },
+              { value: 'none', label: t('orders.scopeNone') },
             ]}
           />
-        )}
+          {view === 'list' && (
+            <Segmented
+              className={SEGMENT}
+              label={t('orders.statusFilter')}
+              value={status ?? 'all'}
+              onChange={(v) => set('status', v === 'all' ? null : v)}
+              options={[
+                { value: 'all', label: t('orders.statusAll') },
+                ...ORDER_STATUSES.map((s) => ({ value: s, label: label('orderStatus', s), count: counts.get(s) })),
+              ]}
+            />
+          )}
+        </div>
       </Toolbar>
       {view === 'board' ? <OrdersBoard query={kanban} /> : <OrdersTable filters={{ ...filters, status }} />}
     </div>

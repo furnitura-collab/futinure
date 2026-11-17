@@ -4,6 +4,7 @@ import { PANEL_ROLES, useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { CommandPalette } from './command/CommandPalette';
 import { PageSkeleton } from './PageSkeleton';
+import { BottomNav } from './shell/BottomNav';
 import { Sidebar } from './shell/Sidebar';
 import { Topbar } from './shell/Topbar';
 
@@ -51,10 +52,11 @@ export function AppShell() {
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <div className={cn('transition-[padding] duration-200 ease-out', collapsed ? 'lg:pl-16' : 'lg:pl-60')}>
         <Topbar onSearch={() => setSearching(true)} />
-        <main key={pathname} className="mx-auto w-full max-w-[1600px] animate-fade-up px-3 py-4 sm:px-5 lg:px-6">
+        <main key={pathname} className="mx-auto w-full max-w-[1600px] animate-fade-up px-3 pt-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:px-5 lg:px-6 lg:pb-4">
           <Outlet />
         </main>
       </div>
+      <BottomNav />
       <CommandPalette open={searching} onOpenChange={setSearching} />
     </div>
   );

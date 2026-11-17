@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { EmptyState, type EmptyStateProps } from './EmptyState';
+import { DataTableCards } from './DataTableCards';
 import { ErrorState } from './ErrorState';
 import { Pagination, type PaginationState } from './Pagination';
 
@@ -108,8 +109,8 @@ export function DataTable<T>({
   } else if (!sorted?.length) {
     body = <EmptyState {...empty} />;
   } else {
-    body = (
-      <Table>
+    const table = (
+      <Table className="max-sm:hidden">
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent">
             {columns.map((c) => {
@@ -162,6 +163,13 @@ export function DataTable<T>({
           ))}
         </TableBody>
       </Table>
+    );
+    // Telefonda — kartalar, kattaroq ekranda — jadval
+    body = (
+      <>
+        <DataTableCards columns={columns} rows={sorted} rowKey={rowKey} onRowClick={onRowClick} rowClassName={rowClassName} loading={loading} />
+        {table}
+      </>
     );
   }
 

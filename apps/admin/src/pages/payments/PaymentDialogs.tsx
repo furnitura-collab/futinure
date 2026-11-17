@@ -25,7 +25,7 @@ export function ReceiptDialog({
   return (
     <FormDialog onClose={onClose} title={t('payments.receiptTitle', { amount: money(payment.amount) })} footer={actions || undefined}>
       <div className="flex justify-center">
-        <AuthFile path={`/payments/${payment.id}/receipt`} mimeType={mimeType} className="max-h-[65vh] w-full object-contain" />
+        <AuthFile path={`/payments/${payment.id}/receipt`} mimeType={mimeType} className="max-h-[58dvh] w-full object-contain sm:max-h-[65vh]" />
       </div>
     </FormDialog>
   );

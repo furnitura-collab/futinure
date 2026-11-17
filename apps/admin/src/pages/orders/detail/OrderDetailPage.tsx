@@ -9,17 +9,18 @@ import { MANAGERS } from '@/components/nav';
 import { PageHeader } from '@/components/PageHeader';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useOrderRoom } from '@/lib/realtime';
 import type { OrderDetail } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { CustomerCard } from './CustomerCard';
 import { DeliveryAssign } from './DeliveryAssign';
 import { DeliverySection } from './DeliverySection';
 import { HistoryCard } from './HistoryCard';
 import { ManagerSelect } from './ManagerSelect';
+import { ActionBar, HeaderActions, type Transition } from './OrderActions';
 import { OrderChat } from './OrderChat';
 import { OrderItemsCard } from './OrderItemsCard';
 import { OrderProgress } from './OrderProgress';
@@ -30,8 +31,6 @@ import { TransitionDialog } from './TransitionDialog';
 
 /** Haydovchi faqat qabul qilingan buyurtmaga */
 const NOT_ACCEPTED: OrderStatus[] = ['NEW', 'CANCELLED'];
-
-type Transition = OrderDetail['availableTransitions'][number];
 
 export function OrderDetailPage() {
   const { t, money } = useI18n();
@@ -50,44 +49,31 @@ export function OrderDetailPage() {
 
   const isManager = can(...MANAGERS);
   const shortage = order.items.some((i) => i.status === 'ACTIVE' && i.stock?.shortage);
-  const forward = order.availableTransitions.filter((tr) => tr.to !== 'CANCELLED');
-  const cancel = order.availableTransitions.find((tr) => tr.to === 'CANCELLED');
+  const hasActions = order.availableTransitions.length > 0;
   const accepted = !NOT_ACCEPTED.includes(order.status);
   // To'lov shartlar belgilangach qabul qilinadi (yangi buyurtmada ham — avans)
   const payable = !!order.paymentTerms && order.status !== 'CANCELLED';
   // Shartlar saqlangan, oldindan to'lov hali kelmagan — mijoz to'lovini kutyapmiz
   const required = order.canSetTerms ? requiredPrepayment(order.paymentTerms, order.grandTotal, order.advanceAmount) : 0;
   const awaitingPayment = required > order.paidTotal;
-  const actionText = (to: OrderStatus) =>
-    order.status === 'NEW' && to === 'PREPARING'
-      ? t('order.accept')
-      : order.status === 'OUT_FOR_DELIVERY' && to === 'READY'
-        ? t('order.notDelivered')
-        : t(`order.action.${to}`);
 
   return (
-    <div className="space-y-4">
+    // Pastki yopishgan panel (< lg) kontent oxirini to'smasin
+    <div className={cn('space-y-4', hasActions && 'max-lg:pb-16')}>
       <PageHeader
+        // Telefonda amallar sarlavhada emas (pastki panelda) — bo'sh oraliq qolmasin
+        className="max-sm:gap-0"
         back={{ to: '/orders', label: t('order.back') }}
         title={<span className="font-mono">{order.number}</span>}
         meta={
           <>
             <CopyButton value={order.number} label={t('order.copyNumber')} />
             <StatusBadge kind="orderStatus" value={order.status} />
-            <span className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</span>
+            <span className="text-xs text-muted-foreground tabular">{formatDateTime(order.createdAt)}</span>
           </>
         }
       >
-        {cancel && (
-          <Button variant="ghost-destructive" onClick={() => setTransition(cancel)}>
-            {t('order.action.CANCELLED')}
-          </Button>
-        )}
-        {forward.map((tr) => (
-          <Button key={tr.to} onClick={() => setTransition(tr)}>
-            {actionText(tr.to)}
-          </Button>
-        ))}
+        {hasActions && <HeaderActions order={order} onPick={setTransition} />}
       </PageHeader>
 
       {(order.status !== 'CANCELLED' || isManager) && (
@@ -121,6 +107,7 @@ export function OrderDetailPage() {
         </div>
       </div>
 
+      {hasActions && <ActionBar order={order} onPick={setTransition} />}
       {transition && <TransitionDialog order={order} {...transition} onClose={() => setTransition(null)} />}
       {paying && <RecordPaymentDialog order={order} onClose={() => setPaying(false)} />}
     </div>

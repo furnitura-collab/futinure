@@ -19,33 +19,58 @@ export function LedgerTable({ customerId }: { customerId: string }) {
     placeholderData: keepPreviousData,
   });
 
+  const description = (e: LedgerEntry) =>
+    e.order ? (
+      <Link to={`/orders/${e.order.id}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>
+        {e.description}
+      </Link>
+    ) : (
+      e.description
+    );
+  const amount = (e: LedgerEntry) => (
+    <span className={cn('font-medium whitespace-nowrap tabular', e.amount > 0 ? 'text-warning' : 'text-success')}>
+      {e.amount > 0 ? '+' : '−'}
+      {money(Math.abs(e.amount))}
+    </span>
+  );
+
   const columns: Column<LedgerEntry>[] = [
-    { id: 'date', header: t('common.date'), cell: (e) => <span className="whitespace-nowrap text-muted-foreground">{formatDateTime(e.createdAt)}</span> },
-    { id: 'type', header: t('ledger.type'), hideBelow: 'sm', cell: (e) => t(`ledger.types.${e.type}`) },
     {
-      id: 'description',
-      header: t('ledger.description'),
-      cell: (e) =>
-        e.order ? (
-          <Link to={`/orders/${e.order.id}`} className="text-primary hover:underline" onClick={(ev) => ev.stopPropagation()}>
-            {e.description}
-          </Link>
-        ) : (
-          e.description
-        ),
-    },
-    {
-      id: 'amount',
-      header: t('common.amount'),
-      align: 'right',
+      id: 'date',
+      header: t('common.date'),
+      // Telefon kartasi: 1-qator — izoh va summa, 2-qator — sana, tur va keyingi qoldiq (boshqa ustunlar yashirin)
       cell: (e) => (
-        <span className={cn('font-medium whitespace-nowrap tabular', e.amount > 0 ? 'text-warning' : 'text-success')}>
-          {e.amount > 0 ? '+' : '−'}
-          {money(Math.abs(e.amount))}
+        <>
+          <span className="whitespace-nowrap text-muted-foreground max-sm:hidden">{formatDateTime(e.createdAt)}</span>
+          <div className="space-y-0.5 sm:hidden">
+            <div className="flex items-start justify-between gap-3">
+              <span className="min-w-0">{description(e)}</span>
+              {amount(e)}
+            </div>
+            <p className="flex flex-wrap justify-between gap-x-3 text-xs text-muted-foreground">
+              <span>
+                {formatDateTime(e.createdAt)} · {t(`ledger.types.${e.type}`)}
+              </span>
+              <BalanceText value={e.balanceAfter} />
+            </p>
+          </div>
+        </>
+      ),
+    },
+    { id: 'type', header: t('ledger.type'), hideBelow: 'sm', cell: (e) => t(`ledger.types.${e.type}`) },
+    { id: 'description', header: t('ledger.description'), hideBelow: 'sm', cell: description },
+    { id: 'amount', header: t('common.amount'), align: 'right', hideBelow: 'sm', cell: amount },
+    {
+      id: 'balance',
+      header: t('ledger.balanceAfter'),
+      align: 'right',
+      hideBelow: 'md',
+      cell: (e) => (
+        <span className="whitespace-nowrap">
+          <BalanceText value={e.balanceAfter} />
         </span>
       ),
     },
-    { id: 'balance', header: t('ledger.balanceAfter'), align: 'right', hideBelow: 'md', cell: (e) => <span className="whitespace-nowrap"><BalanceText value={e.balanceAfter} /></span> },
   ];
 
   return (

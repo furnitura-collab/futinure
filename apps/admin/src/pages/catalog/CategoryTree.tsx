@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SortableList, type DragHandle } from '@/components/dnd/SortableList';
 import { EmptyState } from '@/components/EmptyState';
@@ -27,7 +27,11 @@ function CategoryRow({ c, depth, handle, actions }: { c: Category; depth: number
   const { t } = useI18n();
   const busy = c._count.products > 0 || c._count.children > 0;
   return (
-    <div className="group flex items-center gap-2 border-b py-1.5 pr-2 transition-colors hover:bg-muted/40" style={{ paddingLeft: 8 + depth * 24 }}>
+    // Chuqurlik chekinishi telefonda torroq (16px), kattaroq ekranda 24px
+    <div
+      className="group flex items-center gap-2 border-b py-1.5 pr-2 pl-[calc(8px_+_var(--depth)_*_16px)] transition-colors hover:bg-muted/40 pointer-coarse:py-2 sm:pl-[calc(8px_+_var(--depth)_*_24px)]"
+      style={{ '--depth': depth } as CSSProperties}
+    >
       {handle}
       <span className="min-w-0 flex-1 truncate text-sm">
         <span className="font-medium">{c.nameUz}</span>
@@ -35,7 +39,8 @@ function CategoryRow({ c, depth, handle, actions }: { c: Category; depth: number
       </span>
       {!c.isActive && <Badge>{t('common.inactive')}</Badge>}
       <span className="hidden text-xs text-muted-foreground tabular sm:inline">{t('categories.productsCount', { n: c._count.products })}</span>
-      <div className="flex gap-0.5 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+      {/* Hover faqat sichqonchada bor — sensorli ekranda amallar doim ko'rinadi */}
+      <div className="flex shrink-0 gap-0.5 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
         <IconButton icon={Plus} label={t('categories.addChild')} onClick={() => actions.onAddChild(c)} />
         <IconButton icon={Pencil} label={t('common.edit')} onClick={() => actions.onEdit(c)} />
         <IconButton
@@ -103,7 +108,14 @@ export function CategoryTree() {
     <SectionCard
       className="xl:col-span-2"
       title={t('catalog.categories')}
-      description={all.length > 1 ? t('categories.dragHint') : undefined}
+      description={
+        all.length > 1 ? (
+          <>
+            <span className="pointer-coarse:hidden">{t('categories.dragHint')}</span>
+            <span className="hidden pointer-coarse:inline">{t('categories.dragHintTouch')}</span>
+          </>
+        ) : undefined
+      }
       flush
       actions={
         <Button size="sm" onClick={() => setEditing({ category: null, parentId: null })}>

@@ -49,7 +49,8 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed top-[50%] left-[50%] z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-1.5rem)] translate-x-[-50%] translate-y-[-50%] flex-col overflow-hidden rounded-xl border border-glass-border bg-popover/85 backdrop-blur-xl text-popover-foreground shadow-2xl shadow-black/10 duration-200 ease-out outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg',
+          // Telefonda — pastdan chiqadigan varaq, kattaroq ekranda — markazdagi oyna
+          'fixed inset-x-0 bottom-0 z-50 w-full rounded-t-2xl border border-glass-border pb-[env(safe-area-inset-bottom)] shadow-2xl backdrop-blur-xl duration-200 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom sm:inset-x-auto sm:bottom-auto sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-xl sm:pb-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:fade-in-0 sm:data-[state=closed]:fade-out-0 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:zoom-out-95 flex max-h-[92dvh] flex-col overflow-hidden bg-popover/85 text-popover-foreground shadow-black/10 outline-none sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg',
           className,
         )}
         {...props}

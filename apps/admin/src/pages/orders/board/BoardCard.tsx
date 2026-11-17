@@ -1,5 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { Link } from 'react-router';
 import { formatDateTime } from '@mebel/shared';
 import { Hint } from '@/components/IconButton';
@@ -10,7 +10,7 @@ import { ago, customerName } from '@/lib/format';
 import type { OrderCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-const CARD = 'block rounded-lg border bg-card p-3 shadow-xs';
+const CARD = 'block rounded-lg border bg-card p-3 shadow-xs pointer-coarse:p-3.5';
 
 /** Kartaning ichi — ustundagi havola va sudralayotgan nusxa (DragOverlay) uchun umumiy */
 function CardBody({ order: o }: { order: OrderCard }) {
@@ -76,15 +76,20 @@ export function BoardCard({ order, movable, busy }: { order: OrderCard; movable:
   const onKeyDown = (e: KeyboardEvent<HTMLAnchorElement>) => {
     if (e.key !== 'Enter') listeners?.onKeyDown?.(e);
   };
+  // Barmoq bilan bosib turish — sudrash; havola menyusi (Android/iOS) uni to'xtatmasin. Sichqoncha o'ng tugmasi saqlanadi
+  const onContextMenu = (e: MouseEvent<HTMLAnchorElement>) => {
+    if ('pointerType' in e.nativeEvent && e.nativeEvent.pointerType !== 'mouse') e.preventDefault();
+  };
   return (
     <Link
       ref={setNodeRef}
       to={`/orders/${order.id}`}
-      {...(movable && { ...attributes, ...listeners, role: undefined, onKeyDown })}
+      {...(movable && { ...attributes, ...listeners, role: undefined, onKeyDown, onContextMenu })}
       className={cn(
         CARD,
         'transition-[border-color,box-shadow,opacity] duration-150 ease-out outline-none hover:border-primary/40 hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        movable && 'cursor-grab active:cursor-grabbing',
+        // touch-action yo'q (none emas): ustun va kanban barmoq bilan aylanaveradi, sudrash 250 ms bosib turishda
+        movable && 'cursor-grab select-none [-webkit-touch-callout:none] active:cursor-grabbing',
         (isDragging || busy) && 'opacity-40',
         busy && 'animate-pulse',
       )}
@@ -96,7 +101,7 @@ export function BoardCard({ order, movable, busy }: { order: OrderCard; movable:
 
 export function BoardCardOverlay({ order }: { order: OrderCard }) {
   return (
-    <div className={cn(CARD, 'w-[17rem] cursor-grabbing border-primary/50 shadow-lg ring-1 ring-primary/30')}>
+    <div className={cn(CARD, 'w-[min(17rem,80vw)] cursor-grabbing border-primary/50 shadow-lg ring-1 ring-primary/30')}>
       <CardBody order={order} />
     </div>
   );

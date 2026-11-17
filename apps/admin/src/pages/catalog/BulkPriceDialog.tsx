@@ -129,12 +129,13 @@ export function BulkPriceDialog({ onClose }: { onClose: () => void }) {
         {result && summary && (
           <div className="grid animate-fade-up gap-3">
             <Callout tone={applied ? 'success' : 'warning'}>{applied ? t('bulk.applied', summary) : t('bulk.previewText', summary)}</Callout>
-            <div className="max-h-72 overflow-y-auto rounded-lg border bg-card">
+            {/* Telefonda ichma-ich aylantirish yo'q, SKU nom ostida — 3 ustun ekranga sig'adi */}
+            <div className="rounded-lg border bg-card sm:max-h-72 sm:overflow-y-auto">
               <Table>
                 <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="px-3 text-xs text-muted-foreground">SKU</TableHead>
-                    <TableHead className="text-xs text-muted-foreground">{t('bulk.name')}</TableHead>
+                    <TableHead className="px-3 text-xs text-muted-foreground max-sm:hidden">SKU</TableHead>
+                    <TableHead className="text-xs text-muted-foreground max-sm:pl-3">{t('bulk.name')}</TableHead>
                     <TableHead className="text-right text-xs text-muted-foreground">{t('bulk.current')}</TableHead>
                     <TableHead className="px-3 text-right text-xs text-muted-foreground">{t('bulk.next')}</TableHead>
                   </TableRow>
@@ -142,8 +143,11 @@ export function BulkPriceDialog({ onClose }: { onClose: () => void }) {
                 <TableBody>
                   {result.preview.map((r) => (
                     <TableRow key={r.variantId}>
-                      <TableCell className="px-3 font-mono text-xs">{r.sku}</TableCell>
-                      <TableCell className="whitespace-normal">{r.name}</TableCell>
+                      <TableCell className="px-3 font-mono text-xs max-sm:hidden">{r.sku}</TableCell>
+                      <TableCell className="whitespace-normal max-sm:pl-3">
+                        {r.name}
+                        <p className="font-mono text-xs text-muted-foreground sm:hidden">{r.sku}</p>
+                      </TableCell>
                       <TableCell className="text-right text-muted-foreground tabular">{money(r.oldPrice)}</TableCell>
                       <TableCell className="px-3 text-right font-medium tabular">{money(r.newPrice)}</TableCell>
                     </TableRow>

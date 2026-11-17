@@ -17,7 +17,23 @@ export function VariantsCard({ product }: { product: AdminProduct }) {
   const unit = label('unit', product.unit);
 
   const columns: Column<AdminVariant>[] = [
-    { id: 'sku', header: 'SKU', sortValue: (v) => v.sku, cell: (v) => <span className="font-mono text-xs">{v.sku}</span> },
+    {
+      id: 'sku',
+      header: 'SKU',
+      sortValue: (v) => v.sku,
+      // Telefonda (kartada) atributlar va daraja shu yerda — alohida qatorlar yashirin
+      cell: (v) => (
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-xs">{v.sku}</span>
+            <span className="sm:hidden">
+              <StatusBadge kind="stockLevel" value={v.stockLevel} />
+            </span>
+          </div>
+          <p className="text-sm sm:hidden">{attrsText(v.attributes) || '—'}</p>
+        </div>
+      ),
+    },
     { id: 'attrs', header: t('product.attributes'), hideBelow: 'sm', cell: (v) => attrsText(v.attributes) || '—' },
     {
       id: 'price',

@@ -13,6 +13,10 @@ import { useI18n } from '@/i18n';
 import { api, tokenStore, type Tokens } from '@/lib/api';
 import { PANEL_ROLES, useAuth } from '@/lib/auth';
 import type { Me } from '@/lib/types';
+import { cn } from '@/lib/utils';
+
+// Telefonda kattaroq maydon (barmoq va o'qish uchun); 16px shrift — iOS/WebView fokusda sahifani kattalashtirmaydi
+const FIELD = 'h-12 text-base sm:h-10 md:text-base';
 
 export function LoginPage() {
   const { t, errorText } = useI18n();
@@ -50,12 +54,13 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center p-4">
-      <div className="absolute top-3 right-3 flex items-center gap-1">
+    // Klaviatura ochilganda ko'rinadigan balandlik kichrayadi: markazlash `my-auto` bilan — karta tepasi kesilmaydi, sahifa aylanadi
+    <div className="relative flex min-h-dvh flex-col items-center px-4 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="absolute top-[calc(0.75rem+env(safe-area-inset-top))] right-3 flex items-center gap-1">
         <LanguageSwitcher />
         <ThemeToggle />
       </div>
-      <div className="glass w-full max-w-sm animate-fade-up rounded-2xl border border-primary/15 p-6 shadow-2xl shadow-primary/15">
+      <div className="glass my-auto w-full max-w-sm animate-fade-up rounded-2xl border border-primary/15 p-5 shadow-2xl shadow-primary/15 sm:p-6">
         <div className="mb-5 flex items-center gap-2.5">
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-9 rounded-lg" />
           <div className="leading-tight">
@@ -72,11 +77,12 @@ export function LoginPage() {
                 <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-base text-muted-foreground">+998</span>
                 <Input
                   {...f}
-                  className="h-10 pl-[3.6rem] text-base md:text-base"
+                  className={cn(FIELD, 'pl-[3.6rem]')}
                   autoFocus
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel-national"
+                  enterKeyHint="next"
                   placeholder="90 123 45 67"
                   value={phone}
                   onChange={(e) => setPhone(formatUzPhoneInput(e.target.value))}
@@ -89,9 +95,10 @@ export function LoginPage() {
               <div className="relative">
                 <Input
                   {...f}
-                  className="h-10 pr-10 text-base md:text-base"
+                  className={cn(FIELD, 'pr-11')}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  enterKeyHint="go"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -106,7 +113,7 @@ export function LoginPage() {
             )}
           </FormField>
           {error && <Callout tone="destructive">{error}</Callout>}
-          <Button type="submit" className="mt-1 h-10 w-full" loading={busy} disabled={!normalized || password.length < PASSWORD_MIN}>
+          <Button type="submit" className="mt-1 h-12 w-full text-base sm:h-10 sm:text-sm" loading={busy} disabled={!normalized || password.length < PASSWORD_MIN}>
             {t('auth.submit')}
           </Button>
         </form>

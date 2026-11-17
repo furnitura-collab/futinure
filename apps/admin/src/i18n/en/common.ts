@@ -62,6 +62,7 @@ export const common: Pick<Dictionary, keyof typeof uzPart> = {
     call: 'Call',
   },
   nav: {
+    more: 'More',
     orders: 'Orders',
     payments: 'Payments',
     catalog: 'Catalog',

@@ -60,6 +60,7 @@ export const common = {
     call: "Qo'ng'iroq qilish",
   },
   nav: {
+    more: 'Yana',
     orders: 'Buyurtmalar',
     payments: "To'lovlar",
     catalog: 'Katalog',

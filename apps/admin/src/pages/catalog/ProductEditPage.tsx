@@ -59,13 +59,15 @@ function ProductEditor({ product }: { product?: AdminProduct }) {
     onSuccess: () => navigate('/catalog'),
   });
 
+  const saveProps = { loading: save.isPending, disabled: !isFormValid(form), onClick: () => save.mutate(undefined) };
+
   return (
     <div>
       <PageHeader back={{ to: '/catalog', label: t('catalog.title') }} title={product ? product.nameUz : t('product.newTitle')}>
         {product && can('SUPER_ADMIN') && (
           <IconButton icon={Trash} variant="ghost-destructive" size="icon" label={t('product.deleteTitle')} onClick={() => setDeleting(true)} />
         )}
-        <Button loading={save.isPending} disabled={!isFormValid(form)} onClick={() => save.mutate(undefined)}>
+        <Button className="max-lg:hidden" {...saveProps}>
           {t('common.save')}
         </Button>
       </PageHeader>
@@ -80,6 +82,13 @@ function ProductEditor({ product }: { product?: AdminProduct }) {
           {product && <ImagesCard product={product} />}
           <DescriptionCard form={form} set={set} />
         </div>
+      </div>
+
+      {/* < lg: "Saqlash" pastki tab bar ustida yopishib turadi (xavfsiz hudud hisobga olingan) */}
+      <div className="glass sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-20 mt-4 rounded-xl border p-2 shadow-lg shadow-primary/10 lg:hidden">
+        <Button className="w-full" {...saveProps}>
+          {t('common.save')}
+        </Button>
       </div>
 
       <ConfirmDialog

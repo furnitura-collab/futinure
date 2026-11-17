@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
 import { Pagination } from '@/components/Pagination';
+import { SCROLL_TABS } from '@/components/ScrollRow';
 import { ReceiptText } from '@/components/icons';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,9 +50,10 @@ export function PaymentsPage() {
         }}
         className="mb-3"
       >
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto border-b">
+        {/* Telefonda tablar ekran chetigacha gorizontal aylanadi; pastki chiziq (indikator) kesilmasin — pb */}
+        <TabsList variant="line" className={SCROLL_TABS}>
           {TABS.map((x) => (
-            <TabsTrigger key={x.value} value={x.value} className="flex-none gap-1.5">
+            <TabsTrigger key={x.value} value={x.value} className="h-8 flex-none gap-1.5">
               {t(x.label)}
               {x.value === 'PENDING' && !!pending.data && (
                 <span className="rounded-full bg-warning/15 px-1.5 text-[11px] leading-4 font-semibold text-warning tabular">{pending.data}</span>
