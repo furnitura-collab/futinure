@@ -24,7 +24,7 @@ export function OptionList<T extends string>({ value, options, onChange }: { val
               <Text bold={on}>{o.label}</Text>
               {o.hint ? <Text v="caption">{o.hint}</Text> : null}
             </View>
-            <Icon name={on ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={on ? colors.primary : colors.input} />
+            <Icon name={on ? 'check-circle' : 'circle'} size={22} color={on ? colors.primary : colors.input} />
           </PressableScale>
         );
       })}

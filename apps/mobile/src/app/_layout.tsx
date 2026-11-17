@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack, ThemeProvider as NavThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useNavChrome } from '@/components/nav/useNavChrome';
-import { Background, Text, ToastProvider } from '@/components/ui';
+import { Background, ICON_FONTS, Text, ToastProvider } from '@/components/ui';
 import { WebShell } from '@/components/web/WebShell';
 import { I18nProvider, useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -62,6 +63,8 @@ function Boot() {
 /** Kim kirganiga qarab qaysi ekranlar ochiqligi (Stack.Protected) */
 function Navigator() {
   const { booting, me } = useAuth();
+  // Ikonka shriftlari mahalliy (kichik) — tayyor bo'lguncha Boot, ikonkalar "miltillamaydi"
+  const [fontsReady] = useFonts(ICON_FONTS);
   const { t } = useI18n();
   const { scheme, colors } = useTheme();
   const { navTheme, header } = useNavChrome();
@@ -80,7 +83,7 @@ function Navigator() {
   return (
     <NavThemeProvider value={navTheme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      {booting ? (
+      {booting || !fontsReady ? (
         <Boot />
       ) : (
         <WebShell enabled={site}>

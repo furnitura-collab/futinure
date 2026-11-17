@@ -42,7 +42,7 @@ export function DateChoice({ value, onChange }: { value: string; onChange: (d: s
       </ScrollView>
       {(custom || !isQuick) && (
         <Input
-          icon="calendar-outline"
+          icon="calendar-blank"
           value={value}
           onChangeText={onChange}
           placeholder={addDays(today, 5)}

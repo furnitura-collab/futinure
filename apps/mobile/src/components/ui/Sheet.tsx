@@ -56,7 +56,9 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
             {
               width: '100%',
               maxHeight: '88%',
-              backgroundColor: colors.card,
+              backgroundColor: colors.glassSolid,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: colors.glassBorder,
               borderTopLeftRadius: radius.xl,
               borderTopRightRadius: radius.xl,
               paddingBottom: footer ? 0 : Math.max(safe.bottom, space(4)),
@@ -68,7 +70,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           {!wide && <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.input, marginTop: space(2) }} />}
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: space(4), paddingRight: space(2), paddingTop: space(2) }}>
             <Text v="h2" style={{ flex: 1 }} numberOfLines={2}>{title}</Text>
-            <IconButton icon="close" label={t('close')} onPress={close} />
+            <IconButton icon="x" label={t('close')} onPress={close} />
           </View>
           <ScrollView contentContainerStyle={{ padding: space(4), paddingTop: space(2), gap: space(4) }} keyboardShouldPersistTaps="handled">
             {children}

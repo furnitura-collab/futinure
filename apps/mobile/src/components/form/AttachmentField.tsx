@@ -29,12 +29,12 @@ export function AttachmentField({ label, value, onChange, allowPdf, quality }: A
             <Image source={{ uri: value.uri }} style={{ height: 220 }} contentFit="contain" />
           ) : (
             <Row style={{ padding: space(4) }}>
-              <Icon name="document-text-outline" size={28} tone="primary" />
+              <Icon name="file-text" size={28} tone="primary" />
               <Text style={{ flex: 1 }} numberOfLines={1}>{value.name}</Text>
             </Row>
           )}
           <View style={{ position: 'absolute', top: space(2), right: space(2) }}>
-            <IconButton icon="close" label={t('remove')} variant="secondary" size={36} onPress={() => onChange(null)} />
+            <IconButton icon="x" label={t('remove')} variant="secondary" size={36} onPress={() => onChange(null)} />
           </View>
         </View>
       ) : (

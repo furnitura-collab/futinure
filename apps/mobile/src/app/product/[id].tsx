@@ -4,21 +4,21 @@ import { View } from 'react-native';
 import { AddToCartBar } from '@/components/product/AddToCartBar';
 import { Gallery } from '@/components/product/Gallery';
 import { PriceCard } from '@/components/product/PriceCard';
+import { ProductHeading } from '@/components/product/ProductHeading';
 import { SpecsTable } from '@/components/product/SpecsTable';
 import { useProductPurchase } from '@/components/product/useProductPurchase';
 import { VariantPicker } from '@/components/product/VariantPicker';
-import { Appear, Card, Divider, ErrorState, Row, Screen, Skeleton, Text } from '@/components/ui';
+import { Appear, Card, Divider, ErrorState, Screen, Skeleton, Text } from '@/components/ui';
 import { STICKY } from '@/components/web/TwoColumn';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useLayout, useSite } from '@/lib/layout';
 import type { ProductDetail } from '@/lib/types';
-import { radius, space, useTheme } from '@/theme';
+import { radius, space } from '@/theme';
 
 export default function Product() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, name, locale } = useI18n();
-  const { colors } = useTheme();
   const { wide } = useLayout();
   const { site } = useSite();
   const { data: p, isPending, error, refetch } = useQuery({ queryKey: ['product', id], queryFn: () => api<ProductDetail>(`/products/${id}`) });
@@ -44,23 +44,11 @@ export default function Product() {
   }
 
   const description = locale === 'ru' ? p.descriptionRu : p.descriptionUz;
-  // Asosiy o'lchamlar sarlavha ostida "chip" bo'lib — ro'yxatni ochmasdan ko'rinadi
-  const keySpecs = [p.board && `${p.board.lengthMm} × ${p.board.widthMm} mm`, p.board?.thicknessMm && `${Number(p.board.thicknessMm)} mm`].filter(Boolean) as string[];
 
   const details = (
     <>
-      <Appear style={{ gap: space(2) }}>
-        <Text v="title">{name(p)}</Text>
-        <Text muted>{[p.brand?.name, name(p.category)].filter(Boolean).join(' · ')}</Text>
-        {keySpecs.length > 0 && (
-          <Row style={{ flexWrap: 'wrap' }}>
-            {keySpecs.map((k) => (
-              <View key={k} style={{ paddingHorizontal: space(3), paddingVertical: space(1), borderRadius: radius.full, backgroundColor: colors.muted }}>
-                <Text v="small" bold>{k}</Text>
-              </View>
-            ))}
-          </Row>
-        )}
+      <Appear>
+        <ProductHeading p={p} />
       </Appear>
       <Appear index={1}>
         <PriceCard v={v} unitPrice={buy.price.unitPrice} productUnit={p.unit} quantity={buy.quantity} />
@@ -99,19 +87,7 @@ export default function Product() {
             <Gallery images={p.images} categoryId={p.category.id} kind={p.kind} square />
           </View>
           <Card style={{ flex: 1, minWidth: 0, gap: space(4), padding: space(6) }}>
-            <View style={{ gap: space(2) }}>
-              <Text v="display" accessibilityRole="header">{name(p)}</Text>
-              <Text muted>{[p.brand?.name, name(p.category)].filter(Boolean).join(' · ')}</Text>
-              {keySpecs.length > 0 && (
-                <Row style={{ flexWrap: 'wrap' }}>
-                  {keySpecs.map((k) => (
-                    <View key={k} style={{ paddingHorizontal: space(3), paddingVertical: space(1), borderRadius: radius.full, backgroundColor: colors.muted }}>
-                      <Text v="small" bold>{k}</Text>
-                    </View>
-                  ))}
-                </Row>
-              )}
-            </View>
+            <ProductHeading p={p} large />
             <PriceCard v={v} unitPrice={buy.price.unitPrice} productUnit={p.unit} quantity={buy.quantity} flat />
             {p.variants.length > 1 && (
               <>

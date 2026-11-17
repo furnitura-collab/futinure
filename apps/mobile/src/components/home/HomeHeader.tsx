@@ -25,7 +25,7 @@ export function HomeHeader() {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(1) }}>
       {site ? (
         <View style={{ flex: 1, gap: 2 }}>
-          <Text v="display" accessibilityRole="header" numberOfLines={1}>{t('hello', { name: first })}</Text>
+          <Text v="title" accessibilityRole="header" numberOfLines={1}>{t('hello', { name: first })}</Text>
           {!!p?.companyName && <Text muted numberOfLines={1}>{p.companyName}</Text>}
         </View>
       ) : (
@@ -37,7 +37,7 @@ export function HomeHeader() {
       {!site && <HeaderControls />}
       {!site && (
         <View>
-          <IconButton icon="notifications-outline" size={HEADER_BUTTON} label={t('notifications')} onPress={() => router.push('/notifications')} />
+          <IconButton icon="bell" size={HEADER_BUTTON} label={t('notifications')} onPress={() => router.push('/notifications')} />
           {unread > 0 && (
             <View pointerEvents="none" style={{ position: 'absolute', top: -6, right: -6 }}>
               <CountBadge count={unread} />

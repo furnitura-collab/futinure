@@ -10,9 +10,9 @@ import { Text } from './Text';
 
 type ToastKind = 'success' | 'error' | 'info';
 const KIND: Record<ToastKind, { icon: IconName; tone: Tone }> = {
-  success: { icon: 'checkmark-circle', tone: 'success' },
-  error: { icon: 'alert-circle', tone: 'destructive' },
-  info: { icon: 'notifications', tone: 'primary' },
+  success: { icon: 'check-circle', tone: 'success' },
+  error: { icon: 'warning-circle', tone: 'destructive' },
+  info: { icon: 'bell', tone: 'primary' },
 };
 
 export interface ToastAction {

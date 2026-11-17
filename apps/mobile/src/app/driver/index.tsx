@@ -3,31 +3,28 @@ import { router, Stack } from 'expo-router';
 import { RefreshControl, SectionList } from 'react-native';
 import { DeliveryRow } from '@/components/driver/DeliveryRow';
 import { Appear, EmptyState, ErrorState, IconButton, Screen, SkeletonList, Text } from '@/components/ui';
-import { useI18n } from '@/i18n';
+import { useI18n, type I18nKey } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { driverSections, type DriverSection } from '@/lib/driver';
 import { contained, CONTENT } from '@/lib/layout';
 import type { DriverList } from '@/lib/types';
 import { space, useTheme } from '@/theme';
 
-/** Haydovchi: faol yetkazishlar (sana bo'yicha) va bugun topshirilganlar */
+const TITLES: Record<DriverSection['key'], I18nKey> = { today: 'drvToday', upcoming: 'drvUpcoming', done: 'drvDone' };
+
+/** Haydovchi: bugungi yetkazishlar birinchi, keyin keyingi kunlar va bugun topshirilganlar */
 export default function DriverHome() {
   const { t } = useI18n();
   const { colors } = useTheme();
   const { me } = useAuth();
   const q = useQuery({ queryKey: ['driver', 'list'], queryFn: () => api<DriverList>('/driver/deliveries') });
-  const active = q.data?.active ?? [];
-  const done = q.data?.done ?? [];
-  const sections = [
-    { key: 'active', title: `${t('drvActive')} · ${active.length}`, data: active },
-    ...(done.length ? [{ key: 'done', title: `${t('drvDone')} · ${done.length}`, data: done }] : []),
-  ];
 
   const header = (
     <Stack.Screen
       options={{
         title: me?.fullName ?? t('drvTitle'),
-        headerRight: () => <IconButton icon="settings-outline" label={t('settings')} onPress={() => router.push('/settings')} />,
+        headerRight: () => <IconButton icon="gear-six" label={t('settings')} onPress={() => router.push('/settings')} />,
       }}
     />
   );
@@ -40,7 +37,13 @@ export default function DriverHome() {
       </Screen>
     );
   }
-  const today = q.data.today;
+  const { today } = q.data;
+  const sections = driverSections(q.data);
+  const empty = sections.some((s) => s.key === 'upcoming') ? (
+    <EmptyState icon="truck" title={t('drvNoneToday')} />
+  ) : (
+    <EmptyState icon="truck" title={t('drvEmpty')} hint={t('drvEmptyHint')} />
+  );
 
   return (
     <Screen scroll={false}>
@@ -56,12 +59,12 @@ export default function DriverHome() {
             }
             stickySectionHeadersEnabled={false}
             renderSectionHeader={({ section }) => (
-              <Text v="caption" bold style={{ textTransform: 'uppercase', letterSpacing: 0.6, marginTop: section.key === 'done' ? space(4) : 0 }}>
-                {section.title}
+              <Text v="h2" style={{ marginTop: section.key === 'today' ? 0 : space(4) }}>
+                {t(TITLES[section.key])} · {section.data.length}
               </Text>
             )}
             renderSectionFooter={({ section }) =>
-              section.key === 'active' && !active.length ? <EmptyState icon="car-outline" title={t('drvEmpty')} hint={t('drvEmptyHint')} /> : null
+              (section.key === 'today' && !section.data.length ? empty : null)
             }
             renderItem={({ item, index }) => (
               <Appear index={index}>

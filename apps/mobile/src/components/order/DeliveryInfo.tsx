@@ -1,29 +1,21 @@
-import { formatDate } from '@mebel/shared';
 import { View } from 'react-native';
-import { Card, Row, Text } from '@/components/ui';
+import { Card, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import type { OrderDetail } from '@/lib/types';
 import { space } from '@/theme';
 
-/** Qayerga / qayerdan: manzil yoki ombor, sana va izoh */
+/** Qayerga / qayerdan: manzil yoki ombor va mijoz izohi (reja sanasi — sarlavha kartasida) */
 export function DeliveryInfo({ o }: { o: OrderDetail }) {
   const { t } = useI18n();
-  const pickup = o.deliveryType === 'PICKUP';
+  const w = o.pickupWarehouse;
   return (
-    <Card style={{ gap: space(3) }}>
-      <Text v="h2">{pickup ? t('pickupFrom') : t('deliveryTo')}</Text>
-      <Row gap={space(3)} style={{ alignItems: 'flex-start' }}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text bold>{o.pickupWarehouse?.name ?? o.addressSnapshot?.addressText}</Text>
-          {o.pickupWarehouse && <Text v="small" muted>{[o.pickupWarehouse.addressText, o.pickupWarehouse.workHours].filter(Boolean).join(' · ')}</Text>}
-          {o.deliveryDate && <Text v="small">{t('plannedDate', { date: formatDate(o.deliveryDate) })}</Text>}
-        </View>
-      </Row>
-      {o.customerComment ? (
-        <Text v="small" muted>
-          {t('yourComment')}: {o.customerComment}
-        </Text>
-      ) : null}
+    <Card style={{ gap: space(2) }}>
+      <Text v="small" muted>{w ? t('pickupFrom') : t('deliveryTo')}</Text>
+      <View style={{ gap: 2 }}>
+        <Text bold>{w?.name ?? o.addressSnapshot?.addressText}</Text>
+        {w && <Text v="small" muted>{[w.addressText, w.workHours].filter(Boolean).join(' · ')}</Text>}
+      </View>
+      {o.customerComment ? <Text v="small" muted>{`${t('yourComment')}: ${o.customerComment}`}</Text> : null}
     </Card>
   );
 }

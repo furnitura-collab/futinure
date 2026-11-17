@@ -3,30 +3,17 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { isBlockingIssue } from '@mebel/shared';
 import { ProductThumb } from '@/components/catalog/ProductThumb';
-import { Button, Card, IconButton, PressableScale, QtyStepper, Row, Text } from '@/components/ui';
+import { Card, IconButton, PressableScale, QtyStepper, Row, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { useSetCartItem } from '@/lib/cart';
 import { attrsLabeled } from '@/lib/catalog';
-import type { CartLine, LineIssue } from '@/lib/types';
+import type { CartLine } from '@/lib/types';
 import { radius, space, useTheme } from '@/theme';
+import { CartIssue } from './CartIssue';
 
-const round = (x: number) => String(Math.round(x * 1000) / 1000);
-
-/** Muammoni bir bosishda tuzatish: to'g'ri miqdorga keltirish yoki olib tashlash */
-function fixFor(l: CartLine, i: LineIssue): string | null {
-  const step = Number(l.qtyStep ?? 1);
-  const min = Number(l.minQty ?? step);
-  if (i.code === 'EXCEEDS_AVAILABLE') {
-    const max = Math.floor(Number(i.available ?? 0) / step) * step;
-    return max >= min ? round(max) : '0';
-  }
-  if (i.code === 'BELOW_MIN' || i.code === 'NOT_MULTIPLE_OF_STEP') return round(Math.max(min, Math.ceil(Number(l.qty) / step) * step));
-  if (isBlockingIssue(i.code)) return '0';
-  return null;
-}
-
+/** Savat qatori: rasm va nom (mahsulotga havola), miqdor, qator summasi va muammolar */
 export function CartRow({ line: l }: { line: CartLine }) {
-  const { t, money, unit, name, errorText, locale } = useI18n();
+  const { t, money, unit, name, locale } = useI18n();
   const { colors } = useTheme();
   const setItem = useSetCartItem();
   const step = Number(l.qtyStep ?? 1);
@@ -36,23 +23,29 @@ export function CartRow({ line: l }: { line: CartLine }) {
   const [draft, setDraft] = useState(l.qty);
   useEffect(() => setDraft(l.qty), [l.qty]);
   const blocking = l.issues.some((i) => isBlockingIssue(i.code));
-  const open = () => l.productId && router.push({ pathname: '/product/[id]', params: { id: l.productId } });
+  const set = (qty: string) => setItem.mutate({ variantId: l.variantId, qty });
 
   return (
     <Card style={[{ gap: space(3) }, blocking && { borderColor: colors.destructive, borderWidth: 1 }]}>
       <Row style={{ alignItems: 'flex-start' }} gap={space(3)}>
-        <PressableScale onPress={open} disabled={!l.productId} accessibilityRole="link" accessibilityLabel={name(l)} style={{ width: 64, height: 64, borderRadius: radius.md, overflow: 'hidden' }}>
-          <ProductThumb imageUrl={l.imageUrl} categoryId={l.categoryId} kind={l.kind} iconSize={22} />
+        <PressableScale
+          onPress={() => l.productId && router.push({ pathname: '/product/[id]', params: { id: l.productId } })}
+          disabled={!l.productId}
+          scale={0.99}
+          accessibilityRole="link"
+          accessibilityLabel={name(l)}
+          style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: space(3) }}
+        >
+          <View style={{ width: 64, height: 64, borderRadius: radius.md, overflow: 'hidden' }}>
+            <ProductThumb imageUrl={l.imageUrl} categoryId={l.categoryId} kind={l.kind} iconSize={22} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text bold numberOfLines={2}>{name(l)}</Text>
+            {l.attributes && Object.keys(l.attributes).length > 0 ? <Text v="caption" numberOfLines={2}>{attrsLabeled(l.attributes, locale)}</Text> : null}
+            <Text v="caption">{u ? `${money(l.unitPrice)} / ${u}` : money(l.unitPrice)}</Text>
+          </View>
         </PressableScale>
-        <PressableScale onPress={open} disabled={!l.productId} scale={0.99} style={{ flex: 1, gap: 2 }} accessibilityRole="link">
-          <Text bold numberOfLines={2}>{name(l)}</Text>
-          {l.attributes && Object.keys(l.attributes).length > 0 ? <Text v="caption" numberOfLines={2}>{attrsLabeled(l.attributes, locale)}</Text> : null}
-          <Text v="caption">
-            {money(l.unitPrice)}
-            {u ? ` / ${u}` : ''}
-          </Text>
-        </PressableScale>
-        <IconButton icon="trash-outline" label={t('removeItem', { name: name(l) })} tone="destructive" size={40} onPress={() => setItem.mutate({ variantId: l.variantId, qty: '0' })} />
+        <IconButton icon="trash" label={t('removeItem', { name: name(l) })} tone="destructive" size={40} onPress={() => set('0')} />
       </Row>
       <Row between style={{ flexWrap: 'wrap', rowGap: space(2) }}>
         {l.unit ? (
@@ -69,29 +62,11 @@ export function CartRow({ line: l }: { line: CartLine }) {
         ) : (
           <View />
         )}
-        <Text v="h2">{money(l.lineTotal)}</Text>
+        <Text v="heading">{money(l.lineTotal)}</Text>
       </Row>
-      {l.issues.map((i) => {
-        const fix = fixFor(l, i);
-        const bad = isBlockingIssue(i.code);
-        return (
-          <View key={i.code} style={{ gap: space(2), padding: space(3), borderRadius: radius.md, backgroundColor: bad ? colors.destructiveSoft : colors.warningSoft }}>
-            <Text v="small" tone={bad ? 'destructive' : 'warning'}>
-              {i.code === 'EXCEEDS_AVAILABLE' ? t('onlyAvailable', { n: `${i.available ?? 0} ${u}` }) : errorText(i.code, i.code)}
-            </Text>
-            {fix !== null && (
-              <Button
-                title={fix === '0' ? t('removeFromCart') : t('setQtyTo', { qty: `${fix} ${u}` })}
-                size="sm"
-                variant="outline"
-                style={{ alignSelf: 'flex-start' }}
-                loading={setItem.isPending}
-                onPress={() => setItem.mutate({ variantId: l.variantId, qty: fix })}
-              />
-            )}
-          </View>
-        );
-      })}
+      {l.issues.map((i) => (
+        <CartIssue key={i.code} line={l} issue={i} unit={u} pending={setItem.isPending} onFix={set} />
+      ))}
     </Card>
   );
 }

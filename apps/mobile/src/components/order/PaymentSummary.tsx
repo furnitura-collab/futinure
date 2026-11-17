@@ -20,7 +20,7 @@ export function PaymentSummary({ o }: { o: OrderDetail }) {
   const open = o.status !== 'CANCELLED';
   return (
     <Card style={{ gap: space(2) }}>
-      <Text v="h2">{t('paymentTitle')}</Text>
+      <Text v="small" muted>{t('paymentTitle')}</Text>
       <SumRow label={t('itemsSum')} value={money(o.itemsTotal)} />
       {o.deliveryFee > 0 && <SumRow label={t('deliveryFee')} value={money(o.deliveryFee)} />}
       {o.discountTotal > 0 && <SumRow label={t('discount')} value={`−${money(o.discountTotal)}`} tone="success" />}
@@ -31,8 +31,7 @@ export function PaymentSummary({ o }: { o: OrderDetail }) {
       {o.paymentTerms && (
         <View style={{ gap: 2, marginTop: space(1) }}>
           <Text v="small" bold>
-            {t('terms')}: {terms(o.paymentTerms)}
-            {o.paymentTerms === 'ADVANCE' ? ` — ${money(o.advanceAmount)}` : ''}
+            {`${t('terms')}: ${terms(o.paymentTerms)}${o.paymentTerms === 'ADVANCE' ? ` — ${money(o.advanceAmount)}` : ''}`}
           </Text>
           <Text v="caption">{t(TERMS_HINT[o.paymentTerms], { date: o.dueDate ? formatDate(o.dueDate) : '—' })}</Text>
           {o.allowedMethods.length > 0 && <Text v="caption">{t('methodsList', { list: o.allowedMethods.map(method).join(', ') })}</Text>}
@@ -42,18 +41,16 @@ export function PaymentSummary({ o }: { o: OrderDetail }) {
       {o.payments.length > 0 && (
         <>
           <Divider />
-          <Text v="small" bold>{t('sentPayments')}</Text>
+          <Text v="small" muted>{t('sentPayments')}</Text>
           {o.payments.map((p) => (
-            <Row key={p.id} between style={{ alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text v="small">
-                  {money(p.amount)} · {method(p.method)}
-                </Text>
-                <Text v="caption">{formatDate(p.createdAt)}</Text>
-                {p.rejectReason ? <Text v="caption" tone="destructive">{p.rejectReason}</Text> : null}
-              </View>
-              <Badge label={paymentStatus(p.status)} tone={PAYMENT_TONE[p.status]} dot />
-            </Row>
+            <View key={p.id} style={{ gap: 2 }}>
+              <Row between gap={space(3)}>
+                <Text v="small" bold style={{ flex: 1, fontVariant: ['tabular-nums'] }}>{money(p.amount)}</Text>
+                <Badge label={paymentStatus(p.status)} tone={PAYMENT_TONE[p.status]} />
+              </Row>
+              <Text v="caption">{`${method(p.method)} · ${formatDate(p.createdAt)}`}</Text>
+              {p.rejectReason ? <Text v="caption" tone="destructive">{p.rejectReason}</Text> : null}
+            </View>
           ))}
         </>
       )}

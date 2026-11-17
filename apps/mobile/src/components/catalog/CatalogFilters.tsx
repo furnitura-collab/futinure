@@ -2,7 +2,7 @@ import type { ProductSort } from '@mebel/shared';
 import { router } from 'expo-router';
 import { useState, type ComponentRef, type RefObject } from 'react';
 import { ScrollView, View, type TextInput } from 'react-native';
-import { Button, Chip, IconButton, Input, OptionList, Sheet } from '@/components/ui';
+import { Chip, IconButton, Input, OptionList, Sheet } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useCategories } from '@/lib/categories';
 import { space } from '@/theme';
@@ -21,7 +21,7 @@ export interface Filters {
   sort: ProductSort;
 }
 
-/** Katalog tepasidagi yopishgan panel: qidiruv, "kod bo'yicha", saralash va filtr chiplari */
+/** Katalog tepasidagi yopishgan panel: qidiruv, kod bo'yicha buyurtma, saralash va filtr chiplari */
 export function CatalogFilters({ value, onChange, inputRef }: { value: Filters; onChange: (f: Partial<Filters>) => void; inputRef: RefObject<ComponentRef<typeof TextInput> | null> }) {
   const { t, name } = useI18n();
   const categories = useCategories();
@@ -34,17 +34,17 @@ export function CatalogFilters({ value, onChange, inputRef }: { value: Filters; 
         <View style={{ flex: 1 }}>
           <Input
             ref={inputRef}
-            icon="search"
+            icon="magnifying-glass"
             value={value.q}
             onChangeText={(q) => onChange({ q })}
             placeholder={t('searchPlaceholder')}
             returnKeyType="search"
             autoCorrect={false}
             accessibilityLabel={t('searchPlaceholder')}
-            right={value.q ? <IconButton icon="close-circle" label={t('clear')} size={36} onPress={() => onChange({ q: '' })} /> : null}
+            right={value.q ? <IconButton icon="x-circle" label={t('clear')} size={36} onPress={() => onChange({ q: '' })} /> : null}
           />
         </View>
-        <Button title={t('byCodeShort')} variant="outline" size="md" accessibilityLabel={t('quickSku')} onPress={() => router.push('/sku')} />
+        <IconButton icon="barcode" variant="secondary" size={48} label={t('quickSku')} onPress={() => router.push('/sku')} />
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space(2), paddingHorizontal: space(4) }} style={{ marginHorizontal: -space(4) }}>
         <Chip label={sortLabel} onPress={() => setSorting(true)} />

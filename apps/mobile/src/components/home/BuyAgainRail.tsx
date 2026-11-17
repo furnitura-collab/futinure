@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { ProductThumb } from '@/components/catalog/ProductThumb';
-import { IconButton, PressableScale, SectionHeader, Text } from '@/components/ui';
+import { TileCard } from '@/components/catalog/TileCard';
+import { IconButton, SectionHeader, Text } from '@/components/ui';
 import { Grid } from '@/components/web/Grid';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
@@ -10,7 +11,8 @@ import { addQty, useAddToCart, useCart } from '@/lib/cart';
 import { attrsText } from '@/lib/catalog';
 import { useLayout, useSite } from '@/lib/layout';
 import type { BuyAgainItem } from '@/lib/types';
-import { makeStyles, radius, space, useTheme } from '@/theme';
+import { space } from '@/theme';
+import { Rail } from './Rail';
 
 /** "Yana buyurtma qilish" — oldin olingan tovar, bir bosishda oxirgi miqdori bilan savatga */
 export function BuyAgainRail() {
@@ -21,52 +23,51 @@ export function BuyAgainRail() {
   if (!q.data?.length) return null;
   return (
     <View style={{ gap: space(3) }}>
-      <SectionHeader title={t('buyAgain')} hint={t('buyAgainHint')} />
+      <SectionHeader title={t('buyAgain')} />
       {site ? (
         <Grid columns={desktop ? 6 : 4}>
           {q.data.slice(0, desktop ? 12 : 8).map((i) => (
-            <BuyAgainCard key={i.variantId} item={i} fluid />
+            <BuyAgainCard key={i.variantId} item={i} />
           ))}
         </Grid>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space(4) }} contentContainerStyle={{ gap: space(3), paddingHorizontal: space(4), paddingBottom: space(1) }}>
+        <Rail>
           {q.data.map((i) => (
-            <BuyAgainCard key={i.variantId} item={i} />
+            <BuyAgainCard key={i.variantId} item={i} width={176} />
           ))}
-        </ScrollView>
+        </Rail>
       )}
     </View>
   );
 }
 
-/** fluid — to'r katagini to'ldiradi (saytda), aks holda rail uchun qat'iy kenglik */
-function BuyAgainCard({ item: i, fluid }: { item: BuyAgainItem; fluid?: boolean }) {
+/** width — rail uchun qat'iy kenglik; berilmasa (saytda) to'r katagini to'ldiradi */
+function BuyAgainCard({ item: i, width }: { item: BuyAgainItem; width?: number }) {
   const { t, name, money, unit } = useI18n();
-  const s = useStyles();
-  const { shadowLg } = useTheme();
   const cart = useCart();
   const add = useAddToCart();
   const p = i.product;
   const u = unit(p.unit);
+  const last = `${i.lastQty} ${u}`;
   const inCart = cart.data?.lines.find((l) => l.variantId === i.variantId);
 
   return (
-    <PressableScale onPress={() => router.push({ pathname: '/product/[id]', params: { id: p.id } })} scale={0.98} accessibilityRole="link" accessibilityLabel={name(p)} hoverStyle={[shadowLg, { top: -2 }]} style={[s.card, fluid && { width: undefined }]}>
-      <View style={s.image}>
+    <TileCard onPress={() => router.push({ pathname: '/product/[id]', params: { id: p.id } })} accessibilityLabel={name(p)} style={{ width }}>
+      <View style={{ height: 96 }}>
         <ProductThumb imageUrl={p.imageUrl} categoryId={p.categoryId} kind={p.kind} iconSize={28} />
       </View>
-      <View style={s.body}>
+      <View style={{ padding: space(3), gap: 2 }}>
         <Text v="small" bold numberOfLines={2} style={{ minHeight: 36 }}>{name(p)}</Text>
         <Text v="caption" numberOfLines={1}>{attrsText(i.attributes) || ' '}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space(2), marginTop: space(1) }}>
           <View style={{ flex: 1 }}>
-            <Text v="small" bold numberOfLines={1}>{money(i.unitPrice)}</Text>
-            <Text v="caption" numberOfLines={1}>{t('lastQty', { qty: `${i.lastQty} ${u}` })}</Text>
+            <Text bold numberOfLines={1}>{money(i.unitPrice)}</Text>
+            <Text v="caption" numberOfLines={1}>{t('lastQty', { qty: last })}</Text>
           </View>
           <IconButton
-            icon="add"
+            icon="plus"
             variant="primary"
-            label={t('addLastQty', { qty: `${i.lastQty} ${u}` })}
+            label={t('addLastQty', { qty: last })}
             disabled={i.stockLevel === 'OUT_OF_STOCK' || add.isPending}
             onPress={() => {
               const qty = addQty(inCart?.qty, i.lastQty);
@@ -75,12 +76,6 @@ function BuyAgainCard({ item: i, fluid }: { item: BuyAgainItem; fluid?: boolean 
           />
         </View>
       </View>
-    </PressableScale>
+    </TileCard>
   );
 }
-
-const useStyles = makeStyles((t) => ({
-  card: { width: 176, backgroundColor: t.colors.card, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: t.colors.border, ...t.shadow },
-  image: { height: 96 },
-  body: { padding: space(3), gap: 2 },
-}));

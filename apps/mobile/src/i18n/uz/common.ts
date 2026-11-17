@@ -20,6 +20,7 @@ export const common = {
   phone: 'Telefon raqam',
   password: 'Parol',
   showPassword: "Parolni ko'rsatish",
+  hidePassword: "Parolni yashirish",
   login: 'Kirish',
   invalidPhone: "Telefon raqam noto'g'ri",
   // tanishuv
@@ -51,7 +52,8 @@ export const common = {
   activeOrders: 'Faol buyurtmalar',
   seeAll: 'Hammasi',
   buyAgain: 'Yana buyurtma qilish',
-  buyAgainHint: "Oldin olganlaringiz — «+» oxirgi miqdorni qo'shadi",
+  qtyDecrease: 'Kamaytirish',
+  qtyIncrease: "Ko'paytirish",
   lastQty: 'Oxirgi safar: {qty}',
   addLastQty: "Savatga qo'shish: {qty}",
   categories: 'Kategoriyalar',

@@ -10,17 +10,17 @@ export function useCategories() {
 
 /** Demo katalogda rasm yo'q — kategoriya belgisi rasm o'rnini bosadi, shuning uchun mazmunli bo'lishi kerak */
 const SLUG_ICON: Record<string, IconName> = {
-  plitalar: 'layers-outline',
-  ldsp: 'layers-outline',
-  mdf: 'albums-outline',
-  kromka: 'reorder-four-outline',
-  furnitura: 'construct-outline',
-  petlya: 'git-compare-outline',
-  yonaltiruvchi: 'swap-horizontal-outline',
-  ruchka: 'hand-left-outline',
-  mahkamlagich: 'hammer-outline',
+  plitalar: 'stack',
+  ldsp: 'stack',
+  mdf: 'cards',
+  kromka: 'rows',
+  furnitura: 'wrench',
+  petlya: 'git-diff',
+  yonaltiruvchi: 'arrows-left-right',
+  ruchka: 'hand',
+  mahkamlagich: 'hammer',
 };
-const KIND_ICON: Record<string, IconName> = { BOARD: 'layers-outline', EDGE: 'reorder-four-outline', GOODS: 'cube-outline' };
+const KIND_ICON: Record<string, IconName> = { BOARD: 'stack', EDGE: 'rows', GOODS: 'cube' };
 
 export interface CategoryVisual {
   icon: IconName;
@@ -54,7 +54,7 @@ export function useCategoryVisual() {
     (categoryId: string | null | undefined, kind?: string | null): CategoryVisual => {
       const e = categoryId ? map.get(categoryId) : undefined;
       return {
-        icon: (e && (SLUG_ICON[e.slug] ?? SLUG_ICON[e.rootSlug])) || (kind ? KIND_ICON[kind] : undefined) || 'cube-outline',
+        icon: (e && (SLUG_ICON[e.slug] ?? SLUG_ICON[e.rootSlug])) || (kind ? KIND_ICON[kind] : undefined) || 'cube',
         tint: e?.rootIndex ?? 0,
       };
     },

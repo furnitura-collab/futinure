@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View, type TextInput } from 'react-native';
 import { LanguageMenu } from '@/components/LanguageMenu';
 import { LogoMark } from '@/components/LogoMark';
-import { CountBadge, Icon, IconButton, Input, PressableScale, Text, type IconName } from '@/components/ui';
+import { IconButton, Input, PressableScale, Text } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useCart } from '@/lib/cart';
 import { useCategories } from '@/lib/categories';
@@ -12,11 +12,9 @@ import { useUnreadCount } from '@/lib/notifications';
 import { useAttentionCount } from '@/lib/orders';
 import { radius, space, useTheme } from '@/theme';
 import { AccountMenu } from './AccountMenu';
+import { HeaderAction, NAV_HEIGHT, NavItem } from './HeaderParts';
 
 const BAR_HEIGHT = 64;
-const NAV_HEIGHT = 44;
-/** Sarlavhadagi boshqaruvlar (qidiruv, tugmalar) bir balandlikda */
-const CONTROL_HEIGHT = 40;
 
 interface Section {
   href: Href;
@@ -89,7 +87,7 @@ function TopBar() {
       <View accessibilityRole="search" style={{ flex: 1, maxWidth: 640, marginHorizontal: 'auto' }}>
         <Input
           ref={search}
-          icon="search"
+          icon="magnifying-glass"
           value={q}
           onChangeText={setQ}
           onSubmitEditing={() => submit(q)}
@@ -101,7 +99,7 @@ function TopBar() {
           right={
             q ? (
               <IconButton
-                icon="close-circle"
+                icon="x-circle"
                 label={t('clear')}
                 size={28}
                 onPress={() => {
@@ -119,10 +117,10 @@ function TopBar() {
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(1) }}>
-        <HeaderAction icon="barcode-outline" label={t('quickSku')} onPress={() => router.push('/sku')} />
+        <HeaderAction icon="barcode" label={t('quickSku')} onPress={() => router.push('/sku')} />
         <LanguageMenu />
-        <HeaderAction icon="notifications-outline" label={t('notifications')} badge={unread} active={path === '/notifications'} onPress={() => router.push('/notifications')} />
-        <HeaderAction icon="cart-outline" label={t('tabCart')} badge={cart.data?.count ?? 0} active={path === '/cart'} onPress={() => router.navigate('/cart')} />
+        <HeaderAction icon="bell" label={t('notifications')} badge={unread} active={path === '/notifications'} onPress={() => router.push('/notifications')} />
+        <HeaderAction icon="shopping-cart" label={t('tabCart')} badge={cart.data?.count ?? 0} active={path === '/cart'} onPress={() => router.navigate('/cart')} />
         <View style={{ width: 1, height: 24, backgroundColor: colors.border, marginHorizontal: space(2) }} />
         <AccountMenu />
       </View>
@@ -164,55 +162,5 @@ function NavBar() {
         ))}
       </ScrollView>
     </View>
-  );
-}
-
-function NavItem({ label, active, badge = 0, onPress }: { label: string; active: boolean; badge?: number; onPress: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="link"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-      scale={0.97}
-      hoverStyle={{ backgroundColor: colors.muted }}
-      style={{ height: 32, flexDirection: 'row', alignItems: 'center', gap: space(2), paddingHorizontal: space(3), borderRadius: radius.md }}
-    >
-      <Text v="small" bold={active} color={active ? colors.foreground : colors.mutedForeground} numberOfLines={1}>{label}</Text>
-      {badge > 0 && <CountBadge count={badge} tone="violet" />}
-      {/* Faol chiziq qatorning pastki chegarasiga yopishadi */}
-      {active && <View style={{ position: 'absolute', left: space(3), right: space(3), bottom: -(NAV_HEIGHT - 32) / 2, height: 2, borderRadius: 1, backgroundColor: colors.primary }} />}
-    </PressableScale>
-  );
-}
-
-/** O'ngdagi harakat — faqat ikonka (nomi ekran o'quvchida); son belgisi burchakda, faqat son */
-function HeaderAction({ icon, label, badge = 0, active, onPress }: { icon: IconName; label: string; badge?: number; active?: boolean; onPress: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={badge ? `${label} (${badge})` : label}
-      accessibilityState={{ selected: !!active }}
-      scale={0.95}
-      hoverStyle={{ backgroundColor: colors.muted }}
-      style={{
-        width: CONTROL_HEIGHT,
-        height: CONTROL_HEIGHT,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: radius.md,
-        backgroundColor: active ? colors.muted : 'transparent',
-      }}
-    >
-      <Icon name={icon} size={20} />
-      {badge > 0 && (
-        <View pointerEvents="none" style={{ position: 'absolute', top: 2, right: 0 }}>
-          <CountBadge count={badge} />
-        </View>
-      )}
-    </PressableScale>
   );
 }

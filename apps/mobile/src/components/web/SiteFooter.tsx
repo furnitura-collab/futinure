@@ -1,6 +1,6 @@
 import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
-import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { LanguageMenu } from '@/components/LanguageMenu';
 import { LogoMark } from '@/components/LogoMark';
 import { PressableScale } from '@/components/ui/Pressable';
 import { Text } from '@/components/ui/Text';
@@ -39,18 +39,18 @@ export function SiteFooter() {
   const { t } = useI18n();
   const { colors } = useTheme();
   return (
-    <View accessibilityRole="contentinfo" style={{ marginTop: space(12), borderTopWidth: 1, borderTopColor: colors.border }}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: space(10), paddingVertical: space(8) }}>
-        <View style={{ flexGrow: 1, flexBasis: 280, maxWidth: 360, gap: space(3) }}>
+    <View accessibilityRole="contentinfo" style={{ marginTop: space(10), borderTopWidth: 1, borderTopColor: colors.border }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: space(8), paddingVertical: space(6) }}>
+        <View style={{ flexGrow: 1, flexBasis: 280, maxWidth: 360, gap: space(2) }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(2) }}>
             <LogoMark size={32} />
-            <Text v="heading" bold>{t('appName')}</Text>
+            <Text v="h2">{t('appName')}</Text>
           </View>
           <Text v="small" muted>{t('loginSubtitle')}</Text>
         </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(16) }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(12) }}>
           {COLUMNS.map((col) => (
-            <View key={col.title} accessibilityRole="navigation" accessibilityLabel={t(col.title)} style={{ minWidth: 160, gap: space(3) }}>
+            <View key={col.title} accessibilityRole="navigation" accessibilityLabel={t(col.title)} style={{ minWidth: 160, gap: space(2) }}>
               <Text v="caption" bold style={{ textTransform: 'uppercase', letterSpacing: 0.6 }}>{t(col.title)}</Text>
               {col.links.map((l) => (
                 <FooterLink key={l.label} label={t(l.label)} onPress={() => (l.push ? router.push(l.href) : router.navigate(l.href))} />
@@ -66,13 +66,13 @@ export function SiteFooter() {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: space(3),
-          paddingVertical: space(5),
+          paddingVertical: space(3),
           borderTopWidth: 1,
           borderTopColor: colors.border,
         }}
       >
         <Text v="caption">{t('copyright', { year: new Date().getFullYear() })}</Text>
-        <LanguageSwitch />
+        <LanguageMenu />
       </View>
     </View>
   );
@@ -81,7 +81,7 @@ export function SiteFooter() {
 function FooterLink({ label, onPress }: { label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <PressableScale onPress={onPress} accessibilityRole="link" scale={1} hoverStyle={{ opacity: 0.7 }} style={{ alignSelf: 'flex-start' }}>
+    <PressableScale onPress={onPress} accessibilityRole="link" scale={1} hoverStyle={{ opacity: 0.7 }} style={{ alignSelf: 'flex-start', paddingVertical: 2 }}>
       <Text v="small" color={colors.foreground}>{label}</Text>
     </PressableScale>
   );

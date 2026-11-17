@@ -34,17 +34,14 @@ export function MessageBubble({ m }: { m: ChatMessage }) {
           <Image source={authedSource(`/chat/messages/${m.id}/attachment`)} style={{ width: 220, height: 170, borderRadius: radius.md }} contentFit="cover" />
         )}
         {m.attachment?.mimeType === 'application/pdf' && (
-          <Row gap={6}>
-            <Icon name="document-text-outline" size={18} color={fg} />
-            <Text color={fg}>{t('pdfFile')}</Text>
-          </Row>
+          <Text bold color={fg}>{t('pdfFile')}</Text>
         )}
         {m.text ? <Text color={fg}>{m.text}</Text> : null}
         <Row gap={4} style={{ alignSelf: 'flex-end' }}>
           <Text v="caption" color={mine ? fg : colors.mutedForeground} style={{ opacity: mine ? 0.8 : 1 }}>
             {formatDateTime(m.createdAt).slice(-5)}
           </Text>
-          {mine && m.readByStaffAt ? <Icon name="checkmark-done" size={14} color={fg} /> : null}
+          {mine && m.readByStaffAt ? <Icon name="checks" size={14} color={fg} /> : null}
         </Row>
       </View>
     </View>

@@ -1,20 +1,21 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Linking, View } from 'react-native';
-import { formatDate, formatDateTime, formatPhone, type OrderStatus } from '@mebel/shared';
-import { Appear, Badge, Button, Card, Divider, ErrorState, Row, Screen, SkeletonList, Text } from '@/components/ui';
+import { formatDate, formatDateTime, formatPhone } from '@mebel/shared';
+import { ContactActions } from '@/components/driver/ContactActions';
+import { DeliveryActions, WITH_ACTIONS } from '@/components/driver/DeliveryActions';
+import { DeliveryItems } from '@/components/driver/DeliveryItems';
+import { Appear, Badge, Card, ErrorState, Row, Screen, SkeletonList, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { DELIVERY_TONE } from '@/lib/catalog';
-import { mapUrl, useDriverDelivery } from '@/lib/driver';
+import { useDriverDelivery } from '@/lib/driver';
 import { useApiMutation } from '@/lib/mutation';
 import { space } from '@/theme';
 
-const WITH_ACTIONS: OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY', 'PREPARING'];
-
-/** Bitta yetkazish: manzil, mijoz, olinadigan pul, tovarlar va amallar */
+/** Bitta yetkazish: manzil (xarita, qo'ng'iroq), olinadigan pul, mijoz, tovarlar va bosqich amali */
 export default function DriverDeliveryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t, money, unit, name, terms, deliveryStatus } = useI18n();
+  const { t, money, terms, deliveryStatus } = useI18n();
   const q = useDriverDelivery(id);
 
   const start = useApiMutation(() => api(`/driver/deliveries/${id}/start`, { body: { expectedVersion: q.data?.order.version } }), {
@@ -29,25 +30,27 @@ export default function DriverDeliveryScreen() {
   const o = d.order;
   const a = o.addressSnapshot;
   const c = o.customer;
-  const call = () => void Linking.openURL(`tel:${c.phone}`);
+  const extra = a ? [a.floor !== null ? t('drvFloor', { floor: a.floor }) : null, a.needsLoaders ? t('needsLoaders') : null].filter(Boolean).join(' · ') : '';
 
   return (
     <Screen
+      refreshing={q.isRefetching}
+      onRefresh={() => void q.refetch()}
       footer={
         WITH_ACTIONS.includes(o.status) && (
-        <Actions
-          status={o.status}
-          starting={start.isPending}
-          onStart={() => start.mutate(undefined)}
-          onDeliver={() => router.push({ pathname: '/driver/deliver', params: { id } })}
-          onFail={() => router.push({ pathname: '/driver/fail', params: { id } })}
-        />
+          <DeliveryActions
+            status={o.status}
+            starting={start.isPending}
+            onStart={() => start.mutate(undefined)}
+            onDeliver={() => router.push({ pathname: '/driver/deliver', params: { id } })}
+            onFail={() => router.push({ pathname: '/driver/fail', params: { id } })}
+          />
         )
       }
     >
       <Stack.Screen options={{ title: o.number }} />
       <Row between>
-        <Badge label={deliveryStatus(d.status)} tone={DELIVERY_TONE[d.status]} dot />
+        <Badge label={deliveryStatus(d.status)} tone={DELIVERY_TONE[d.status]} dot size="md" />
         {d.scheduledDate && <Text v="small" muted>{t('drvPlanned', { date: formatDate(d.scheduledDate) })}</Text>}
       </Row>
 
@@ -57,38 +60,21 @@ export default function DriverDeliveryScreen() {
         </Card>
       )}
 
-      {a && (
-        <Appear>
-          <Card style={{ gap: space(3) }}>
-            <Row style={{ alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, gap: 2 }}>
-                {a.label ? <Text bold>{a.label}</Text> : null}
-                <Text>{a.addressText}</Text>
-                <Text v="small" muted>
-                  {[a.floor !== null ? t('drvFloor', { floor: a.floor }) : null, a.needsLoaders ? t('needsLoaders') : null].filter(Boolean).join(' · ')}
-                </Text>
-                {a.comment ? <Text v="small">{a.comment}</Text> : null}
-              </View>
-            </Row>
-            <Row>
-              <Button title={t('drvMap')} variant="outline" size="md" style={{ flex: 1 }} onPress={() => void Linking.openURL(mapUrl(a))} />
-              <Button title={t('drvCall')} variant="outline" size="md" style={{ flex: 1 }} onPress={call} />
-            </Row>
-          </Card>
-        </Appear>
-      )}
-
-      <Appear index={1}>
-        <Card style={{ gap: 2 }}>
-          <Text bold>{[c.fullName, c.customerProfile?.companyName].filter(Boolean).join(', ') || '—'}</Text>
-          <Text v="small" tone="primary" onPress={call} accessibilityRole="link">
-            {formatPhone(c.phone)}
-          </Text>
-          {o.customerComment ? <Text v="small" style={{ marginTop: space(1) }}>{o.customerComment}</Text> : null}
+      <Appear>
+        <Card style={{ gap: space(3) }}>
+          <Row style={{ alignItems: 'flex-start' }} gap={space(3)}>
+            <View style={{ flex: 1, gap: 2 }}>
+              {a?.label ? <Text v="small" muted>{a.label}</Text> : null}
+              <Text v="h2">{a?.addressText ?? '—'}</Text>
+              {extra ? <Text v="small" muted>{extra}</Text> : null}
+            </View>
+            <ContactActions order={o} size={52} />
+          </Row>
+          {a?.comment ? <Text v="small">{a.comment}</Text> : null}
         </Card>
       </Appear>
 
-      <Appear index={2}>
+      <Appear index={1}>
         <Card tone={o.toCollect > 0 ? 'warning' : undefined} style={{ gap: 2 }}>
           {o.toCollect > 0 ? (
             <>
@@ -99,9 +85,7 @@ export default function DriverDeliveryScreen() {
               <Text v="title">{money(o.toCollect)}</Text>
             </>
           ) : (
-            <Row gap={6}>
-              <Text muted>{t('drvNoCollect')}</Text>
-            </Row>
+            <Text muted>{t('drvNoCollect')}</Text>
           )}
           {d.cashCollected !== null && (
             <Text v="small">
@@ -120,50 +104,19 @@ export default function DriverDeliveryScreen() {
         </Card>
       )}
 
-      <Appear index={3} style={{ gap: space(2) }}>
-        <Text v="small" bold>
-          {t('drvItems')} ({o.itemsCount}) · {o.totalWeightKg} {t('kg')}
-        </Text>
-        <Card style={{ paddingVertical: space(1) }}>
-          {o.items?.map((i, idx) => (
-            <View key={i.id}>
-              {idx > 0 && <Divider spacing={0} />}
-              <Row between style={{ paddingVertical: space(3), alignItems: 'flex-start' }}>
-                <View style={{ flex: 1 }}>
-                  <Text v="small">{name(i)}</Text>
-                  <Text v="caption">{[i.sku, Object.values(i.attributes).join(', ')].filter(Boolean).join(' · ')}</Text>
-                </View>
-                <Text bold>
-                  {i.qty} {unit(i.unit)}
-                </Text>
-              </Row>
-            </View>
-          ))}
+      <Appear index={2}>
+        <Card style={{ gap: 2 }}>
+          <Text bold>{[c.fullName, c.customerProfile?.companyName].filter(Boolean).join(', ') || '—'}</Text>
+          <Text v="small" tone="primary" onPress={() => void Linking.openURL(`tel:${c.phone}`)} accessibilityRole="link">
+            {formatPhone(c.phone)}
+          </Text>
+          {o.customerComment ? <Text v="small" style={{ marginTop: space(1) }}>{o.customerComment}</Text> : null}
         </Card>
+      </Appear>
+
+      <Appear index={3}>
+        <DeliveryItems order={o} />
       </Appear>
     </Screen>
   );
-}
-
-function Actions(props: { status: OrderStatus; starting: boolean; onStart: () => void; onDeliver: () => void; onFail: () => void }) {
-  const { t } = useI18n();
-  switch (props.status) {
-    case 'READY':
-      return <Button title={t('drvStart')} loading={props.starting} onPress={props.onStart} />;
-    case 'OUT_FOR_DELIVERY':
-      return (
-        <>
-          <Button title={t('drvDeliver')} onPress={props.onDeliver} />
-          <Button title={t('drvFail')} variant="outline" onPress={props.onFail} />
-        </>
-      );
-    case 'PREPARING':
-      return (
-        <Row gap={6} style={{ justifyContent: 'center' }}>
-          <Text muted>{t('drvNotReady')}</Text>
-        </Row>
-      );
-    default:
-      return null;
-  }
 }

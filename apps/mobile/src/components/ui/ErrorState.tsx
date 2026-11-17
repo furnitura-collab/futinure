@@ -8,7 +8,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   const message = error instanceof ApiError ? errorText(error.code, error.message) : error instanceof Error ? error.message : undefined;
   return (
     <EmptyState
-      icon={error instanceof ApiError && error.code === 'NETWORK' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+      icon={error instanceof ApiError && error.code === 'NETWORK' ? 'cloud-slash' : 'warning-circle'}
       title={t('errorTitle')}
       hint={message}
       action={onRetry ? <Button title={t('retry')} variant="outline" size="md" onPress={onRetry} /> : null}

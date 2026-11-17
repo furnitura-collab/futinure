@@ -18,7 +18,7 @@ interface Action {
 }
 
 /** "Sizdan kutilmoqda" — to'lov, yangi xabar. Hech narsa bo'lmasa — umuman ko'rinmaydi */
-export function ActionCards() {
+export function ActionCards({ columns = 1 }: { columns?: number }) {
   const { t, money } = useI18n();
   const { colors } = useTheme();
   const orders = useActiveOrders();
@@ -62,20 +62,24 @@ export function ActionCards() {
   return (
     <View style={{ gap: space(3) }}>
       <Text v="h2">{t('needsAction')}</Text>
-      {actions.map((a) => {
-        const tc = toneColors(colors, a.tone);
-        return (
-          <Card key={a.key} style={{ gap: space(3), borderLeftWidth: 4, borderLeftColor: tc.fg }}>
-            <View style={{ flexDirection: 'row', gap: space(3), alignItems: 'flex-start' }}>
+      {/* Har harakat — ixcham qator: matn chapda, tugma o'ngda; saytda bir nechta ustun */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space(3) }}>
+        {actions.map((a) => {
+          const tc = toneColors(colors, a.tone);
+          return (
+            <Card
+              key={a.key}
+              style={{ flexGrow: 1, flexBasis: columns > 1 ? 300 : '100%', flexDirection: 'row', alignItems: 'center', gap: space(3), borderLeftWidth: 3, borderLeftColor: tc.fg }}
+            >
               <View style={{ flex: 1, gap: 2 }}>
-                <Text bold>{a.title}</Text>
-                <Text v="small" muted>{a.text}</Text>
+                <Text bold numberOfLines={2}>{a.title}</Text>
+                <Text v="small" muted numberOfLines={2}>{a.text}</Text>
               </View>
-            </View>
-            <Button title={a.button} size="md" variant={a.tone === 'info' ? 'outline' : 'primary'} onPress={a.onPress} />
-          </Card>
-        );
-      })}
+              <Button title={a.button} size="sm" variant={a.tone === 'info' ? 'outline' : 'primary'} onPress={a.onPress} />
+            </Card>
+          );
+        })}
+      </View>
     </View>
   );
 }

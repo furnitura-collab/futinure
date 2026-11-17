@@ -3,24 +3,26 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { DeliveryType } from '@mebel/shared';
+import { TotalRow } from '@/components/cart/TotalRow';
 import { CheckoutSection } from '@/components/checkout/CheckoutSection';
 import { DateChoice, isValidChoice } from '@/components/checkout/DateChoice';
+import { DestinationPicker } from '@/components/checkout/DestinationPicker';
+import { OrderReview, WhatNext } from '@/components/checkout/OrderReview';
 import { OptionCard } from '@/components/form/OptionCard';
-import { SumRow } from '@/components/order/SumRow';
-import { Button, Card, Input, Row, Screen, Skeleton, Text } from '@/components/ui';
+import { Button, Card, Input, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useCart } from '@/lib/cart';
 import { useSite } from '@/lib/layout';
 import { useApiMutation } from '@/lib/mutation';
 import type { Address, Warehouse } from '@/lib/types';
-import { radius, space } from '@/theme';
+import { space } from '@/theme';
 
 /** Bir martalik kalit — tarmoq uzilib qayta yuborilsa ham bitta buyurtma */
 const newKey = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 
 export default function Checkout() {
-  const { t, money } = useI18n();
+  const { t } = useI18n();
   const cart = useCart();
   const addresses = useQuery({ queryKey: ['addresses'], queryFn: () => api<Address[]>('/addresses') });
   const warehouses = useQuery({ queryKey: ['warehouses'], queryFn: () => api<Warehouse[]>('/warehouses'), staleTime: 10 * 60_000 });
@@ -36,6 +38,8 @@ export default function Checkout() {
   const selectedWarehouse = warehouseId ?? warehouses.data?.[0]?.id ?? null;
   const loading = cart.isPending || addresses.isPending || warehouses.isPending;
   const pickup = type === 'PICKUP';
+  const count = cart.data?.count ?? 0;
+  const total = cart.data?.itemsTotal ?? 0;
 
   const place = useApiMutation(
     () =>
@@ -59,10 +63,7 @@ export default function Checkout() {
 
   const submit = (
     <>
-      <Row between>
-        <Text muted>{t('itemsCount', { n: cart.data?.count ?? 0 })}</Text>
-        <Text v="heading">{money(cart.data?.itemsTotal ?? 0)}</Text>
-      </Row>
+      <TotalRow label={t('itemsCount', { n: count })} amount={total} />
       <Button
         title={t('placeOrder')}
         block
@@ -72,29 +73,7 @@ export default function Checkout() {
       />
     </>
   );
-
-  const review = (
-    <Card style={{ gap: space(2) }}>
-      <Text v="h2">{t('reviewTitle')}</Text>
-      <SumRow label={t('itemsCount', { n: cart.data?.count ?? 0 })} value={money(cart.data?.itemsTotal ?? 0)} />
-      <SumRow label={t('deliveryFee')} value={pickup ? t('free') : t('byManager')} />
-      <Button title={t('editCart')} variant="ghost" size="sm" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} onPress={() => router.back()} />
-    </Card>
-  );
-
-  const whatNext = (
-    <Card tone="info" style={{ gap: space(2) }}>
-      <Row gap={space(2)}>
-        <Text bold tone="info">{t('whatNextTitle')}</Text>
-      </Row>
-      {(['whatNext1', 'whatNext2', 'whatNext3'] as const).map((k, i) => (
-        <Row key={k} gap={space(2)} style={{ alignItems: 'flex-start' }}>
-          <Text v="small" bold>{i + 1}.</Text>
-          <Text v="small" style={{ flex: 1 }}>{t(k)}</Text>
-        </Row>
-      ))}
-    </Card>
-  );
+  const review = <OrderReview count={count} total={total} pickup={pickup} />;
 
   return (
     <Screen
@@ -106,7 +85,7 @@ export default function Checkout() {
           <>
             {review}
             <Card style={{ gap: space(3) }}>{submit}</Card>
-            {whatNext}
+            <WhatNext />
           </>
         ) : undefined
       }
@@ -122,29 +101,16 @@ export default function Checkout() {
       </CheckoutSection>
 
       <CheckoutSection n={2} title={pickup ? t('stepWarehouse') : t('stepAddress')}>
-        {loading ? (
-          <Skeleton height={72} radius={radius.md} />
-        ) : pickup ? (
-          <View style={{ gap: space(2) }}>
-            {warehouses.data?.map((w) => (
-              <OptionCard
-                key={w.id}
-                selected={w.id === selectedWarehouse}
-                onPress={() => setWarehouseId(w.id)}
-                title={w.name}
-                subtitle={[w.addressText, w.workHours].filter(Boolean).join(' · ')}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={{ gap: space(2) }}>
-            {addresses.data?.map((a) => (
-              <OptionCard key={a.id} selected={a.id === selectedAddress} onPress={() => setAddressId(a.id)} title={a.label ?? a.addressText} subtitle={a.label ? a.addressText : undefined} />
-            ))}
-            {!addresses.data?.length && <Text v="small" muted>{t('noAddressesHint')}</Text>}
-            <Button title={t('addAddress')} variant="outline" size="md" onPress={() => router.push('/address-new')} />
-          </View>
-        )}
+        <DestinationPicker
+          pickup={pickup}
+          loading={loading}
+          warehouses={warehouses.data}
+          addresses={addresses.data}
+          warehouseId={selectedWarehouse}
+          addressId={selectedAddress}
+          onWarehouse={setWarehouseId}
+          onAddress={setAddressId}
+        />
       </CheckoutSection>
 
       <CheckoutSection n={3} title={t('stepDate')} hint={t('stepDateHint')}>
@@ -156,7 +122,7 @@ export default function Checkout() {
       </CheckoutSection>
 
       {!site && review}
-      {!site && whatNext}
+      {!site && <WhatNext />}
     </Screen>
   );
 }

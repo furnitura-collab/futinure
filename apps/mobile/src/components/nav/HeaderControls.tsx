@@ -28,7 +28,7 @@ function ThemeButton() {
   const dark = scheme === 'dark';
   return (
     <IconButton
-      icon={dark ? 'sunny-outline' : 'moon-outline'}
+      icon={dark ? 'sun' : 'moon'}
       label={dark ? t('themeLight') : t('themeDark')}
       size={HEADER_BUTTON}
       onPress={() => setPreference(dark ? 'light' : 'dark')}

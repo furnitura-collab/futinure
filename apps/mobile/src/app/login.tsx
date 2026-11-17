@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { formatUzPhoneInput, normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
-import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { LanguageMenu } from '@/components/LanguageMenu';
 import { Button, Card, Input, Screen, Text } from '@/components/ui';
 import { AuthSplit, BrandIntro, useAuthSplit } from '@/components/web/AuthSplit';
 import { useI18n } from '@/i18n';
@@ -36,11 +36,10 @@ export default function Login() {
   };
 
   const form = (
-    <Card style={{ gap: space(4), padding: space(6) }}>
+    <Card style={{ gap: space(4), padding: space(5) }}>
       <Text v="h2">{t('loginWelcome')}</Text>
       <Input
         label={t('phone')}
-        icon="call-outline"
         prefix="+998"
         placeholder="90 123 45 67"
         value={phone}
@@ -53,7 +52,6 @@ export default function Login() {
       />
       <Input
         label={t('password')}
-        icon="lock-closed-outline"
         value={password}
         onChangeText={setPassword}
         password
@@ -69,7 +67,7 @@ export default function Login() {
   );
   const language = (
     <View style={{ alignSelf: 'flex-end' }}>
-      <LanguageSwitch />
+      <LanguageMenu />
     </View>
   );
 
@@ -88,13 +86,10 @@ export default function Login() {
       {language}
 
       <View style={{ flex: 1, justifyContent: 'center', gap: space(6), paddingBottom: space(8) }}>
-      <Animated.View entering={FadeInDown.duration(250)}>
-        <BrandIntro />
-      </Animated.View>
-
-      <Animated.View entering={FadeInDown.duration(250).delay(80)}>
-        {form}
-      </Animated.View>
+        <Animated.View entering={FadeInDown.duration(250)}>
+          <BrandIntro />
+        </Animated.View>
+        <Animated.View entering={FadeInDown.duration(250).delay(80)}>{form}</Animated.View>
       </View>
     </Screen>
   );

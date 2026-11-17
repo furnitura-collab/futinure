@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 import { useThemeOptions } from '@/components/ThemeSwitch';
 import { ListGroup, ListItem, OptionList, Sheet, Text } from '@/components/ui';
 import { LANGUAGES, useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
-import { useThemeSettings } from '@/theme';
+import { space, useThemeSettings } from '@/theme';
 
 /** Til, mavzu, parol va chiqish — mijoz profilida ham, haydovchi sozlamalarida ham bir xil */
 export function SettingsSections({ passwordChange = true }: { passwordChange?: boolean }) {
@@ -22,9 +23,11 @@ export function SettingsSections({ passwordChange = true }: { passwordChange?: b
         <ListItem title={t('theme')} right={value(themes.find((x) => x.value === preference)!.label)} onPress={() => setSheet('theme')} />
         {passwordChange && <ListItem title={t('changePassword')} onPress={() => router.push('/password')} />}
       </ListGroup>
-      <ListGroup>
-        <ListItem title={t('logout')} destructive onPress={() => void logout()} />
-      </ListGroup>
+      <View style={{ marginTop: space(2) }}>
+        <ListGroup>
+          <ListItem title={t('logout')} destructive onPress={() => void logout()} />
+        </ListGroup>
+      </View>
 
       <Sheet open={sheet === 'language'} onClose={() => setSheet(null)} title={t('language')}>
         <OptionList

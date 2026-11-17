@@ -9,9 +9,9 @@ import { useLayout, useSite } from '@/lib/layout';
 import { useAttentionCount } from '@/lib/orders';
 import { radius, space, useTheme } from '@/theme';
 
-const icon = (name: IconName, active: IconName) =>
+const icon = (name: IconName) =>
   function TabIcon({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) {
-    return <Icon name={focused ? active : name} color={color as string} size={size - 2} />;
+    return <Icon name={name} weight={focused ? 'fill' : 'regular'} color={color as string} size={size - 2} />;
   };
 
 export default function TabsLayout() {
@@ -56,19 +56,19 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t('tabHome'), headerShown: false, tabBarIcon: icon('home-outline', 'home') }} />
-      <Tabs.Screen name="catalog" options={{ title: t('tabCatalog'), tabBarIcon: icon('grid-outline', 'grid') }} />
-      <Tabs.Screen name="cart" options={{ title: t('tabCart'), tabBarIcon: icon('cart-outline', 'cart'), tabBarBadge: cart.data?.count || undefined }} />
+      <Tabs.Screen name="index" options={{ title: t('tabHome'), headerShown: false, tabBarIcon: icon('house') }} />
+      <Tabs.Screen name="catalog" options={{ title: t('tabCatalog'), tabBarIcon: icon('squares-four') }} />
+      <Tabs.Screen name="cart" options={{ title: t('tabCart'), tabBarIcon: icon('shopping-cart'), tabBarBadge: cart.data?.count || undefined }} />
       <Tabs.Screen
         name="orders"
         options={{
           title: t('tabOrders'),
-          tabBarIcon: icon('receipt-outline', 'receipt'),
+          tabBarIcon: icon('receipt'),
           tabBarBadge: attention || undefined,
           tabBarBadgeStyle: { backgroundColor: colors.violet, color: colors.background, fontSize: 11 },
         }}
       />
-      <Tabs.Screen name="profile" options={{ title: t('tabProfile'), tabBarIcon: icon('person-outline', 'person') }} />
+      <Tabs.Screen name="profile" options={{ title: t('tabProfile'), tabBarIcon: icon('user') }} />
     </Tabs>
   );
 }

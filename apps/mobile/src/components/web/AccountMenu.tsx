@@ -1,8 +1,9 @@
 import { router, type Href } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { formatPhone } from '@mebel/shared';
 import { ThemeSwitch } from '@/components/ThemeSwitch';
-import { Avatar, Icon, PopoverPanel, PressableScale, Text, usePopover } from '@/components/ui';
+import { Avatar, Icon, PopoverPanel, PressableScale, Text, Tooltip, usePopover } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { radius, space, useTheme } from '@/theme';
@@ -19,6 +20,7 @@ export function AccountMenu() {
   const { colors } = useTheme();
   const { me, logout } = useAuth();
   const menu = usePopover();
+  const [hover, setHover] = useState(false);
   const go = (href: Href) => {
     menu.close();
     router.navigate(href);
@@ -29,6 +31,8 @@ export function AccountMenu() {
       <View ref={menu.anchor} collapsable={false}>
         <PressableScale
           onPress={menu.open}
+          onHoverIn={() => setHover(true)}
+          onHoverOut={() => setHover(false)}
           accessibilityRole="button"
           accessibilityLabel={t('accountMenu')}
           accessibilityState={{ expanded: menu.expanded }}
@@ -37,7 +41,8 @@ export function AccountMenu() {
           style={{ height: 40, flexDirection: 'row', alignItems: 'center', gap: space(1), paddingLeft: 4, paddingRight: space(2), borderRadius: radius.full }}
         >
           <Avatar name={me?.fullName} size={32} />
-          <Icon name="chevron-down" size={16} muted />
+          <Icon name="caret-down" size={16} muted />
+          <Tooltip label={t('accountMenu')} visible={hover && !menu.expanded} />
         </PressableScale>
       </View>
 

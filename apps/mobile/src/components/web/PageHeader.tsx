@@ -39,7 +39,7 @@ export function PageHeader({ title, crumbs, actions, heading = true }: PageHeade
                 >
                   <Text v="small" muted>{c.label}</Text>
                 </PressableScale>
-                <Icon name="chevron-forward" size={12} muted />
+                <Icon name="caret-right" size={12} muted />
               </Fragment>
             ))}
             <Text v="small" numberOfLines={1} style={{ flexShrink: 1 }}>{title}</Text>

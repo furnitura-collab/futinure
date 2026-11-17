@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import type { CustomerType } from '@mebel/shared';
+import { FieldLabel } from '@/components/form/FieldLabel';
 import { Button, Card, Input, Screen, Segmented, Text } from '@/components/ui';
 import { AuthSplit, useAuthSplit } from '@/components/web/AuthSplit';
 import { useI18n } from '@/i18n';
@@ -44,15 +45,15 @@ export default function Setup() {
         <Text muted>{t('setupSubtitle')}</Text>
       </Animated.View>
       <Animated.View entering={FadeInDown.duration(250).delay(80)}>
-        <Card style={{ gap: space(5), padding: space(6) }}>
-          <Input label={t('fullName')} icon="person-outline" value={fullName} onChangeText={setFullName} autoFocus autoComplete="name" />
+        <Card style={{ gap: space(4), padding: space(5) }}>
+          <Input label={t('fullName')} value={fullName} onChangeText={setFullName} autoFocus autoComplete="name" />
           <View style={{ gap: space(2) }}>
-            <Text v="small" bold>{t('customerType')}</Text>
+            <FieldLabel>{t('customerType')}</FieldLabel>
             <Segmented value={type} onChange={setType} options={TYPES.map((c) => ({ value: c, label: customerType(c) }))} />
           </View>
           {type === 'COMPANY' && (
-            <Animated.View entering={FadeInDown.duration(200)} style={{ gap: space(5) }}>
-              <Input label={t('companyName')} icon="business-outline" value={companyName} onChangeText={setCompanyName} />
+            <Animated.View entering={FadeInDown.duration(200)} style={{ gap: space(4) }}>
+              <Input label={t('companyName')} value={companyName} onChangeText={setCompanyName} />
               <Input label={t('inn')} value={inn} onChangeText={(v) => setInn(v.replace(/\D/g, '').slice(0, 9))} keyboardType="number-pad" />
             </Animated.View>
           )}

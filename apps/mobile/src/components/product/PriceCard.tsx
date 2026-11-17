@@ -4,27 +4,27 @@ import { Badge, Card, Row, Text } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { LEVEL_TONE } from '@/lib/catalog';
 import type { ProductDetail } from '@/lib/types';
-import { radius, space, useTheme, type Tone } from '@/theme';
+import { radius, space, useTheme } from '@/theme';
 
 type Variant = ProductDetail['variants'][number];
 
-const STOCK: Record<StockLevel, { key: I18nKey }> = {
-  IN_STOCK: { key: 'stockInStock' },
-  LOW: { key: 'stockLow' },
-  ON_ORDER: { key: 'stockOnOrder' },
-  OUT_OF_STOCK: { key: 'stockOut' },
+const STOCK: Record<StockLevel, I18nKey> = {
+  IN_STOCK: 'stockInStock',
+  LOW: 'stockLow',
+  ON_ORDER: 'stockOnOrder',
+  OUT_OF_STOCK: 'stockOut',
 };
 
-/** Narx bloki: birlik narxi, shaxsiy narx belgisi, pog'onalar jadvali va "qachon olasiz" jumlasi */
-/** flat — saytdagi xarid blokining ichida (karta ichida karta bo'lmasin) */
+/**
+ * Narx bloki: birlik narxi, shaxsiy narx belgisi, pog'onalar jadvali va "qachon olasiz" jumlasi.
+ * flat — saytdagi xarid blokining ichida (karta ichida karta bo'lmasin)
+ */
 export function PriceCard({ v, unitPrice, productUnit, quantity, flat }: { v: Variant; unitPrice: number; productUnit: Unit; quantity: string; flat?: boolean }) {
   const { t, money, unit } = useI18n();
   const { colors } = useTheme();
   const u = unit(productUnit);
-  const stock = STOCK[v.stockLevel];
-  const tone: Tone = LEVEL_TONE[v.stockLevel];
-  // Joriy miqdorga mos eng katta pog'ona — jadvalda belgilanadi
   const Box = flat ? View : Card;
+  // Joriy miqdorga mos eng katta pog'ona — jadvalda belgilanadi
   const activeTier = v.tiers.filter((x) => Number(quantity) >= Number(x.minQty)).at(-1)?.minQty;
 
   return (
@@ -38,15 +38,11 @@ export function PriceCard({ v, unitPrice, productUnit, quantity, flat }: { v: Va
         </Row>
       </View>
 
-      <Row gap={space(2)} style={{ alignItems: 'flex-start' }}>
-        <Text v="small" bold tone={tone} style={{ flex: 1 }}>{t(stock.key, { days: v.leadTimeDays ?? '' })}</Text>
-      </Row>
+      <Text v="small" bold tone={LEVEL_TONE[v.stockLevel]}>{t(STOCK[v.stockLevel], { days: v.leadTimeDays ?? '' })}</Text>
 
       {v.tiers.length > 0 && (
         <View style={{ gap: space(2) }}>
-          <Row gap={6}>
-            <Text v="small" bold>{t('priceTiers')}</Text>
-          </Row>
+          <Text v="small" bold>{t('priceTiers')}</Text>
           <View style={{ borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
             {v.tiers.map((tier, i) => {
               const on = tier.minQty === activeTier;

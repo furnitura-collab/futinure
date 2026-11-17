@@ -34,7 +34,7 @@ export function OptionCard({ selected, onPress, title, subtitle }: OptionCardPro
         <Text bold>{title}</Text>
         {subtitle ? <Text v="small" muted>{subtitle}</Text> : null}
       </View>
-      <Icon name={selected ? 'radio-button-on' : 'radio-button-off'} size={22} color={selected ? colors.primary : colors.placeholder} />
+      <Icon name={selected ? 'radio-button' : 'circle'} size={22} color={selected ? colors.primary : colors.placeholder} />
     </PressableScale>
   );
 }

@@ -25,7 +25,7 @@ export default function Orders() {
         <FlatList
           data={q.items}
           keyExtractor={(o) => o.id}
-          contentContainerStyle={{ ...insets.container, paddingTop: insets.top + space(site ? 6 : 4), paddingBottom: insets.bottom + space(6), gap: space(3) }}
+          contentContainerStyle={{ ...insets.container, paddingTop: insets.top + space(site ? 6 : 4), paddingBottom: insets.bottom + space(6), gap: space(site ? 2 : 3) }}
           refreshControl={
             <RefreshControl refreshing={q.isRefetching && !q.isFetchingNextPage} onRefresh={() => void q.refetch()} tintColor={colors.primary} colors={[colors.primary]} progressViewOffset={insets.top} />
           }
@@ -39,7 +39,7 @@ export default function Orders() {
               <ErrorState error={q.error} onRetry={() => void q.refetch()} />
             ) : (
               <EmptyState
-                icon="receipt-outline"
+                icon="receipt"
                 title={tab === 'active' ? t('noActiveOrders') : t('noOrders')}
                 hint={t('noOrdersHint')}
                 action={<Button title={t('goToCatalog')} variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}

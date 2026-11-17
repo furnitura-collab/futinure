@@ -1,4 +1,5 @@
 import { TextInput, View } from 'react-native';
+import { useI18n } from '@/i18n';
 import { font, makeStyles, radius } from '@/theme';
 import { IconButton } from './IconButton';
 import { Text } from './Text';
@@ -20,6 +21,7 @@ const fix = (x: number) => String(Math.round(x * 1000) / 1000);
 const clean = (s: string) => s.replace(',', '.').replace(/[^\d.]/g, '');
 
 export function QtyStepper({ value, onChange, onCommit, step, min, unit }: QtyStepperProps) {
+  const { t } = useI18n();
   const s = useStyles();
   const n = Number(value) || 0;
   const set = (v: string) => {
@@ -28,7 +30,7 @@ export function QtyStepper({ value, onChange, onCommit, step, min, unit }: QtySt
   };
   return (
     <View style={s.root}>
-      <IconButton icon="remove" label="−" size={40} onPress={() => set(fix(Math.max(min, n - step)))} disabled={n <= min} />
+      <IconButton icon="minus" label={t('qtyDecrease')} size={40} onPress={() => set(fix(Math.max(min, n - step)))} disabled={n <= min} />
       <TextInput
         value={value}
         onChangeText={(t) => onChange(clean(t))}
@@ -40,7 +42,7 @@ export function QtyStepper({ value, onChange, onCommit, step, min, unit }: QtySt
         style={s.input}
       />
       <Text v="small" muted style={s.unit}>{unit}</Text>
-      <IconButton icon="add" label="+" size={40} onPress={() => set(fix(n < min ? min : n + step))} />
+      <IconButton icon="plus" label={t('qtyIncrease')} size={40} onPress={() => set(fix(n < min ? min : n + step))} />
     </View>
   );
 }

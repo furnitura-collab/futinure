@@ -7,6 +7,8 @@ import { Text } from './Text';
 
 interface ListItemProps {
   title: string;
+  /** Uzun sarlavha (masalan, manzil) — nechta qatorgacha */
+  titleLines?: number;
   subtitle?: string;
   /** O'ng tomonda: qiymat, badge yoki boshqa element */
   right?: ReactNode;
@@ -15,18 +17,18 @@ interface ListItemProps {
 }
 
 /** Ro'yxat qatori — matn; o'ngdagi ">" faqat "ochiladi" belgisi */
-export function ListItem({ title, subtitle, right, onPress, destructive }: ListItemProps) {
+export function ListItem({ title, titleLines = 1, subtitle, right, onPress, destructive }: ListItemProps) {
   const { colors } = useTheme();
   const body = (
     <>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text bold={!!subtitle} tone={destructive ? 'destructive' : undefined} numberOfLines={1}>
+        <Text bold={!!subtitle} tone={destructive ? 'destructive' : undefined} numberOfLines={titleLines}>
           {title}
         </Text>
         {subtitle ? <Text v="small" muted numberOfLines={2}>{subtitle}</Text> : null}
       </View>
       {right}
-      {onPress && !destructive ? <Icon name="chevron-forward" size={18} color={colors.placeholder} /> : null}
+      {onPress && !destructive ? <Icon name="caret-right" size={18} color={colors.placeholder} /> : null}
     </>
   );
   const row = { flexDirection: 'row', alignItems: 'center', gap: space(3), minHeight: 56, paddingHorizontal: space(4), paddingVertical: space(3) } as const;

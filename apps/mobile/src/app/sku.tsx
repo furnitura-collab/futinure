@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Button, Card, Icon, Input, Row, Screen, Text } from '@/components/ui';
+import { Button, Card, Input, Row, Screen, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
@@ -37,12 +37,6 @@ export default function Sku() {
 
   return (
     <Screen width="form" modal title={t('quickSku')}>
-      <Card tone="primary" style={{ gap: space(1) }}>
-        <Row gap={space(2)}>
-          <Text v="small" bold tone="primary">{t('skuHowTitle')}</Text>
-        </Row>
-        <Text v="small">{t('quickSkuExplain')}</Text>
-      </Card>
       <Input
         label={t('skuInputLabel')}
         hint={t('quickSkuHint')}
@@ -66,12 +60,9 @@ export default function Sku() {
               return (
                 <Row key={i} between>
                   <Text style={{ fontFamily: 'monospace', flex: 1 }} numberOfLines={1}>{r.sku}</Text>
-                  <Row gap={6}>
-                    <Icon name={ok ? 'checkmark-circle' : 'close-circle'} size={16} tone={ok ? 'success' : 'destructive'} />
-                    <Text v="small" tone={ok ? 'success' : 'destructive'}>
-                      {ok ? t('skuAdded', { qty: r.qty ?? '' }) : r.status === 'NOT_FOUND' ? t('skuNotFound') : errorText(r.status, r.status)}
-                    </Text>
-                  </Row>
+                  <Text v="small" bold tone={ok ? 'success' : 'destructive'}>
+                    {ok ? t('skuAdded', { qty: r.qty ?? '' }) : r.status === 'NOT_FOUND' ? t('skuNotFound') : errorText(r.status, r.status)}
+                  </Text>
                 </Row>
               );
             })}

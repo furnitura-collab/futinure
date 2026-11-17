@@ -70,7 +70,7 @@ export default function Chat() {
       ]}
       footer={
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space(2) }}>
-          <IconButton icon="image-outline" label={t('attachImage')} onPress={() => void attach()} />
+          <IconButton icon="image" label={t('attachImage')} onPress={() => void attach()} />
           <TextInput
             value={text}
             onChangeText={setText}
@@ -94,7 +94,7 @@ export default function Chat() {
               outlineWidth: 0,
             }}
           />
-          <IconButton icon="send" label={t('send')} variant="primary" disabled={!text.trim() || send.isPending} onPress={submit} />
+          <IconButton icon="paper-plane-right" label={t('send')} variant="primary" disabled={!text.trim() || send.isPending} onPress={submit} />
         </View>
       }
     >
@@ -112,7 +112,7 @@ export default function Chat() {
           }}
           onContentSizeChange={() => list.current?.scrollToEnd({ animated: false })}
           ListHeaderComponent={insets.header}
-          ListEmptyComponent={q.isPending ? <SkeletonList count={3} lines={1} /> : <EmptyState icon="chatbubbles-outline" title={t('chat')} hint={t('noMessages')} />}
+          ListEmptyComponent={q.isPending ? <SkeletonList count={3} lines={1} /> : <EmptyState icon="chats-circle" title={t('chat')} hint={t('noMessages')} />}
           renderItem={({ item }) => <MessageBubble m={item} />}
         />
       )}

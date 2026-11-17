@@ -18,7 +18,7 @@ export function SearchEntry() {
         shadow,
       ]}
     >
-      <Icon name="search" size={20} muted />
+      <Icon name="magnifying-glass" size={20} muted />
       <Text muted style={{ flex: 1 }} numberOfLines={1}>{t('searchPlaceholder')}</Text>
     </PressableScale>
   );

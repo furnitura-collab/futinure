@@ -3,6 +3,7 @@ import { Platform, Pressable, TextInput, View, type TextInputProps, type TextSty
 import { useI18n } from '@/i18n';
 import { font, makeStyles, radius, space, useTheme } from '@/theme';
 import { Icon, type IconName } from './Icon';
+import { IconButton } from './IconButton';
 import { Text } from './Text';
 
 /**
@@ -57,9 +58,7 @@ export function Input({ label, error, hint, icon, prefix, right, password, compa
           style={[s.input, compact && s.inputCompact, NO_OUTLINE, multiline && s.inputMultiline, style]}
         />
         {password ? (
-          <Pressable onPress={() => setHidden((h) => !h)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('showPassword')}>
-            <Icon name={hidden ? 'eye-outline' : 'eye-off-outline'} size={20} muted />
-          </Pressable>
+          <IconButton icon={hidden ? 'eye' : 'eye-slash'} label={t(hidden ? 'showPassword' : 'hidePassword')} size={36} onPress={() => setHidden((h) => !h)} />
         ) : null}
         {right}
       </View>

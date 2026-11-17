@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { StageProgress } from '@/components/order/StageProgress';
 import { Badge, Card, SectionHeader, Text } from '@/components/ui';
 import { Grid } from '@/components/web/Grid';
@@ -9,6 +9,7 @@ import { useLayout, useSite } from '@/lib/layout';
 import { statusSentenceKey, useActiveOrders } from '@/lib/orders';
 import type { OrderListItem } from '@/lib/types';
 import { space } from '@/theme';
+import { Rail } from './Rail';
 
 /** Faol buyurtmalar — gorizontal kartalar (saytda — 3 ustunli to'r): holat, "keyin nima" va mini progress */
 export function ActiveOrdersRail() {
@@ -29,11 +30,11 @@ export function ActiveOrdersRail() {
           ))}
         </Grid>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space(4) }} contentContainerStyle={{ gap: space(3), paddingHorizontal: space(4), paddingBottom: space(1) }}>
+        <Rail>
           {items.map((o) => (
             <ActiveOrderCard key={o.id} o={o} width={272} />
           ))}
-        </ScrollView>
+        </Rail>
       )}
     </View>
   );

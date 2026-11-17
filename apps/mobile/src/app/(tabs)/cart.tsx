@@ -2,14 +2,15 @@ import { router } from 'expo-router';
 import { FlatList } from 'react-native';
 import { CartRow } from '@/components/cart/CartRow';
 import { CartSummary } from '@/components/cart/CartSummary';
-import { Appear, Button, EmptyState, ErrorState, Row, Screen, SkeletonList, Text } from '@/components/ui';
+import { TotalRow } from '@/components/cart/TotalRow';
+import { Appear, Button, EmptyState, ErrorState, Screen, SkeletonList, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { useCart } from '@/lib/cart';
 import { useSite } from '@/lib/layout';
 import { space } from '@/theme';
 
 export default function CartScreen() {
-  const { t, money } = useI18n();
+  const { t } = useI18n();
   const cart = useCart();
   const { site } = useSite();
   const c = cart.data;
@@ -23,10 +24,10 @@ export default function CartScreen() {
           <ErrorState error={cart.error} onRetry={() => void cart.refetch()} />
         ) : (
           <EmptyState
-            icon="cart-outline"
+            icon="shopping-cart"
             title={t('cartEmpty')}
             hint={t('cartEmptyHint')}
-            action={<Button title={t('goToCatalog')} variant="outline" size="md" onPress={() => router.navigate('/catalog')} />}
+            action={<Button title={t('goToCatalog')} size="md" onPress={() => router.navigate('/catalog')} />}
           />
         )}
       </Screen>
@@ -35,23 +36,17 @@ export default function CartScreen() {
 
   const footer = (
     <>
-      {c.hasBlockingIssues ? (
-        <Text v="small" tone="destructive">{t('fixIssues')}</Text>
-      ) : site ? null : (
-        // Saytda jami summa yonidagi xulosa kartasida turibdi
-        <Row between>
-          <Text muted>{t('total')}</Text>
-          <Text v="heading">{money(c.itemsTotal)}</Text>
-        </Row>
-      )}
+      {c.hasBlockingIssues && <Text v="small" tone="destructive">{t('fixIssues')}</Text>}
+      {/* Saytda jami summa yonidagi xulosa kartasida turibdi */}
+      {!site && <TotalRow label={t('total')} amount={c.itemsTotal} />}
       <Button title={t('checkout')} block disabled={c.hasBlockingIssues} onPress={() => router.push('/checkout')} />
     </>
   );
 
-  // Saytda: chapda qatorlar, o'ngda yopishgan xulosa va "Rasmiylashtirish"
+  // Saytda: chapda qatorlar, o'ngda yopishgan xulosa — "Rasmiylashtirish" shu kartaning ichida
   if (site) {
     return (
-      <Screen title={t('tabCart')} aside={<CartSummary c={c} />} footer={footer} contentStyle={{ gap: space(3) }}>
+      <Screen title={t('tabCart')} aside={<CartSummary c={c} withTotal action={footer} />} contentStyle={{ gap: space(3) }}>
         {c.lines.map((l, index) => (
           <Appear key={l.variantId} index={index}>
             <CartRow line={l} />

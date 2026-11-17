@@ -29,16 +29,14 @@ export default function Home() {
   };
 
   return (
-    <Screen title={t('tabHome')} heading={false} refreshing={refreshing} onRefresh={() => void refresh()} contentStyle={{ gap: space(site ? 10 : 6) }}>
+    <Screen title={t('tabHome')} heading={false} refreshing={refreshing} onRefresh={() => void refresh()} contentStyle={{ gap: space(site ? 8 : 5) }}>
       {site ? (
-        // Saytda qidiruv sarlavhada; salomlashish va "sizdan kutilmoqda" bir qatorda
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space(8) }}>
-          <Appear style={{ flex: 2, gap: space(4) }}>
+        // Saytda qidiruv sarlavhada; salomlashish ixcham, "sizdan kutilmoqda" — to'liq kenglikda ustunlar
+        <View style={{ gap: space(6) }}>
+          <Appear>
             <HomeHeader />
           </Appear>
-          <View style={{ flex: 3 }}>
-            <ActionCards />
-          </View>
+          <ActionCards columns={3} />
         </View>
       ) : (
         <>

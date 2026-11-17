@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 import { AttachmentField } from '@/components/form/AttachmentField';
-import { Button, Card, Icon, Input, PressableScale, Row, Screen, Segmented, SkeletonList, Text, useToast } from '@/components/ui';
+import { Button, Card, IconButton, Input, Screen, Segmented, SkeletonList, Text, useToast } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api, fileToForm } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
@@ -70,53 +71,43 @@ export default function Pay() {
         />
       }
     >
-      <Text muted>{t('payHint')}</Text>
       {loading ? (
         <SkeletonList count={2} />
       ) : (
         <>
-          {o && (
-            <Row between>
-              <Text bold>{o.number}</Text>
-              <Text>
-                {t('due')}: <Text bold>{money(due)}</Text>
-              </Text>
-            </Row>
-          )}
+          <View style={{ gap: 2 }}>
+            <Text v="small" muted>{o ? `${o.number} · ${t('toPayNow')}` : t('toPayNow')}</Text>
+            <Text v="display" style={{ fontVariant: ['tabular-nums'] }}>{money(due)}</Text>
+            <Text v="small" muted>{t('payHint')}</Text>
+          </View>
 
           {methods.length > 1 && <Segmented value={payMethod} onChange={setPayMethod} options={methods.map((m) => ({ value: m, label: method(m) }))} />}
 
           {payMethod === 'CARD_TRANSFER' && card ? (
-            <PressableScale
-              onPress={() => {
-                void Clipboard.setStringAsync(card.number.replace(/\s/g, ''));
-                toast(t('copied'), 'success');
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t('cardNumber')}
-            >
-              <Card tone="primary" style={{ gap: space(2) }}>
+            <Card tone="primary" style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
+              <View style={{ flex: 1, gap: 2 }}>
                 <Text v="caption" tone="primary">{t('cardNumber')}</Text>
-                <Row between>
-                  <Text v="title" style={{ letterSpacing: 1.5 }}>{card.number}</Text>
-                  <Icon name="copy-outline" size={20} tone="primary" />
-                </Row>
+                <Text v="heading" style={{ letterSpacing: 1.5, fontVariant: ['tabular-nums'] }} selectable>{card.number}</Text>
                 <Text v="small">{card.holder}</Text>
-              </Card>
-            </PressableScale>
+              </View>
+              <IconButton
+                icon="copy"
+                label={t('copyCard')}
+                onPress={() => {
+                  void Clipboard.setStringAsync(card.number.replace(/\s/g, ''));
+                  toast(t('copied'), 'success');
+                }}
+              />
+            </Card>
           ) : bank ? (
-            <Card style={{ gap: space(1) }}>
+            <Card style={{ gap: 2 }}>
               <Text bold>{bank.name}</Text>
-              <Text v="small">
-                {t('bankAccount')} {bank.account}
-              </Text>
-              <Text v="small">
-                {t('bankMfo')} {bank.mfo} · {t('bankInn')} {bank.inn}
-              </Text>
+              <Text v="small" selectable>{`${t('bankAccount')} ${bank.account}`}</Text>
+              <Text v="small" selectable>{`${t('bankMfo')} ${bank.mfo} · ${t('bankInn')} ${bank.inn}`}</Text>
             </Card>
           ) : null}
 
-          <Input label={t('amount')} icon="cash-outline" value={value} onChangeText={setAmount} keyboardType="number-pad" />
+          <Input label={t('amount')} value={value} onChangeText={setAmount} keyboardType="number-pad" />
           <AttachmentField label={t('receipt')} value={file} onChange={setFile} allowPdf />
         </>
       )}

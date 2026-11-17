@@ -7,9 +7,9 @@ import { api, fileToForm } from '@/lib/api';
 import { useDriverDelivery } from '@/lib/driver';
 import { useApiMutation } from '@/lib/mutation';
 import type { Picked } from '@/lib/pick';
-import { space } from '@/theme';
+import { font, space } from '@/theme';
 
-/** Topshirish: kim qabul qildi, surat, olingan naqd pul */
+/** Topshirish: kim qabul qildi, olingan naqd pul, surat — bitta asosiy tugma */
 export default function DriverDeliver() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, money } = useI18n();
@@ -42,24 +42,38 @@ export default function DriverDeliver() {
   return (
     <Screen
       width="form"
+      title={q.data?.order.number}
       footer={
         <Button
           title={t('drvDeliver')}
+          block
           disabled={!q.data || receiver.trim().length < 2 || cashNum > toCollect}
           loading={send.isPending}
           onPress={() => send.mutate(undefined)}
         />
       }
     >
-      {q.data && <Text v="h2">{q.data.order.number}</Text>}
+      {toCollect > 0 && (
+        <Card tone="warning" style={{ gap: 2 }}>
+          <Text v="small" muted>{t('drvToCollect')}</Text>
+          <Text v="title">{money(toCollect)}</Text>
+        </Card>
+      )}
       <Card style={{ gap: space(4) }}>
-        <Input label={t('drvReceiver')} icon="person-outline" value={receiver} onChangeText={setReceiver} autoCapitalize="words" autoFocus />
+        <Input label={t('drvReceiver')} value={receiver} onChangeText={setReceiver} autoCapitalize="words" autoComplete="name" autoFocus />
         {toCollect > 0 && (
-          <Input label={t('drvCash')} icon="cash-outline" value={cashValue} onChangeText={setCash} keyboardType="number-pad" hint={`${t('drvToCollect')}: ${money(toCollect)}`} />
+          <Input
+            label={t('drvCash')}
+            value={cashValue}
+            onChangeText={(v) => setCash(v.replace(/\D/g, ''))}
+            keyboardType="number-pad"
+            error={cashNum > toCollect ? t('drvCashTooMuch') : null}
+            style={{ fontSize: font.xl, fontWeight: '600' }}
+          />
         )}
-        <Input label={t('comment')} value={comment} onChangeText={setComment} multiline />
       </Card>
       <AttachmentField label={t('drvPhoto')} value={photo} onChange={setPhoto} quality={0.6} />
+      <Input label={t('comment')} value={comment} onChangeText={setComment} multiline />
     </Screen>
   );
 }

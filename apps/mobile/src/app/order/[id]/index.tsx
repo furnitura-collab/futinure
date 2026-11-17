@@ -5,9 +5,8 @@ import type { OrderStatus } from '@mebel/shared';
 import { DeliveryInfo } from '@/components/order/DeliveryInfo';
 import { OrderHeaderCard } from '@/components/order/OrderHeaderCard';
 import { OrderItems } from '@/components/order/OrderItems';
-import { OrderTracker } from '@/components/order/OrderTracker';
 import { PaymentSummary } from '@/components/order/PaymentSummary';
-import { Appear, Button, Card, ErrorState, Input, ListGroup, ListItem, Row, Screen, SkeletonList } from '@/components/ui';
+import { Appear, Button, Card, ErrorState, Input, Row, Screen, SkeletonList } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useSite } from '@/lib/layout';
@@ -42,18 +41,15 @@ export default function Order() {
     return <Screen>{q.error ? <ErrorState error={q.error} onRetry={() => void q.refetch()} /> : <SkeletonList count={4} lines={3} />}</Screen>;
   }
   const openChat = () => router.push({ pathname: '/order/[id]/chat', params: { id: o.id } });
-  const canReorder = REORDERABLE.includes(o.status);
+  const canReorder = REORDERABLE.includes(o.status) && !orderAction(o);
 
   const header = <OrderHeaderCard o={o} />;
-  const tracker = <OrderTracker o={o} />;
   const payment = <PaymentSummary o={o} />;
-  // Asosiy harakat (to'lov) sarlavha kartasida; pastda — doim qo'l ostidagi chat va qayta buyurtma
+  // To'lov — sarlavha kartasida; pastda doim qo'l ostida chat va (yakunlanganda) qayta buyurtma
   const footer = (
     <Row>
-      <Button title={t('chatShort')} accessibilityLabel={t('chat')} variant="outline" style={{ flex: 1 }} onPress={openChat} />
-      {canReorder && !orderAction(o) && (
-        <Button title={t('buyAgainShort')} style={{ flex: 1 }} loading={reorder.isPending} onPress={() => reorder.mutate(undefined)} />
-      )}
+      <Button title={t('chatShort')} accessibilityLabel={t('chat')} variant={canReorder ? 'outline' : 'secondary'} style={{ flex: 1 }} onPress={openChat} />
+      {canReorder && <Button title={t('buyAgainShort')} style={{ flex: 1 }} loading={reorder.isPending} onPress={() => reorder.mutate(undefined)} />}
     </Row>
   );
 
@@ -64,12 +60,10 @@ export default function Order() {
       footer={footer}
       title={o.number}
       crumbs={[{ label: t('tabOrders'), href: '/orders' }]}
-      // Saytda o'ngda yopishgan: holat va keyingi qadam, kuzatuv, to'lov
       aside={
         site ? (
           <>
             {header}
-            {tracker}
             {payment}
           </>
         ) : undefined
@@ -77,17 +71,12 @@ export default function Order() {
     >
       <Stack.Screen options={{ title: o.number }} />
       {!site && <Appear>{header}</Appear>}
-
-      {!site && <Appear index={1}>{tracker}</Appear>}
-      <Appear index={2}>
+      <Appear index={1}>
         <OrderItems o={o} />
       </Appear>
-      <Appear index={3} style={{ gap: space(4) }}>
+      <Appear index={2} style={{ gap: space(4) }}>
         <DeliveryInfo o={o} />
         {!site && payment}
-        <ListGroup>
-          <ListItem title={t('chat')} subtitle={t('chatHint')} onPress={openChat} />
-        </ListGroup>
       </Appear>
 
       {cancelling ? (
