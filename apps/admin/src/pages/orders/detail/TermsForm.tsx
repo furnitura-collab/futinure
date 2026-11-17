@@ -121,7 +121,7 @@ export function TermsForm({
           { label: t('order.itemsTotal'), value: money(itemsTotal) },
           order.servicesTotal > 0 && { label: t('order.services'), value: money(order.servicesTotal) },
           { label: t('order.delivery'), value: money(value.deliveryFee) },
-          { label: t('order.discount'), value: `−${money(value.discountTotal)}` },
+          value.discountTotal > 0 && { label: t('order.discount'), value: `−${money(value.discountTotal)}` },
           { label: t('order.grandTotal'), value: money(grand), strong: true, className: grand < 0 ? 'text-destructive' : undefined },
         ]}
       />

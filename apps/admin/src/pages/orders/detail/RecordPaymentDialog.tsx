@@ -16,7 +16,10 @@ const isMethod = (v: string): v is PaymentMethod => (PAYMENT_METHODS as readonly
 /** Menejer qo'lida olgan pul (naqd, bank) — darhol tasdiqlangan bo'ladi */
 export function RecordPaymentDialog({ order, onClose }: { order: OrderDetail; onClose: () => void }) {
   const { t, money, label } = useI18n();
-  const [amount, setAmount] = useState(Math.max(0, order.balanceDue));
+  // Tekshiruvdagi cheklar ham qoldiqdan ayriladi — server buyurtmaga qarzdan ortiq yozmaydi
+  const pending = order.payments.reduce((s, p) => (p.status === 'PENDING' ? s + p.amount : s), 0);
+  const due = Math.max(0, order.balanceDue - pending);
+  const [amount, setAmount] = useState(due);
   const [method, setMethod] = useState<PaymentMethod>(order.allowedMethods.includes('CASH') ? 'CASH' : (order.allowedMethods[0] ?? 'CASH'));
   const [comment, setComment] = useState('');
   const record = useApiMutation(
@@ -27,13 +30,13 @@ export function RecordPaymentDialog({ order, onClose }: { order: OrderDetail; on
     <FormDialog
       onClose={onClose}
       title={t('recordPayment.title', { number: order.number })}
-      description={t('recordPayment.hint', { amount: money(order.balanceDue) })}
+      description={[t('recordPayment.hint', { amount: money(due) }), pending > 0 && t('recordPayment.pending', { amount: money(pending) })].filter(Boolean).join(' ')}
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button loading={record.isPending} disabled={amount <= 0} onClick={() => record.mutate(undefined)}>
+          <Button loading={record.isPending} disabled={amount <= 0 || amount > due} onClick={() => record.mutate(undefined)}>
             {t('recordPayment.submit')}
           </Button>
         </>

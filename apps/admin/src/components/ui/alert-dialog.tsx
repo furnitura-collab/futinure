@@ -1,4 +1,5 @@
 import * as React from "react"
+import { touchSafeAutoFocus } from "@/lib/pointer"
 import { cn } from "@/lib/utils"
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
@@ -60,6 +61,7 @@ function AlertDialogContent({
           className
         )}
         {...props}
+        onOpenAutoFocus={touchSafeAutoFocus(props.onOpenAutoFocus)}
       />
     </AlertDialogPortal>
   )

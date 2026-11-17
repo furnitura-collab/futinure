@@ -17,6 +17,7 @@ export const orders: Pick<Dict, keyof typeof uzPart> = {
   terms: 'Payment terms',
   payTitle: 'Report a payment',
   payHint: 'Transfer to the card and upload a photo of the receipt. The manager will verify and confirm it.',
+  payOffline: 'This is paid in cash — to the driver or at the office.',
   cardNumber: 'Card number',
   copied: 'Copied',
   bankAccount: 'Account',

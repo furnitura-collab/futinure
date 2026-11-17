@@ -122,6 +122,7 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
   recordPayment: {
     title: '{number}: record payment',
     hint: 'Balance due: {amount}. This payment is confirmed immediately.',
+    pending: 'Pending review: {amount}.',
     submit: 'Record',
     done: '{amount} recorded',
   },

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { touchSafeAutoFocus } from "@/lib/pointer"
 import { cn } from "@/lib/utils"
 import { X } from "@/components/icons"
 import { Dialog as SheetPrimitive } from "radix-ui"
@@ -71,6 +72,7 @@ function SheetContent({
           className
         )}
         {...props}
+        onOpenAutoFocus={touchSafeAutoFocus(props.onOpenAutoFocus)}
       >
         {children}
         {showCloseButton && (

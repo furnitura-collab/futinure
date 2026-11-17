@@ -53,6 +53,7 @@ export const orders = {
   // to'lov
   payTitle: "To'lov haqida xabar",
   payHint: "Kartaga o'tkazing va chek rasmini yuklang. Menejer tekshirib tasdiqlaydi.",
+  payOffline: "Bu to'lov naqd qilinadi — haydovchiga yoki ofisda.",
   cardNumber: 'Karta raqami',
   copied: 'Nusxa olindi',
   bankAccount: 'H/r',

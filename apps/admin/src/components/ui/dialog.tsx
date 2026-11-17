@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { X } from '@/components/icons';
 import { useI18n } from '@/i18n';
+import { touchSafeAutoFocus } from '@/lib/pointer'
 import { cn } from '@/lib/utils';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -54,6 +55,7 @@ function DialogContent({
           className,
         )}
         {...props}
+        onOpenAutoFocus={touchSafeAutoFocus(props.onOpenAutoFocus)}
       >
         {children}
         {showCloseButton && (

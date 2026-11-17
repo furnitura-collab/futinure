@@ -1,10 +1,9 @@
 import { Spinner, Search, X } from '@/components/icons';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/i18n';
+import { FINE_POINTER } from '@/lib/pointer';
 import { cn } from '@/lib/utils';
 
-// Telefonda avtofokus klaviaturani o'zi ochadi (va pastki tab bar yashirinadi) — faqat sichqonchali qurilmada
-const FINE_POINTER = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches;
 
 export function SearchInput({
   value,

@@ -120,6 +120,7 @@ export const orders = {
   recordPayment: {
     title: "{number}: to'lov kiritish",
     hint: "Qoldiq: {amount}. Bu to'lov darhol tasdiqlangan hisoblanadi.",
+    pending: 'Tekshiruvda: {amount}.',
     submit: 'Kiritish',
     done: '{amount} kiritildi',
   },

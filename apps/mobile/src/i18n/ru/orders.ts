@@ -17,6 +17,7 @@ export const orders: Pick<Dict, keyof typeof uzPart> = {
   terms: 'Условия оплаты',
   payTitle: 'Сообщить об оплате',
   payHint: 'Переведите на карту и загрузите фото чека. Менеджер проверит и подтвердит.',
+  payOffline: 'Эта оплата наличными — водителю или в офисе.',
   cardNumber: 'Номер карты',
   copied: 'Скопировано',
   bankAccount: 'Р/с',

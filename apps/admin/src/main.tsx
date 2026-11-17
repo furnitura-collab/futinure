@@ -15,6 +15,7 @@ import { I18nProvider, useI18n } from '@/i18n';
 import { ApiError } from '@/lib/api';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { RealtimeProvider } from '@/lib/realtime';
+import { usePhone } from '@/lib/hooks';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 import { PAGES, type PageKey } from '@/lib/pages';
 import { LoginPage } from '@/pages/Login';
@@ -96,7 +97,9 @@ const router = createBrowserRouter(
 
 function ThemedToaster() {
   const { resolved } = useTheme();
-  return <Toaster theme={resolved} position="bottom-right" richColors closeButton toastOptions={{ className: 'backdrop-blur-xl' }} />;
+  // Telefonda pastda tab bar va amallar paneli — xabar tepada chiqadi
+  const phone = usePhone();
+  return <Toaster theme={resolved} position={phone ? 'top-center' : 'bottom-right'} richColors closeButton toastOptions={{ className: 'backdrop-blur-xl' }} />;
 }
 
 createRoot(document.getElementById('root')!).render(

@@ -163,6 +163,8 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         "availableTransitions": [
             {"to": t.to, "requiresComment": t.requires_comment}
             for t in available_transitions(order.status, viewer.role, order.delivery_type)
+            # Jo'natish — haydovchi biriktirilgandan keyin (tugma oldin ko'rinmaydi)
+            if t.to != "OUT_FOR_DELIVERY" or driver_id
         ],
         # Shartlar (to'lov turi, yetkazish narxi) faqat qabul qilinmagan buyurtmada o'zgaradi
         "canSetTerms": order.status == "NEW",

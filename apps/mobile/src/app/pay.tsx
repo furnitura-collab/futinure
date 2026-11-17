@@ -26,22 +26,27 @@ export default function Pay() {
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => api<OrderDetail>(`/orders/${orderId}`), enabled: !!orderId });
   const balance = useQuery({ queryKey: ['balance'], queryFn: () => api<Balance>('/me/balance'), enabled: !orderId });
 
-  const allowed = (orderId ? order.data?.allowedMethods : balance.data?.allowedPaymentMethods) ?? [];
-  const methods = (['CARD_TRANSFER', 'BANK_TRANSFER'] as const).filter((m) => allowed.length === 0 || allowed.includes(m));
-  const due = orderId ? (order.data?.balanceDue ?? 0) : Math.max(0, balance.data?.balance ?? 0);
   const o = order.data;
-  // Avans hali to'liq to'lanmagan bo'lsa — avans qoldig'ini taklif qilamiz
-  const suggested = orderId && o?.paymentTerms === 'ADVANCE' && o.paidTotal < o.advanceAmount ? o.advanceAmount - o.paidTotal : due;
+  const b = balance.data;
+  // Faqat ruxsat etilgan onlayn usullar (naqd — haydovchiga yoki ofisda); server boshqasini rad etadi
+  const allowed = (orderId ? o?.allowedMethods : b?.allowedPaymentMethods) ?? [];
+  const methods = (['CARD_TRANSFER', 'BANK_TRANSFER'] as const).filter((m) => allowed.includes(m));
+  // Tekshiruvdagi cheklar qoldiqdan ayriladi — server ham shunday cheklaydi
+  const pending = o?.payments.reduce((s, p) => (p.status === 'PENDING' ? s + p.amount : s), 0) ?? 0;
+  const due = orderId ? Math.max(0, (o?.balanceDue ?? 0) - pending) : Math.max(0, (b?.balance ?? 0) - (b?.pendingPayments ?? 0));
+  // Hozir to'lanadigani (avans, topshirishda, muddati kelgan) — umumiy qoida bilan
+  const suggested = o ? Math.min(o.amountDue, due) : due;
 
   const [amount, setAmount] = useState<string | null>(null);
-  const [payMethod, setPayMethod] = useState<PayMethod>('CARD_TRANSFER');
+  const [picked, setPayMethod] = useState<PayMethod | null>(null);
+  const payMethod = picked && methods.includes(picked) ? picked : methods[0];
   const [file, setFile] = useState<Picked | null>(null);
   const value = amount ?? (suggested ? String(suggested) : '');
   const amountNum = Number(value.replace(/\D/g, ''));
 
   const send = useApiMutation(
     async () => {
-      if (!file) return;
+      if (!file || !payMethod) return;
       const { id } = await api<{ id: string }>('/uploads/receipts', { form: await fileToForm(file) });
       const body = { amount: amountNum, method: payMethod, receiptUploadId: id };
       return orderId ? api(`/orders/${orderId}/payments`, { body }) : api('/me/payments', { body });
@@ -62,13 +67,15 @@ export default function Pay() {
       modal
       title={t('payTitle')}
       footer={
-        <Button
-          title={t('send')}
-          block
-          disabled={loading || !file || amountNum <= 0 || amountNum > due}
-          loading={send.isPending}
-          onPress={() => send.mutate(undefined)}
-        />
+        payMethod && (
+          <Button
+            title={t('send')}
+            block
+            disabled={loading || !file || amountNum <= 0 || amountNum > due}
+            loading={send.isPending}
+            onPress={() => send.mutate(undefined)}
+          />
+        )
       }
     >
       {loading ? (
@@ -78,12 +85,12 @@ export default function Pay() {
           <View style={{ gap: 2 }}>
             <Text v="small" muted>{o ? `${o.number} · ${t('toPayNow')}` : t('toPayNow')}</Text>
             <Text v="display" style={{ fontVariant: ['tabular-nums'] }}>{money(due)}</Text>
-            <Text v="small" muted>{t('payHint')}</Text>
+            <Text v="small" muted>{t(payMethod ? 'payHint' : 'payOffline')}</Text>
           </View>
 
-          {methods.length > 1 && <Segmented value={payMethod} onChange={setPayMethod} options={methods.map((m) => ({ value: m, label: method(m) }))} />}
+          {payMethod && methods.length > 1 && <Segmented value={payMethod} onChange={setPayMethod} options={methods.map((m) => ({ value: m, label: method(m) }))} />}
 
-          {payMethod === 'CARD_TRANSFER' && card ? (
+          {!payMethod ? null : payMethod === 'CARD_TRANSFER' && card ? (
             <Card tone="primary" style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text v="caption" tone="primary">{t('cardNumber')}</Text>
@@ -107,8 +114,12 @@ export default function Pay() {
             </Card>
           ) : null}
 
-          <Input label={t('amount')} value={value} onChangeText={setAmount} keyboardType="number-pad" />
-          <AttachmentField label={t('receipt')} value={file} onChange={setFile} allowPdf />
+          {payMethod && (
+            <>
+              <Input label={t('amount')} value={value} onChangeText={setAmount} keyboardType="number-pad" />
+              <AttachmentField label={t('receipt')} value={file} onChange={setFile} allowPdf />
+            </>
+          )}
         </>
       )}
     </Screen>

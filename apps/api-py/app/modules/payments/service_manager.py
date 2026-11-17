@@ -12,7 +12,16 @@ from app.db import transaction
 from app.models import CustomerProfile, Payment, Setting, Upload, utcnow
 from app.modules.orders.lock import lock_order
 from app.modules.payments.schemas import AdminPaymentInput, PaymentListQuery
-from app.modules.payments.service_common import _INCLUDE, _apply_confirmed, _load, _not_pending, payable, payment_json
+from app.modules.payments.service_common import (
+    _INCLUDE,
+    _apply_confirmed,
+    _exceeds,
+    _load,
+    _not_pending,
+    _pending_sum,
+    payable,
+    payment_json,
+)
 from app.services.audit import audit
 from app.services.outbox import add_event
 
@@ -55,6 +64,10 @@ async def record(db: AsyncSession, body: AdminPaymentInput, actor: AuthUser) -> 
                 raise AppError("ORDER_CUSTOMER_MISMATCH", "Buyurtma boshqa mijozniki", 422)
             if not payable(order):
                 raise AppError("ORDER_NOT_PAYABLE", "Buyurtma hali tasdiqlanmagan yoki bekor qilingan", 409)
+            # Buyurtmaga qarzdan ortiq yozilmaydi (paid_total > grand_total bo'lmasin); ortig'i — buyurtmasiz, balansga
+            due = order.grand_total - order.paid_total - await _pending_sum(db, Payment.order_id == body.order_id)
+            if body.amount > due:
+                raise _exceeds("Summa buyurtma qoldig'idan katta", due)
         payment = Payment(
             customer_id=body.customer_id,
             order_id=body.order_id,

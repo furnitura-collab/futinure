@@ -28,7 +28,7 @@ from app.models import Delivery, Order, utcnow
 from app.modules.orders import acceptance, inventory
 from app.modules.orders.lock import LockedOrder, lock_order
 from app.modules.orders.schemas import TransitionInput
-from app.modules.orders.state_machine import opt, transition
+from app.modules.orders.state_machine import ensure_allowed, opt, transition
 from app.services.ledger import post_ledger
 
 
@@ -69,6 +69,10 @@ async def apply(db: AsyncSession, order_id: str, body: TransitionInput, actor: A
                 await _update_delivery(db, order_id, status="FAILED", fail_reason=body.comment)
             return None
         case "OUT_FOR_DELIVERY":
+            # Haydovchisiz jo'natilgan buyurtma hech kimning ilovasida ko'rinmaydi (avval rol/tur qoidasi)
+            ensure_allowed(order, "OUT_FOR_DELIVERY", actor, body.comment)
+            if not await db.scalar(select(Delivery.driver_id).where(Delivery.order_id == order_id)):
+                raise AppError("DRIVER_REQUIRED", "Avval haydovchini biriktiring", 409)
             await transition(db, order, "OUT_FOR_DELIVERY", actor, comment=comment, data=assign)
             await _update_delivery(db, order_id, status="IN_TRANSIT", fail_reason=None)
             return await inventory.ship(db, order_id, actor.id)
