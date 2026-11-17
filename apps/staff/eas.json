@@ -1,18 +1,32 @@
 {
-  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
   "build": {
-    "base": { "node": "24.11.0", "pnpm": "12.16.1" },
+    "base": {
+      "node": "24.11.0",
+      "pnpm": "12.16.1"
+    },
     "preview": {
       "extends": "base",
       "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_ADMIN_URL": "https://mebel-admin.vercel.app" },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ADMIN_URL": "https://mebel-admin.vercel.app"
+      },
       "channel": "preview"
     },
     "production": {
       "extends": "base",
-      "android": { "buildType": "app-bundle" },
-      "env": { "EXPO_PUBLIC_ADMIN_URL": "https://mebel-admin.vercel.app" },
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_ADMIN_URL": "https://mebel-admin.vercel.app"
+      },
       "channel": "production"
     }
   }
