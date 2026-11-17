@@ -44,7 +44,7 @@ function SearchTrigger({ onOpen }: { onOpen: () => void }) {
 export function Topbar({ onSearch }: { onSearch: () => void }) {
   return (
     // Telefonda bo'limlar pastki tab bar'da (BottomNav); yuqorida — brend, qidiruv va sozlamalar
-    <header className="glass sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center gap-2 border-b px-3 pt-[env(safe-area-inset-top)] sm:px-5 lg:px-6">
+    <header className="glass sticky top-0 z-20 flex h-[calc(3rem+var(--safe-top))] sm:h-[calc(3.5rem+var(--safe-top))] items-center gap-2 border-b px-3 pt-[var(--safe-top)] sm:px-5 lg:px-6">
       <div className="lg:hidden">
         <Brand compact />
       </div>

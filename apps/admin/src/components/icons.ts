@@ -22,6 +22,7 @@ export { CubeIcon as Cube } from '@phosphor-icons/react/dist/csr/Cube';
 export { DotsSixVerticalIcon as GripVertical } from '@phosphor-icons/react/dist/csr/DotsSixVertical';
 export { DotsThreeIcon as DotsThree } from '@phosphor-icons/react/dist/csr/DotsThree';
 export { DownloadSimpleIcon as Download } from '@phosphor-icons/react/dist/csr/DownloadSimple';
+export { FunnelSimpleIcon as Filter } from '@phosphor-icons/react/dist/csr/FunnelSimple';
 export { EyeIcon as Eye } from '@phosphor-icons/react/dist/csr/Eye';
 export { EyeSlashIcon as EyeOff } from '@phosphor-icons/react/dist/csr/EyeSlash';
 export { IdentificationBadgeIcon as IdentificationBadge } from '@phosphor-icons/react/dist/csr/IdentificationBadge';

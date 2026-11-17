@@ -35,3 +35,6 @@ export function useMediaQuery(query: string): boolean {
   }, [query]);
   return match;
 }
+
+/** Telefon kengligi (< sm) — Tailwind max-sm bilan bir xil chegara */
+export const usePhone = () => useMediaQuery('(max-width: 639px)');

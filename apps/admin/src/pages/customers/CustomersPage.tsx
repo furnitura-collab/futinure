@@ -8,17 +8,16 @@ import { Hint } from '@/components/IconButton';
 import { Identity } from '@/components/Identity';
 import { UsersRound } from '@/components/icons';
 import { PageHeader } from '@/components/PageHeader';
+import { FilterBar } from '@/components/FilterBar';
 import { SearchInput } from '@/components/SearchInput';
 import { Segmented } from '@/components/Segmented';
 import { Toolbar } from '@/components/Toolbar';
-import { SCROLL_ROW_FLEX } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { usePriceGroups } from '@/lib/catalog';
 import { ago } from '@/lib/format';
 import { useDebounced } from '@/lib/hooks';
 import type { CustomerRow, Paginated } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { CustomerTags } from './CustomerTags';
 
 const DEBTS = ['all', 'debtors', 'overdue'] as const;
@@ -138,38 +137,61 @@ export function CustomersPage() {
     <div className="space-y-4">
       <PageHeader title={t('customers.title')} />
       <Toolbar>
-        <SearchInput
-          value={q}
-          onChange={(v) => {
-            setQ(v);
-            if (page > 1) set('page', null);
-          }}
-          placeholder={t('customers.search')}
-          loading={isFetching && !!filters.q}
-        />
-        {/* Filtrlar bitta qatorda: telefonda ekran chetigacha gorizontal aylanadi */}
-        <div className={cn(SCROLL_ROW_FLEX, '-my-1 py-1')}>
-          <Segmented
-            className="max-w-none shrink-0"
-            label={t('customers.debtFilter')}
-            value={debt}
-            onChange={(v) => set('debt', v === 'all' ? null : v)}
-            options={[
-              { value: 'all', label: t('customers.debtAll') },
-              { value: 'debtors', label: t('customers.debtors') },
-              { value: 'overdue', label: t('customers.overdue') },
-            ]}
-          />
-          {!!groups.data?.length && (
-            <Segmented
-              className="max-w-none shrink-0"
-              label={t('customer.priceGroup')}
-              value={group}
-              onChange={(v) => set('group', v === 'all' ? null : v)}
-              options={[{ value: 'all', label: t('customers.allGroups') }, ...groups.data.map((g) => ({ value: g.id, label: g.name }))]}
+        <FilterBar
+          search={
+            <SearchInput
+              value={q}
+              onChange={(v) => {
+                setQ(v);
+                if (page > 1) set('page', null);
+              }}
+              placeholder={t('customers.search')}
+              loading={isFetching && !!filters.q}
             />
-          )}
-        </div>
+          }
+          onReset={() =>
+            setParams((p) => {
+              ['debt', 'group', 'page'].forEach((k) => p.delete(k));
+              return p;
+            })
+          }
+          filters={[
+            {
+              id: 'debt',
+              label: t('customers.debtFilter'),
+              active: debt !== 'all',
+              node: (
+                <Segmented
+                  label={t('customers.debtFilter')}
+                  value={debt}
+                  onChange={(v) => set('debt', v === 'all' ? null : v)}
+                  options={[
+                    { value: 'all', label: t('customers.debtAll') },
+                    { value: 'debtors', label: t('customers.debtors') },
+                    { value: 'overdue', label: t('customers.overdue') },
+                  ]}
+                />
+              ),
+            },
+            ...(groups.data?.length
+              ? [
+                  {
+                    id: 'group',
+                    label: t('customer.priceGroup'),
+                    active: group !== 'all',
+                    node: (
+                      <Segmented
+                        label={t('customer.priceGroup')}
+                        value={group}
+                        onChange={(v) => set('group', v === 'all' ? null : v)}
+                        options={[{ value: 'all', label: t('customers.allGroups') }, ...groups.data.map((g) => ({ value: g.id, label: g.name }))]}
+                      />
+                    ),
+                  },
+                ]
+              : []),
+          ]}
+        />
       </Toolbar>
       <DataTable
         columns={columns}

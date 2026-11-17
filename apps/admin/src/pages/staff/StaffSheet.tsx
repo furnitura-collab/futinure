@@ -53,7 +53,7 @@ export function StaffSheet({ member, onClose }: { member: StaffMember | null; on
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       {/* Telefonda to'liq ekran varaq: xavfsiz hududlar hisobga olinadi, klaviatura ochilsa tana aylanadi */}
-      <SheetContent className="h-dvh w-full gap-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:max-w-md">
+      <SheetContent className="h-dvh w-full gap-0 pt-[var(--safe-top)] pb-[var(--safe-bottom)] sm:max-w-md">
         <form onSubmit={submit} className="flex h-full flex-col">
           <SheetHeader className="border-b p-4">
             <SheetTitle>{member ? t('staff.editTitle') : t('staff.createTitle')}</SheetTitle>

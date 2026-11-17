@@ -2,22 +2,21 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { DataTable } from '@/components/DataTable';
-import { IconButton } from '@/components/IconButton';
+import { FilterBar } from '@/components/FilterBar';
 import { OptionSelect } from '@/components/OptionSelect';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { SwitchField } from '@/components/SwitchField';
 import { Toolbar } from '@/components/Toolbar';
+import { ToolbarActions } from '@/components/ToolbarActions';
 import { Download, FolderTree, PackageSearch, Percent, Upload } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { SCROLL_ROW } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api, apiDownload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { flattenCategories, useBrands, useCategories } from '@/lib/catalog';
 import { useDebounced } from '@/lib/hooks';
 import type { AdminProduct, Paginated } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { BulkPriceDialog } from './BulkPriceDialog';
 import { ImportDialog } from './ImportDialog';
 import { useProductColumns } from './productColumns';
@@ -70,50 +69,86 @@ export function CatalogPage() {
       <Toolbar
         className="mb-3"
         actions={
-          <>
-            <IconButton icon={FolderTree} label={t('catalog.categories')} to="/catalog/categories" />
-            <IconButton
-              icon={Download}
-              label={t('catalog.export')}
-              onClick={() => void apiDownload('/admin/catalog/export.xlsx', t('catalog.exportFile', { date: new Date().toISOString().slice(0, 10) }))}
-            />
-            <IconButton icon={Upload} label={t('catalog.import')} onClick={() => setDialog('import')} />
-            {can('SUPER_ADMIN') && <IconButton icon={Percent} label={t('catalog.bulkPrice')} onClick={() => setDialog('bulk')} />}
-          </>
-        }
-      >
-        <SearchInput className="max-sm:min-w-0 max-sm:flex-1" value={q} onChange={resetPage(setQ)} placeholder={t('catalog.search')} loading={isFetching && !!query} />
-        {/* Telefonda filtrlar bitta gorizontal aylanadigan qatorda; kattaroq ekranda — asboblar qatorining qismi */}
-        <div className={cn(SCROLL_ROW, 'order-last')}>
-          <OptionSelect
-            className="max-sm:w-auto max-sm:max-w-52 max-sm:shrink-0 sm:w-52"
-            aria-label={t('catalog.category')}
-            value={categoryId}
-            onValueChange={resetPage(setCategoryId)}
-            emptyLabel={t('catalog.allCategories')}
-            options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
-          />
-          <OptionSelect
-            className="max-sm:w-auto max-sm:max-w-52 max-sm:shrink-0 sm:w-40"
-            aria-label={t('product.brand')}
-            value={brandId}
-            onValueChange={resetPage(setBrandId)}
-            emptyLabel={t('catalog.allBrands')}
-            options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
-          />
-          <OptionSelect
-            className="max-sm:w-auto max-sm:max-w-52 max-sm:shrink-0 sm:w-32"
-            aria-label={t('common.status')}
-            value={active}
-            onValueChange={(v) => isActiveFilter(v) && resetPage(setActive)(v)}
-            emptyLabel={t('common.all')}
-            options={[
-              { value: 'true', label: t('catalog.onSale') },
-              { value: 'false', label: t('common.inactive') },
+          <ToolbarActions
+            items={[
+              { icon: FolderTree, label: t('catalog.categories'), to: '/catalog/categories' },
+              {
+                icon: Download,
+                label: t('catalog.export'),
+                onClick: () => void apiDownload('/admin/catalog/export.xlsx', t('catalog.exportFile', { date: new Date().toISOString().slice(0, 10) })),
+              },
+              { icon: Upload, label: t('catalog.import'), onClick: () => setDialog('import') },
+              ...(can('SUPER_ADMIN') ? [{ icon: Percent, label: t('catalog.bulkPrice'), onClick: () => setDialog('bulk') }] : []),
             ]}
           />
-          <SwitchField className="shrink-0 whitespace-nowrap" checked={lowStock} onCheckedChange={resetPage(setLowStock)} label={t('catalog.lowStock')} />
-        </div>
+        }
+      >
+        <FilterBar
+          search={<SearchInput value={q} onChange={resetPage(setQ)} placeholder={t('catalog.search')} loading={isFetching && !!query} />}
+          onReset={() => {
+            setCategoryId('');
+            setBrandId('');
+            setActive('');
+            setLowStock(false);
+            setPage(1);
+          }}
+          filters={[
+            {
+              id: 'category',
+              label: t('catalog.category'),
+              active: !!categoryId,
+              node: (
+                <OptionSelect
+                  className="sm:w-52"
+                  aria-label={t('catalog.category')}
+                  value={categoryId}
+                  onValueChange={resetPage(setCategoryId)}
+                  emptyLabel={t('catalog.allCategories')}
+                  options={flattenCategories(categories.data ?? []).map((c) => ({ value: c.id, label: c.label }))}
+                />
+              ),
+            },
+            {
+              id: 'brand',
+              label: t('product.brand'),
+              active: !!brandId,
+              node: (
+                <OptionSelect
+                  className="sm:w-40"
+                  aria-label={t('product.brand')}
+                  value={brandId}
+                  onValueChange={resetPage(setBrandId)}
+                  emptyLabel={t('catalog.allBrands')}
+                  options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
+                />
+              ),
+            },
+            {
+              id: 'status',
+              label: t('common.status'),
+              active: !!active,
+              node: (
+                <OptionSelect
+                  className="sm:w-32"
+                  aria-label={t('common.status')}
+                  value={active}
+                  onValueChange={(v) => isActiveFilter(v) && resetPage(setActive)(v)}
+                  emptyLabel={t('common.all')}
+                  options={[
+                    { value: 'true', label: t('catalog.onSale') },
+                    { value: 'false', label: t('common.inactive') },
+                  ]}
+                />
+              ),
+            },
+            {
+              id: 'low',
+              label: t('catalog.lowStock'),
+              active: lowStock,
+              node: <SwitchField className="shrink-0 whitespace-nowrap" checked={lowStock} onCheckedChange={resetPage(setLowStock)} label={t('catalog.lowStock')} />,
+            },
+          ]}
+        />
       </Toolbar>
 
       <DataTable

@@ -55,8 +55,8 @@ export function LoginPage() {
 
   return (
     // Klaviatura ochilganda ko'rinadigan balandlik kichrayadi: markazlash `my-auto` bilan — karta tepasi kesilmaydi, sahifa aylanadi
-    <div className="relative flex min-h-dvh flex-col items-center px-4 pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="absolute top-[calc(0.75rem+env(safe-area-inset-top))] right-3 flex items-center gap-1">
+    <div className="relative flex min-h-dvh flex-col items-center px-4 pt-[calc(3.5rem+var(--safe-top))] pb-[calc(1rem+var(--safe-bottom))]">
+      <div className="absolute top-[calc(0.75rem+var(--safe-top))] right-3 flex items-center gap-1">
         <LanguageSwitcher />
         <ThemeToggle />
       </div>

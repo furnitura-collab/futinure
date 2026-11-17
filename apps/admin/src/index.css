@@ -65,6 +65,22 @@
 }
 
 :root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+  /* Pastki tab bar balandligi (telefon) — yopishgan panellar shunga tayanadi */
+  --tabbar: 3.25rem;
+}
+
+html.in-app {
+  --safe-top: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
+  --safe-right: 0px;
+}
+
+:root {
   color-scheme: light;
   --background: oklch(0.985 0.004 290);
   --foreground: oklch(0.21 0.02 285);

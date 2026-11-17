@@ -10,6 +10,8 @@ export const common = {
     back: 'Orqaga',
     search: 'Qidirish',
     clear: 'Tozalash',
+    filters: 'Filtrlar',
+    show: "Ko'rsatish",
     all: 'Hammasi',
     retry: 'Qayta urinish',
     error: 'Xatolik yuz berdi',

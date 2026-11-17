@@ -117,7 +117,7 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
       </Button>
       {dirty &&
         createPortal(
-          <div className="glass fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-20 animate-fade-up border-t px-3 py-2 sm:px-5 lg:hidden">
+          <div className="glass fixed inset-x-0 bottom-[calc(var(--tabbar)+var(--safe-bottom))] z-20 animate-fade-up border-t px-3 py-2 sm:px-5 lg:hidden">
             <Button className="h-11 w-full" {...saveProps}>
               {t('common.save')}
             </Button>

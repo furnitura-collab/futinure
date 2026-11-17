@@ -56,7 +56,7 @@ export function ActionBar(props: { order: OrderDetail; onPick: (tr: Transition) 
     <div
       role="toolbar"
       aria-label={t('order.actions')}
-      className="glass fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-20 flex gap-2 border-t px-3 py-2 sm:px-5 lg:hidden [body:has(:is(input,textarea):focus)_&]:hidden"
+      className="glass fixed inset-x-0 bottom-[calc(var(--tabbar)+var(--safe-bottom))] z-20 flex gap-2 border-t px-3 py-2 sm:px-5 lg:hidden [body:has(:is(input,textarea):focus)_&]:hidden"
     >
       <ActionButtons {...props} bar />
     </div>

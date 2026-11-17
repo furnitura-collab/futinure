@@ -85,7 +85,7 @@ function ProductEditor({ product }: { product?: AdminProduct }) {
       </div>
 
       {/* < lg: "Saqlash" pastki tab bar ustida yopishib turadi (xavfsiz hudud hisobga olingan) */}
-      <div className="glass sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-20 mt-4 rounded-xl border p-2 shadow-lg shadow-primary/10 lg:hidden">
+      <div className="glass sticky bottom-[calc(var(--tabbar)+0.5rem+var(--safe-bottom))] z-20 mt-4 rounded-xl border p-2 shadow-lg shadow-primary/10 lg:hidden">
         <Button className="w-full" {...saveProps}>
           {t('common.save')}
         </Button>

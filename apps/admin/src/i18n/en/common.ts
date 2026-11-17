@@ -12,6 +12,8 @@ export const common: Pick<Dictionary, keyof typeof uzPart> = {
     back: 'Back',
     search: 'Search',
     clear: 'Clear',
+    filters: 'Filters',
+    show: 'Show',
     all: 'All',
     retry: 'Try again',
     error: 'Something went wrong',

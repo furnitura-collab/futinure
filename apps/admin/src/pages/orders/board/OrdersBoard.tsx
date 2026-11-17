@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { useDndSensors } from '@/lib/dnd';
-import { useMediaQuery } from '@/lib/hooks';
+import { usePhone } from '@/lib/hooks';
 import type { KanbanColumn, OrderCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { BoardCardOverlay } from './BoardCard';
@@ -23,7 +23,7 @@ export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }
   const { t, label } = useI18n();
   const role = useAuth().me?.role;
   const sensors = useDndSensors();
-  const phone = useMediaQuery('(max-width: 639px)');
+  const phone = usePhone();
   const fade = useEdgeFade<HTMLDivElement>(query.data);
   const { busyId, pending, drop, close } = useBoardDrop();
   const [active, setActive] = useState<OrderCard | null>(null);

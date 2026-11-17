@@ -2,12 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { ORDER_STATUSES } from '@mebel/shared';
+import { FilterBar } from '@/components/FilterBar';
 import { Board, List } from '@/components/icons';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchInput } from '@/components/SearchInput';
 import { Segmented } from '@/components/Segmented';
 import { Toolbar } from '@/components/Toolbar';
-import { SCROLL_ROW } from '@/components/ScrollRow';
 import { useI18n } from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -16,8 +16,6 @@ import type { KanbanColumn } from '@/lib/types';
 import { isOrderStatus } from './board/rules';
 import { OrdersBoard } from './board/OrdersBoard';
 import { OrdersTable, type Filters } from './OrdersTable';
-
-const SEGMENT = 'shrink-0 snap-start max-sm:max-w-none';
 
 const SCOPES = ['all', 'mine', 'none'] as const;
 type Scope = (typeof SCOPES)[number];
@@ -69,32 +67,55 @@ export function OrdersPage() {
         />
       </PageHeader>
       <Toolbar>
-        <SearchInput value={q} onChange={setQ} placeholder={t('orders.search')} loading={kanban.isFetching && !!filters.q} />
-        <div className={SCROLL_ROW}>
-          <Segmented
-            className={SEGMENT}
-            label={t('orders.manager')}
-            value={scope}
-            onChange={(v) => set('scope', v === 'all' ? null : v)}
-            options={[
-              { value: 'all', label: t('orders.scopeAll') },
-              { value: 'mine', label: t('orders.scopeMine') },
-              { value: 'none', label: t('orders.scopeNone') },
-            ]}
-          />
-          {view === 'list' && (
-            <Segmented
-              className={SEGMENT}
-              label={t('orders.statusFilter')}
-              value={status ?? 'all'}
-              onChange={(v) => set('status', v === 'all' ? null : v)}
-              options={[
-                { value: 'all', label: t('orders.statusAll') },
-                ...ORDER_STATUSES.map((s) => ({ value: s, label: label('orderStatus', s), count: counts.get(s) })),
-              ]}
-            />
-          )}
-        </div>
+        <FilterBar
+          search={<SearchInput value={q} onChange={setQ} placeholder={t('orders.search')} loading={kanban.isFetching && !!filters.q} />}
+          onReset={() =>
+            setParams((p) => {
+              p.delete('scope');
+              p.delete('status');
+              return p;
+            })
+          }
+          filters={[
+            {
+              id: 'scope',
+              label: t('orders.manager'),
+              active: scope !== 'all',
+              node: (
+                <Segmented
+                  label={t('orders.manager')}
+                  value={scope}
+                  onChange={(v) => set('scope', v === 'all' ? null : v)}
+                  options={[
+                    { value: 'all', label: t('orders.scopeAll') },
+                    { value: 'mine', label: t('orders.scopeMine') },
+                    { value: 'none', label: t('orders.scopeNone') },
+                  ]}
+                />
+              ),
+            },
+            ...(view === 'list'
+              ? [
+                  {
+                    id: 'status',
+                    label: t('orders.statusFilter'),
+                    active: !!status,
+                    node: (
+                      <Segmented
+                        label={t('orders.statusFilter')}
+                        value={status ?? 'all'}
+                        onChange={(v) => set('status', v === 'all' ? null : v)}
+                        options={[
+                          { value: 'all', label: t('orders.statusAll') },
+                          ...ORDER_STATUSES.map((s) => ({ value: s, label: label('orderStatus', s), count: counts.get(s) })),
+                        ]}
+                      />
+                    ),
+                  },
+                ]
+              : []),
+          ]}
+        />
       </Toolbar>
       {view === 'board' ? <OrdersBoard query={kanban} /> : <OrdersTable filters={{ ...filters, status }} />}
     </div>

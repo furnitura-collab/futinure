@@ -117,7 +117,7 @@ export function OrderChat({ orderId }: { orderId: string }) {
           placeholder={t('chat.placeholder')}
           aria-label={t('chat.placeholder')}
           enterKeyHint="send"
-          className="max-lg:scroll-mb-[calc(5rem+env(safe-area-inset-bottom))]"
+          className="max-lg:scroll-mb-[calc(5rem+var(--safe-bottom))]"
         />
         <Hint label={t('chat.send')}>
           <Button type="submit" size="icon" loading={send.isPending} disabled={!text.trim()} aria-label={t('chat.send')}>

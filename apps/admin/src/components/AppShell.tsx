@@ -52,7 +52,7 @@ export function AppShell() {
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <div className={cn('transition-[padding] duration-200 ease-out', collapsed ? 'lg:pl-16' : 'lg:pl-60')}>
         <Topbar onSearch={() => setSearching(true)} />
-        <main key={pathname} className="mx-auto w-full max-w-[1600px] animate-fade-up px-3 pt-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:px-5 lg:px-6 lg:pb-4">
+        <main key={pathname} className="mx-auto w-full max-w-[1600px] animate-fade-up px-3 pt-3 pb-[calc(var(--tabbar)+1rem+var(--safe-bottom))] sm:pt-4 sm:px-5 lg:px-6 lg:pb-4">
           <Outlet />
         </main>
       </div>
