@@ -57,7 +57,7 @@ export function OrdersPage() {
   return (
     <div className="space-y-4">
       {/* Telefonda ham sarlavha va ko'rinish tugmasi bitta qatorda */}
-      <PageHeader title={t('orders.title')} className="max-sm:flex-row max-sm:items-center max-sm:justify-between">
+      <PageHeader title={t('orders.title')}>
         <Segmented
           label={t('orders.view')}
           value={view}

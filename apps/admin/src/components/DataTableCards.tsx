@@ -21,7 +21,9 @@ export function DataTableCards<T>({
   rowClassName?: (row: T) => string | false | undefined;
   loading?: boolean;
 }) {
-  const [head, ...rest] = columns.filter((c) => !c.hideBelow);
+  const visible = columns.filter((c) => !c.hideBelow);
+  const end = visible.filter((c) => c.card === 'end');
+  const [head, ...rest] = visible.filter((c) => c.card !== 'end');
   const onKey = (row: T) => (e: KeyboardEvent) => {
     if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
@@ -38,7 +40,19 @@ export function DataTableCards<T>({
           onKeyDown={onRowClick && onKey(row)}
           className={cn('space-y-2 px-4 py-3 text-sm', onRowClick && 'cursor-pointer active:bg-primary/6', rowClassName?.(row))}
         >
-          {head && <div className="min-w-0">{head.cell(row)}</div>}
+          <div className="flex items-start justify-between gap-3">
+            {head && <div className="min-w-0 flex-1">{head.cell(row)}</div>}
+            {end.length > 0 && (
+              // Amallar bosilganda karta (qator) ochilmasin
+              <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                {end.map((c) => (
+                  <span key={c.id} className="contents">
+                    {c.cell(row)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           {rest.length > 0 && (
             <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1">
               {rest.map((c) => (

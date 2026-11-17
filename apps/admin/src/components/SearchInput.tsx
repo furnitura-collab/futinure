@@ -3,6 +3,9 @@ import { Input } from '@/components/ui/input';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 
+// Telefonda avtofokus klaviaturani o'zi ochadi (va pastki tab bar yashirinadi) — faqat sichqonchali qurilmada
+const FINE_POINTER = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches;
+
 export function SearchInput({
   value,
   onChange,
@@ -24,7 +27,7 @@ export function SearchInput({
       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         type="search"
-        autoFocus={autoFocus}
+        autoFocus={autoFocus && FINE_POINTER}
         aria-label={placeholder ?? t('common.search')}
         placeholder={placeholder ?? t('common.search')}
         value={value}

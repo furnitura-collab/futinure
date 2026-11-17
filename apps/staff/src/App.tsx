@@ -5,6 +5,7 @@ import { BackHandler, Linking, useColorScheme } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import type { WebViewNavigation } from 'react-native-webview';
 import { handleNativeMessage } from './bridge';
+import { LoadBar } from './LoadBar';
 import { ADMIN_URL, isInternal } from './config';
 import { Offline } from './Offline';
 import { PALETTE } from './palette';
@@ -22,6 +23,7 @@ export function App() {
   const web = useRef<WebFrameHandle>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Android "orqaga": admin ichida oldingi sahifaga; eng boshida — ilovadan chiqish
   useEffect(() => {
@@ -51,22 +53,26 @@ export function App() {
         {failed ? (
           <Offline colors={colors} onRetry={retry} />
         ) : (
-          <WebFrame
-            ref={web}
-            source={{ uri: ADMIN_URL }}
-            style={{ flex: 1, backgroundColor: colors.background }}
-            applicationNameForUserAgent="MebelStaffApp"
-            onNavigationStateChange={onNav}
-            onShouldStartLoadWithRequest={(req) => openOutside(req.url)}
-            onMessage={(e) => void handleNativeMessage(e.nativeEvent.data)}
-            onLoadEnd={() => void SplashScreen.hideAsync()}
-            onError={() => setFailed(true)}
-            onHttpError={(e) => e.nativeEvent.statusCode >= 500 && setFailed(true)}
-            allowFileAccess
-            setSupportMultipleWindows={false}
-            overScrollMode="never"
-            textZoom={100}
-          />
+          <>
+            <LoadBar progress={progress} color={colors.primary} />
+            <WebFrame
+              ref={web}
+              source={{ uri: ADMIN_URL }}
+              style={{ flex: 1, backgroundColor: colors.background }}
+              applicationNameForUserAgent="MebelStaffApp"
+              onNavigationStateChange={onNav}
+              onShouldStartLoadWithRequest={(req) => openOutside(req.url)}
+              onMessage={(e) => void handleNativeMessage(e.nativeEvent.data)}
+              onLoadProgress={(e) => setProgress(e.nativeEvent.progress)}
+              onLoadEnd={() => void SplashScreen.hideAsync()}
+              onError={() => setFailed(true)}
+              onHttpError={(e) => e.nativeEvent.statusCode >= 500 && setFailed(true)}
+              allowFileAccess
+              setSupportMultipleWindows={false}
+              overScrollMode="never"
+              textZoom={100}
+            />
+          </>
         )}
       </SafeAreaView>
     </SafeAreaProvider>

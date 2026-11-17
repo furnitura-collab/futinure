@@ -6,10 +6,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { useDndSensors } from '@/lib/dnd';
+import { useMediaQuery } from '@/lib/hooks';
 import type { KanbanColumn, OrderCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { BoardCardOverlay } from './BoardCard';
 import { BoardColumn } from './BoardColumn';
+import { MobileBoard } from './MobileBoard';
 import { canMove, isOrderStatus } from './rules';
 import { useBoardDrop } from './useBoardDrop';
 import { useEdgeFade } from './useEdgeFade';
@@ -21,6 +23,7 @@ export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }
   const { t, label } = useI18n();
   const role = useAuth().me?.role;
   const sensors = useDndSensors();
+  const phone = useMediaQuery('(max-width: 639px)');
   const fade = useEdgeFade<HTMLDivElement>(query.data);
   const { busyId, pending, drop, close } = useBoardDrop();
   const [active, setActive] = useState<OrderCard | null>(null);
@@ -44,6 +47,7 @@ export function OrdersBoard({ query }: { query: UseQueryResult<KanbanColumn[]> }
   };
 
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
+  if (phone && query.data) return <MobileBoard columns={query.data} />;
 
   return (
     <DndContext

@@ -20,6 +20,8 @@ export interface Column<T> {
   className?: string;
   /** Tor ekranda yashiriladi */
   hideBelow?: 'sm' | 'md' | 'lg';
+  /** Telefon kartasida: yorliqsiz, sarlavha qatorining o'ng tomonida (amallar, holat belgisi) */
+  card?: 'end';
 }
 
 const HIDE = { sm: 'hidden sm:table-cell', md: 'hidden md:table-cell', lg: 'hidden lg:table-cell' } as const;

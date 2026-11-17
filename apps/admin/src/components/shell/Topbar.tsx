@@ -52,7 +52,7 @@ export function Topbar({ onSearch }: { onSearch: () => void }) {
       <div className="ml-auto flex items-center gap-0.5">
         <RealtimeDot />
         <LanguageSwitcher />
-        <ThemeToggle />
+        <ThemeToggle className="max-sm:hidden" />
         <ProfileMenu />
       </div>
     </header>

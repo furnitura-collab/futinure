@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n';
 import type { OrderDetail } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { orderFlow } from './progress';
 
 export type Transition = OrderDetail['availableTransitions'][number];
 
@@ -11,13 +12,15 @@ function ActionButtons({ order, onPick, bar }: { order: OrderDetail; onPick: (tr
   const { t } = useI18n();
   const forward = order.availableTransitions.filter((tr) => tr.to !== 'CANCELLED');
   const cancel = order.availableTransitions.find((tr) => tr.to === 'CANCELLED');
+  const { flow, current } = orderFlow(order);
+  const back = (to: OrderStatus) => flow.indexOf(to) < current;
   const actionText = (to: OrderStatus) =>
     order.status === 'NEW' && to === 'PREPARING'
       ? t('order.accept')
       : order.status === 'OUT_FOR_DELIVERY' && to === 'READY'
         ? t('order.notDelivered')
         : t(`order.action.${to}`);
-  // Panelda asosiy amallar kenglikni teng bo'lishadi; uzun matn qisqartiriladi
+  // Panelda amallar kenglikni teng bo'lishadi; ortga qaytarish (yetkazilmadi) — ikkinchi darajali
   return (
     <>
       {cancel && (
@@ -26,7 +29,7 @@ function ActionButtons({ order, onPick, bar }: { order: OrderDetail; onPick: (tr
         </Button>
       )}
       {forward.map((tr) => (
-        <Button key={tr.to} className={cn(bar && 'min-w-0 flex-1')} onClick={() => onPick(tr)}>
+        <Button key={tr.to} variant={back(tr.to) ? 'outline' : 'default'} className={cn(bar && 'min-w-0 flex-1')} onClick={() => onPick(tr)}>
           <span className="truncate">{actionText(tr.to)}</span>
         </Button>
       ))}

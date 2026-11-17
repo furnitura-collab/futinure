@@ -13,6 +13,7 @@ import { useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { initials } from '@/lib/format';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { ThemeOptions } from './ThemeToggle';
 
 export function ProfileMenu() {
   const { t, label } = useI18n();
@@ -42,6 +43,12 @@ export function ProfileMenu() {
           <DropdownMenuItem onSelect={() => setChanging(true)}>
             {t('profile.changePassword')}
           </DropdownMenuItem>
+          {/* Telefonda mavzu tugmasi sarlavhada emas — shu yerda (sarlavha ixcham) */}
+          <div className="sm:hidden">
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground">{t('theme.title')}</DropdownMenuLabel>
+            <ThemeOptions />
+          </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={() => void logout()}>
             {t('profile.logout')}

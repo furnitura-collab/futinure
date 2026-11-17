@@ -85,6 +85,7 @@ export function StaffPage() {
     {
       id: 'actions',
       header: <span className="sr-only">{t('common.actions')}</span>,
+      card: 'end',
       align: 'right',
       cell: (m) => (
         // Qator bosilsa (yoki Enter) tahrir ochiladi — tugmadagi bosish/Enter qatorga o'tmasin.

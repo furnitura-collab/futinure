@@ -69,6 +69,7 @@ export function VariantsCard({ product }: { product: AdminProduct }) {
     {
       id: 'actions',
       header: <span className="sr-only">{t('common.actions')}</span>,
+      card: 'end',
       align: 'right',
       cell: (v) => (
         <div className="flex justify-end gap-0.5">

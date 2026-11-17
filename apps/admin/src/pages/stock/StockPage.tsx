@@ -68,6 +68,7 @@ export function StockPage() {
     {
       id: 'action',
       header: <span className="sr-only">{t('common.actions')}</span>,
+      card: 'end',
       align: 'right',
       cell: (r) => (
         <IconButton
