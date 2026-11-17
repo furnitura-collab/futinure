@@ -21,6 +21,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.CAMERA"
       ],
       "predictiveBackGestureEnabled": false
@@ -52,6 +53,14 @@
         }
       ],
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8f1fdced-8662-4e1d-ac5d-c04c6cf5f342"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8f1fdced-8662-4e1d-ac5d-c04c6cf5f342"
+    }
   }
 }
