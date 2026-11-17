@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
-import { Badge, IconButton, Text } from '@/components/ui';
+import { Badge, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { addQty, useAddToCart, useCart } from '@/lib/cart';
 import { LEVEL_TONE } from '@/lib/catalog';
 import type { ProductCard as Product } from '@/lib/types';
-import { makeStyles, radius, space } from '@/theme';
+import { makeStyles, space } from '@/theme';
+import { CardQtyControl } from './CardQtyControl';
 import { ProductThumb } from './ProductThumb';
 import { TileCard } from './TileCard';
 
@@ -37,12 +38,9 @@ export function ProductCard({ p, width, onQuickAdd }: { p: Product; width: numbe
             <Badge label={level(p.stockLevel)} tone={LEVEL_TONE[p.stockLevel]} dot />
           </View>
         )}
-        {/* "+" rasm burchagida — narx uchun to'liq kenglik qoladi; savatdagi miqdor uning yonida */}
+        {/* Miqdor rasm burchagida — narx uchun to'liq kenglik qoladi; savatda bo'lsa [− son +] */}
         <View style={s.actions}>
-          {inCart && <Badge label={inCart.qty} tone="primary" size="md" />}
-          <View style={s.add}>
-            <IconButton icon="plus" variant="primary" size={44} label={t('addToCartOf', { name: name(p) })} disabled={out || add.isPending} onPress={onAdd} />
-          </View>
+          <CardQtyControl line={inCart} addLabel={t('addToCartOf', { name: name(p) })} disabled={out || add.isPending} onAdd={onAdd} />
         </View>
       </View>
       <View style={s.body}>
@@ -63,8 +61,7 @@ export function ProductCard({ p, width, onQuickAdd }: { p: Product; width: numbe
 const useStyles = makeStyles((t) => ({
   image: { aspectRatio: 4 / 3, backgroundColor: t.colors.muted },
   badge: { position: 'absolute', top: space(2), left: space(2) },
-  actions: { position: 'absolute', bottom: space(2), right: space(2), flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  add: { borderRadius: radius.full, ...t.shadow },
+  actions: { position: 'absolute', bottom: space(2), right: space(2) },
   body: { flex: 1, padding: space(3), paddingTop: space(2), gap: 2 },
   name: { minHeight: 36 },
   // Brendsiz kartochkada ham narx kartaning pastida — qatordagi narxlar bir chiziqda
