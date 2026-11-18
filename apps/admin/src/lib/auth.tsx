@@ -1,6 +1,6 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { APP_ROLES, type Role } from '@mebel/shared';
+import { APP_ROLES, hasPermission, type Permission } from '@mebel/shared';
 import { api, tokenStore, type Tokens } from './api';
 import type { Me } from './types';
 
@@ -13,7 +13,8 @@ interface AuthState {
   /** Kirish javobi: tokenlar va profil (alohida /me so'rovisiz) */
   login: (session: Tokens & { me: Me }) => void;
   logout: () => Promise<void>;
-  can: (...roles: Role[]) => boolean;
+  /** Ruxsat (packages/shared/src/permissions.ts) — rol ro'yxati emas */
+  can: (p: Permission) => boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading: hasTokens && meQuery.isPending,
       login,
       logout,
-      can: (...roles) => !!me && roles.includes(me.role),
+      can: (p) => hasPermission(me?.role, p),
     }),
     [me, hasTokens, meQuery.isPending, login, logout],
   );

@@ -64,7 +64,7 @@ function ProductEditor({ product }: { product?: AdminProduct }) {
   return (
     <div>
       <PageHeader back={{ to: '/catalog', label: t('catalog.title') }} title={product ? product.nameUz : t('product.newTitle')}>
-        {product && can('SUPER_ADMIN') && (
+        {product && can('catalog.delete') && (
           <IconButton icon={Trash} variant="ghost-destructive" size="icon" label={t('product.deleteTitle')} onClick={() => setDeleting(true)} />
         )}
         <Button className="max-lg:hidden" {...saveProps}>

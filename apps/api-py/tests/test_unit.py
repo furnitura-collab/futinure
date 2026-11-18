@@ -92,3 +92,15 @@ def test_shared_app_roles_match_backend():
     assert body
     found = {app: set(re.findall(r"'([^']+)'", roles)) for app, roles in re.findall(r"(\w+): \[([^\]]*)\]", body.group(1))}
     assert found == {app: set(roles) for app, roles in APP_ROLES.items()}
+
+
+def test_shared_permissions_match_backend():
+    from app.auth.permissions import PERMISSIONS, WAREHOUSE_ORDER_STATUSES
+
+    text = (SHARED_ENUMS.parent / "permissions.ts").read_text()
+    body = re.search(r"PERMISSIONS = \{(.*?)\} as const", text, re.S)
+    assert body
+    found = {p: set(re.findall(r"'([^']+)'", roles)) for p, roles in re.findall(r"'([\w.]+)': \[([^\]]*)\]", body.group(1))}
+    assert found == {p: set(roles) for p, roles in PERMISSIONS.items()}
+    statuses = re.search(r"WAREHOUSE_ORDER_STATUSES = \[([^\]]*)\]", text)
+    assert statuses and re.findall(r"'([^']+)'", statuses.group(1)) == list(WAREHOUSE_ORDER_STATUSES)

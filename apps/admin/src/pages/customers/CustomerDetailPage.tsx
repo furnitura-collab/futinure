@@ -54,7 +54,7 @@ function CustomerView({ customer: c }: { customer: CustomerDetail }) {
           </>
         }
       >
-        {can('SUPER_ADMIN') && (
+        {can('payments.adjust') && (
           <>
             <IconButton icon={PencilLine} label={t('customer.adjust')} variant="outline" size="icon" side="bottom" onClick={() => setDialog('adjust')} />
             {f.balance < 0 && <IconButton icon={Undo} label={t('customer.refund')} variant="outline" size="icon" side="bottom" onClick={() => setDialog('refund')} />}

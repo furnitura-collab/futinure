@@ -4,7 +4,8 @@ from typing import Annotated
 
 from fastapi import Depends, Header
 
-from app.auth.deps import AuthUser, Staff, require_roles
+from app.auth.deps import AuthUser, require_roles
+from app.auth.permissions import Can
 from app.core.errors import AppError
 from app.core.http import DumpedJSON, api_router
 from app.core.params import UuidPath
@@ -26,10 +27,13 @@ from app.modules.orders.schemas import (
     transition_rule,
 )
 
+OrdersView = Can("orders.view")
+OrdersManage = Can("orders.manage")
+Operator = Can("orders.view", "DRIVER")
+
 router = api_router(tags=["orders"])
 
 Customer = Annotated[AuthUser, Depends(require_roles("CUSTOMER"))]
-Operator = Annotated[AuthUser, Depends(require_roles("MANAGER", "SUPER_ADMIN", "WAREHOUSE", "DRIVER"))]
 
 
 # ───────────── Mijoz ─────────────
@@ -73,33 +77,35 @@ async def cancel(u: Customer, id: UuidPath, body: Annotated[CancelOrderInput, De
 
 
 @router.get("/admin/orders")
-async def admin_list(u: Staff, db: Db, q: Annotated[AdminOrderListQuery, Depends(query_model(AdminOrderListQuery))]):
-    return await admin.list_orders(db, q)
+async def admin_list(u: OrdersView, db: Db, q: Annotated[AdminOrderListQuery, Depends(query_model(AdminOrderListQuery))]):
+    return await admin.list_orders(db, q, u.role)
 
 
 @router.get("/admin/orders/kanban")
-async def admin_kanban(u: Staff, db: Db, q: Annotated[AdminOrderListQuery, Depends(query_model(AdminOrderListQuery))]):
-    return await admin.kanban(db, q)
+async def admin_kanban(u: OrdersView, db: Db, q: Annotated[AdminOrderListQuery, Depends(query_model(AdminOrderListQuery))]):
+    return await admin.kanban(db, q, u.role)
 
 
 @router.get("/admin/orders/managers")
-async def admin_managers(u: Staff, db: Db):
+async def admin_managers(u: OrdersManage, db: Db):
     return await admin.managers(db)
 
 
 @router.get("/admin/orders/{id}")
-async def admin_detail(u: Staff, id: UuidPath, db: Db):
-    return await admin.detail(db, id, u)
+async def admin_detail(u: OrdersView, id: UuidPath, db: Db):
+    return await admin.detail(db, id, u, scoped=True)
 
 
 @router.patch("/admin/orders/{id}/assign")
-async def admin_assign(u: Staff, id: UuidPath, body: Annotated[AssignOrderInput, Depends(body_of(AssignOrderInput))], db: Db):
+async def admin_assign(
+    u: OrdersManage, id: UuidPath, body: Annotated[AssignOrderInput, Depends(body_of(AssignOrderInput))], db: Db
+):
     return await admin.assign(db, id, body.manager_id, u)
 
 
 @router.put("/admin/orders/{id}/terms")
 async def admin_terms(
-    u: Staff, id: UuidPath, body: Annotated[SetTermsInput, Depends(body_of(SetTermsInput, set_terms_rule))], db: Db
+    u: OrdersManage, id: UuidPath, body: Annotated[SetTermsInput, Depends(body_of(SetTermsInput, set_terms_rule))], db: Db
 ):
     """Yangi buyurtmaga shartlar (status o'zgarmaydi) — oldindan to'lovda mijoz avansni shundan keyin to'laydi"""
     await acceptance.save_terms(db, id, body, u)

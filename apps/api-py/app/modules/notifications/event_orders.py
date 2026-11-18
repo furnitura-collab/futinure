@@ -37,7 +37,7 @@ async def _order_status_changed(db: AsyncSession, e: OutboxEnvelope) -> None:
     o = x.o
     to, frm, comment = p.get("to"), p.get("from"), p.get("comment")
     data = {"orderId": o.id, "number": o.number, "from": frm, "to": to, "version": o.version}
-    await rt.to_staff(rt.ORDER_STATUS_CHANGED, data)
+    await rt.to_order_viewers(rt.ORDER_STATUS_CHANGED, data)
     await rt.to_user(o.customer_id, rt.ORDER_STATUS_CHANGED, data)
     await rt.to_order(o.id, rt.ORDER_STATUS_CHANGED, data)
 

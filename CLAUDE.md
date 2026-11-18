@@ -13,6 +13,10 @@
   `git ls-files '*.py' '*.ts' '*.tsx' | xargs wc -l | awk '$1>250 && $2!="total"'`
 - Baza uzoqda (har so'rov yuzlab ms) — so'rovlar sonini kamaytir; ochiq katalog Redis keshida (`app/core/cache.py`),
   admin o'zgarishi keshni avtomatik yangilaydi. Har javobda `Server-Timing` (SQL soni va vaqti) bor.
+- **Ruxsatlar — rol emas, ruxsat nomi** (`orders.view`, `catalog.edit`…): yagona manba `packages/shared/src/permissions.ts`
+  ↔ `apps/api-py/app/auth/permissions.py` (testda solishtiriladi). Backend: `u: Can("orders.view")`; admin: `can('orders.manage')`.
+  Yangi endpoint yoki rol o'zgarsa `tests/route_roles.txt` testi yiqiladi — ataylab bo'lsa `uv run python -m tests.support_routes`.
+  Matritsa: `docs/15-roles-permissions-prompt.md`. Shared o'zgarsa — `pnpm --filter @mebel/shared build`.
 
 ## Mobil ilova yangilanishi (APK)
 - APK o'rnatilgan paytdagi holat. **JS/UI o'zgarishi** (ekranlar, matn, stil) — EAS Update bilan, qayta o'rnatishsiz:

@@ -26,9 +26,12 @@ async def test_new_order_in_new_column_search_by_number_and_phone(ctx: Ctx, env:
     assert unassigned.json()["total"] == 1
 
 
-async def test_customer_and_warehouse_cannot_see_admin_list(ctx: Ctx, env: Env):
+async def test_customer_cannot_see_admin_list_warehouse_sees_only_accepted(ctx: Ctx, env: Env):
     expect(await ctx.http.get("/api/v1/admin/orders", headers=env.customer.auth), 403)
-    expect(await ctx.http.get("/api/v1/admin/orders", headers=env.warehouse), 403)
+    # Omborchi yig'adi va tayyorlaydi — ro'yxat ochiq, lekin faqat qabul qilinganlar (yangi buyurtma — menejer ishi)
+    await env.place_order([(env.c.white.id, 1)])
+    res = expect(await ctx.http.get("/api/v1/admin/orders", headers=env.warehouse), 200).json()
+    assert res["total"] == 0
 
 
 async def test_detail_stock_shortage_and_available_transitions(ctx: Ctx, env: Env):

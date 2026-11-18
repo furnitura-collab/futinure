@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.auth import tokens
 from app.auth.deps import AuthUser
+from app.auth.permissions import can
 from app.core.errors import AppError
 from app.core.serialize import row
 from app.db import transaction
@@ -149,7 +150,7 @@ async def update(db: AsyncSession, customer_id: str, body: AdminCustomerUpdate, 
     isActive=false — barcha sessiyalar yopiladi. Javob: detail().
     """
     fields = body.model_fields_set
-    if actor.role != "SUPER_ADMIN":
+    if not can(actor.role, "customers.credit"):
         forbidden = [camel for f, camel in SUPER_ADMIN_FIELDS if f in fields and getattr(body, f) is not None]
         if forbidden:
             raise AppError.forbidden(f"Faqat super admin: {', '.join(forbidden)}")

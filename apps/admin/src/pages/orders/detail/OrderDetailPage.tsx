@@ -5,7 +5,6 @@ import { formatDateTime, type OrderStatus } from '@mebel/shared';
 import { Callout } from '@/components/Callout';
 import { CopyButton } from '@/components/CopyButton';
 import { ErrorState } from '@/components/ErrorState';
-import { MANAGERS } from '@/components/nav';
 import { PageHeader } from '@/components/PageHeader';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -47,7 +46,9 @@ export function OrderDetailPage() {
   if (isPending) return <PageSkeleton />;
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />;
 
-  const isManager = can(...MANAGERS);
+  // Omborchi: tarkib, bosqichlar va o'z tugmalari; boshqaruv, chat va moliya — menejerda
+  const manage = can('orders.manage');
+  const finance = can('orders.finance');
   const shortage = order.items.some((i) => i.status === 'ACTIVE' && i.stock?.shortage);
   const hasActions = order.availableTransitions.length > 0;
   const accepted = !NOT_ACCEPTED.includes(order.status);
@@ -76,10 +77,10 @@ export function OrderDetailPage() {
         {hasActions && <HeaderActions order={order} onPick={setTransition} />}
       </PageHeader>
 
-      {(order.status !== 'CANCELLED' || isManager) && (
+      {(order.status !== 'CANCELLED' || manage) && (
         <div className="surface flex flex-col gap-3 rounded-xl border px-4 py-3 lg:flex-row lg:items-center">
           <OrderProgress order={order} />
-          {isManager && <ManagerSelect order={order} />}
+          {manage && <ManagerSelect order={order} />}
         </div>
       )}
 
@@ -92,17 +93,17 @@ export function OrderDetailPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="min-w-0 space-y-4 lg:col-span-2">
           <OrderItemsCard order={order} />
-          {isManager && <OrderChat orderId={order.id} />}
+          {can('orders.chat') && <OrderChat orderId={order.id} />}
         </div>
         <div className="min-w-0 space-y-4">
           <CustomerCard order={order} />
           <DeliverySection order={order}>
-            {isManager && order.deliveryType === 'DELIVERY' && accepted && (
+            {manage && order.deliveryType === 'DELIVERY' && accepted && (
               // Server qiymati o'zgarsa (boshqa menejer) — forma qayta boshlanadi
               <DeliveryAssign key={`${order.delivery?.driverId}-${order.delivery?.scheduledDate}`} order={order} />
             )}
           </DeliverySection>
-          <PaymentCard order={order} onRecord={isManager && order.balanceDue > 0 && payable ? () => setPaying(true) : undefined} />
+          {finance && <PaymentCard order={order} onRecord={order.balanceDue > 0 && payable ? () => setPaying(true) : undefined} />}
           <HistoryCard order={order} />
         </div>
       </div>

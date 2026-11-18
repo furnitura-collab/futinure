@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Server ham tekshiradi (app: 'customer'); bu — eski server versiyasi uchun ikkinchi himoya
       if (!APP_ROLES.customer.includes(profile.role)) {
         await api('/auth/logout', { body: { refreshToken: t.refreshToken } }).catch(() => undefined);
-        throw new ApiError(403, 'USE_ADMIN_PANEL', 'Xodimlar admin paneldan kiradi');
+        throw new ApiError(403, 'USE_ADMIN_PANEL', 'Xodimlar «Mebel Xodim» ilovasi yoki admin paneldan kiradi');
       }
       qc.setQueryData(['me'], profile);
       await tokens.set({ accessToken: t.accessToken, refreshToken: t.refreshToken });

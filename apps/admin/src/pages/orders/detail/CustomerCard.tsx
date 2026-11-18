@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import { BalanceText } from '@/components/BalanceText';
 import { Inset } from '@/components/Inset';
-import { MANAGERS } from '@/components/nav';
 import { PhoneLine } from '@/components/PhoneLine';
 import { SectionCard } from '@/components/SectionCard';
 import { TotalsList } from '@/components/TotalsList';
@@ -17,7 +16,7 @@ export function CustomerCard({ order }: { order: OrderDetail }) {
   const name = c.fullName ?? '—';
   return (
     <SectionCard title={t('order.customer')} contentClassName="space-y-1.5 text-sm">
-      {can(...MANAGERS) ? (
+      {can('customers.manage') ? (
         <Link to={`/customers/${order.customerId}`} className="block font-medium hover:text-primary hover:underline">
           {name}
         </Link>
@@ -35,13 +34,13 @@ export function CustomerCard({ order }: { order: OrderDetail }) {
         {t('order.ordersCount', { n: c._count.orders })}
         {p?.priceGroup && ` · ${t('order.priceGroup', { name: p.priceGroup.name })}`}
       </p>
-      {p && (
+      {p && p.balanceCached !== null && (
         <Inset className="mt-2">
           <TotalsList
             className="text-xs"
             rows={[
               { label: t('order.balance'), value: <BalanceText value={p.balanceCached} /> },
-              { label: t('order.creditLimit'), value: money(p.creditLimit) },
+              { label: t('order.creditLimit'), value: money(p.creditLimit ?? 0) },
             ]}
           />
         </Inset>

@@ -7,6 +7,7 @@ from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.auth.permissions import visible_order_statuses
 from app.domain.dates import day_range
 from app.models import ChatMessage, CustomerProfile, Order, OrderItem, User
 from app.modules.orders.schemas import AdminOrderListQuery
@@ -92,8 +93,11 @@ async def _cards(db: AsyncSession, orders: list[Order]) -> list[dict[str, Any]]:
     return out
 
 
-def _where(q: AdminOrderListQuery) -> list[Any]:
+def _where(q: AdminOrderListQuery, role: str) -> list[Any]:
     conds: list[Any] = []
+    # Rol doirasi (omborchi — faqat qabul qilingan, yetkazilmagan buyurtmalar)
+    if (visible := visible_order_statuses(role)) is not None:
+        conds.append(Order.status.in_(visible))
     if q.status:
         conds.append(Order.status == q.status)
     if q.manager_id:
@@ -134,22 +138,24 @@ async def _count(db: AsyncSession, conds: list[Any]) -> int:
     return await db.scalar(select(func.count()).select_from(Order).where(*conds)) or 0
 
 
-async def list_orders(db: AsyncSession, q: AdminOrderListQuery) -> dict[str, Any]:
-    conds = _where(q)
+async def list_orders(db: AsyncSession, q: AdminOrderListQuery, role: str) -> dict[str, Any]:
+    conds = _where(q, role)
     orders = await _fetch(db, conds, Order.created_at.desc(), (q.page - 1) * q.limit, q.limit)
     total = await _count(db, conds)
     return {"items": await _cards(db, orders), "total": total, "page": q.page, "limit": q.limit}
 
 
-async def kanban(db: AsyncSession, q: AdminOrderListQuery) -> list[dict[str, Any]]:
+async def kanban(db: AsyncSession, q: AdminOrderListQuery, role: str) -> list[dict[str, Any]]:
     """Kanban: har ustunda eng uzoq kutayotganlar birinchi; barcha ustunlar va ularning soni — bitta so'rovda"""
+    visible = visible_order_statuses(role)
+    columns = [s for s in KANBAN_STATUSES if visible is None or s in visible]
     ranked = (
         select(
             Order.id,
             func.row_number().over(partition_by=Order.status, order_by=Order.updated_at.asc()).label("rn"),
             func.count().over(partition_by=Order.status).label("total"),
         )
-        .where(*_where(q), Order.status.in_(KANBAN_STATUSES))
+        .where(*_where(q, role), Order.status.in_(columns))
         .subquery()
     )
     rows = (
@@ -163,4 +169,4 @@ async def kanban(db: AsyncSession, q: AdminOrderListQuery) -> list[dict[str, Any
     ).all()
     totals = {o.status: total for o, total in rows}
     cards = await _cards(db, [o for o, _ in rows])
-    return [{"status": s, "total": totals.get(s, 0), "items": [c for c in cards if c["status"] == s]} for s in KANBAN_STATUSES]
+    return [{"status": s, "total": totals.get(s, 0), "items": [c for c in cards if c["status"] == s]} for s in columns]

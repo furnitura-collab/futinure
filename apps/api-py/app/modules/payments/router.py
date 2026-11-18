@@ -8,7 +8,8 @@ from typing import Annotated
 
 from fastapi import Depends, File, UploadFile
 
-from app.auth.deps import AuthUser, Staff, SuperAdmin, require_roles
+from app.auth.deps import AuthUser, require_roles
+from app.auth.permissions import Can
 from app.core.files import read_upload
 from app.core.http import api_router
 from app.core.params import UuidPath
@@ -34,6 +35,11 @@ from app.modules.payments.schemas import (
     RejectPaymentInput,
 )
 from app.services.storage import MAX_RECEIPT_BYTES, RECEIPT_PURPOSE, private_file_response, save_private, upload_json
+
+PaymentsManage = Can("payments.manage")
+PaymentsAdjust = Can("payments.adjust")
+CustomersManage = Can("customers.manage")
+ReceiptViewer = Can("payments.manage", "CUSTOMER")
 
 router = api_router(tags=["payments"])
 
@@ -94,7 +100,7 @@ async def payment_info(db: Db):
 
 
 @router.get("/payments/{id}/receipt")
-async def receipt(u: Annotated[AuthUser, Depends(require_roles("CUSTOMER", "MANAGER", "SUPER_ADMIN"))], id: UuidPath, db: Db):
+async def receipt(u: ReceiptViewer, id: UuidPath, db: Db):
     upload = await payments.receipt_for(db, id, u)
     return private_file_response(upload)
 
@@ -103,69 +109,75 @@ async def receipt(u: Annotated[AuthUser, Depends(require_roles("CUSTOMER", "MANA
 
 
 @router.get("/admin/payments")
-async def admin_list(u: Staff, db: Db, q: Annotated[PaymentListQuery, Depends(query_model(PaymentListQuery))]):
+async def admin_list(u: PaymentsManage, db: Db, q: Annotated[PaymentListQuery, Depends(query_model(PaymentListQuery))]):
     return await payments.list_payments(db, q)
 
 
 @router.get("/admin/payments/{id}")
-async def admin_get(u: Staff, id: UuidPath, db: Db):
+async def admin_get(u: PaymentsManage, id: UuidPath, db: Db):
     return await payments.get(db, id)
 
 
 @router.post("/admin/payments", status_code=201)
-async def admin_record(u: Staff, body: Annotated[AdminPaymentInput, Depends(body_of(AdminPaymentInput))], db: Db):
+async def admin_record(u: PaymentsManage, body: Annotated[AdminPaymentInput, Depends(body_of(AdminPaymentInput))], db: Db):
     return await payments.record(db, body, u)
 
 
 @router.post("/admin/payments/{id}/confirm")
-async def admin_confirm(u: Staff, id: UuidPath, db: Db):
+async def admin_confirm(u: PaymentsManage, id: UuidPath, db: Db):
     return await payments.confirm(db, id, u)
 
 
 @router.post("/admin/payments/{id}/reject")
-async def admin_reject(u: Staff, id: UuidPath, body: Annotated[RejectPaymentInput, Depends(body_of(RejectPaymentInput))], db: Db):
+async def admin_reject(
+    u: PaymentsManage, id: UuidPath, body: Annotated[RejectPaymentInput, Depends(body_of(RejectPaymentInput))], db: Db
+):
     return await payments.reject(db, id, body.reason, u)
 
 
 @router.get("/admin/customers")
-async def customer_list(u: Staff, db: Db, q: Annotated[AdminCustomerListQuery, Depends(query_model(AdminCustomerListQuery))]):
+async def customer_list(
+    u: CustomersManage, db: Db, q: Annotated[AdminCustomerListQuery, Depends(query_model(AdminCustomerListQuery))]
+):
     return await customers.list_customers(db, q)
 
 
 @router.get("/admin/customers/{id}")
-async def customer_detail(u: Staff, id: UuidPath, db: Db):
+async def customer_detail(u: CustomersManage, id: UuidPath, db: Db):
     return await customers.detail(db, id)
 
 
 @router.patch("/admin/customers/{id}")
 async def customer_update(
-    u: Staff, id: UuidPath, body: Annotated[AdminCustomerUpdate, Depends(body_of(AdminCustomerUpdate))], db: Db
+    u: CustomersManage, id: UuidPath, body: Annotated[AdminCustomerUpdate, Depends(body_of(AdminCustomerUpdate))], db: Db
 ):
     return await customers.update(db, id, body, u)
 
 
 @router.get("/admin/customers/{id}/ledger")
-async def customer_ledger(u: Staff, id: UuidPath, db: Db, q: Annotated[LedgerQuery, Depends(query_model(LedgerQuery))]):
+async def customer_ledger(u: CustomersManage, id: UuidPath, db: Db, q: Annotated[LedgerQuery, Depends(query_model(LedgerQuery))]):
     return await finance.ledger(db, id, q)
 
 
 @router.get("/admin/customers/{id}/reconciliation")
-async def customer_reconciliation(u: Staff, id: UuidPath, db: Db, q: Annotated[PeriodQuery, Depends(query_model(PeriodQuery))]):
+async def customer_reconciliation(
+    u: CustomersManage, id: UuidPath, db: Db, q: Annotated[PeriodQuery, Depends(query_model(PeriodQuery))]
+):
     return await finance.reconciliation(db, id, q)
 
 
 @router.post("/admin/customers/{id}/ledger/adjust", status_code=201)
 async def customer_adjust(
-    u: SuperAdmin, id: UuidPath, body: Annotated[LedgerAdjustInput, Depends(body_of(LedgerAdjustInput))], db: Db
+    u: PaymentsAdjust, id: UuidPath, body: Annotated[LedgerAdjustInput, Depends(body_of(LedgerAdjustInput))], db: Db
 ):
     return await customers.adjust(db, id, body, u)
 
 
 @router.post("/admin/customers/{id}/refunds", status_code=201)
-async def customer_refund(u: SuperAdmin, id: UuidPath, body: Annotated[RefundInput, Depends(body_of(RefundInput))], db: Db):
+async def customer_refund(u: PaymentsAdjust, id: UuidPath, body: Annotated[RefundInput, Depends(body_of(RefundInput))], db: Db):
     return await customers.refund(db, id, body, u)
 
 
 @router.get("/admin/reports/receivables")
-async def receivables(u: Staff, db: Db):
+async def receivables(u: CustomersManage, db: Db):
     return await customers.receivables(db)

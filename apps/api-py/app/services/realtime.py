@@ -9,10 +9,10 @@ from typing import Any
 import socketio
 from sqlalchemy import func, select
 
+from app.auth.permissions import can
 from app.auth.tokens import AccessPayload, decode_access
 from app.config import get_settings
 from app.db import standalone_session
-from app.domain.state_machine import STAFF_ROLES
 from app.models import Order
 
 NS = "/rt"
@@ -39,7 +39,9 @@ def room_order(order_id: str) -> str:
     return f"order:{order_id}"
 
 
+# Menejerlar: chat, to'lov, shartlar. Buyurtma ko'ruvchilar (omborchi ham): faqat holat o'zgarishi — kanban yangilanadi
 ROOM_STAFF = "staff"
+ROOM_ORDERS = "orders"
 
 _sio: socketio.AsyncServer | None = None
 
@@ -62,6 +64,10 @@ async def to_staff(event: str, data: Any) -> None:
     await sio().emit(event, _json(data), room=ROOM_STAFF, namespace=NS)
 
 
+async def to_order_viewers(event: str, data: Any) -> None:
+    await sio().emit(event, _json(data), room=ROOM_ORDERS, namespace=NS)
+
+
 async def to_order(order_id: str, event: str, data: Any) -> None:
     await sio().emit(event, _json(data), room=room_order(order_id), namespace=NS)
 
@@ -78,7 +84,8 @@ _UUID_RE = re.compile(r"^[0-9a-f-]{36}$", re.IGNORECASE)
 async def _can_access(user: dict[str, str], order_id: str) -> bool:
     if not _UUID_RE.match(order_id):
         return False
-    if user["role"] in ("MANAGER", "SUPER_ADMIN"):
+    # Buyurtma xonasida chat ham bor — xodimlardan faqat chat ruxsati borlar
+    if can(user["role"], "orders.chat"):
         return True
     if user["role"] != "CUSTOMER":
         return False
@@ -98,8 +105,10 @@ def _register(server: socketio.AsyncServer) -> None:
             raise socketio.exceptions.ConnectionRefusedError({"code": "UNAUTHORIZED"})
         await server.save_session(sid, {"userId": payload.sub, "role": payload.role}, namespace=NS)
         await server.enter_room(sid, room_user(payload.sub), namespace=NS)
-        if payload.role in STAFF_ROLES:
+        if can(payload.role, "orders.manage"):
             await server.enter_room(sid, ROOM_STAFF, namespace=NS)
+        if can(payload.role, "orders.view"):
+            await server.enter_room(sid, ROOM_ORDERS, namespace=NS)
         await server.emit("ready", {"userId": payload.sub, "role": payload.role}, to=sid, namespace=NS)
 
     # Buyurtma sahifasi ochilganda — shu buyurtmaning chat va status hodisalari

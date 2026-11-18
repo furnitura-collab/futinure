@@ -34,7 +34,7 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
   const [termDays, setTermDays] = useState(String(p?.paymentTermDays ?? 0));
   const [methods, setMethods] = useState<PaymentMethod[]>(p?.allowedPaymentMethods ?? ['CASH']);
   const [isActive, setIsActive] = useState(c.isActive);
-  const admin = can('SUPER_ADMIN');
+  const admin = can('customers.credit');
 
   const body = {
     fullName: fullName.trim() || undefined,

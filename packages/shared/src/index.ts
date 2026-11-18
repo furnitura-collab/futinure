@@ -1,5 +1,6 @@
 export * from './enums.js';
 export * from './order-state-machine.js';
+export * from './permissions.js';
 export * from './quantity.js';
 export * from './pricing.js';
 export * from './phone.js';

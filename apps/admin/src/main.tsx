@@ -3,11 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, Link, Navigate, RouterProvider } from 'react-router';
 import { Toaster } from 'sonner';
-import type { Role } from '@mebel/shared';
+import type { Permission } from '@mebel/shared';
 import { AppShell } from '@/components/AppShell';
 import { EmptyState } from '@/components/EmptyState';
 import { ShieldOff, SearchX } from '@/components/icons';
-import { MANAGERS } from '@/components/nav';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -46,14 +45,14 @@ function NotFound() {
   return <EmptyState icon={SearchX} title={t('common.notFound')} description={t('common.notFoundHint')} action={<HomeLink />} />;
 }
 
-/** Rolga mos bo'lmasa — menyuda ham yo'q, to'g'ridan-to'g'ri havola bilan ham ochilmaydi */
-function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
+/** Ruxsat bo'lmasa — menyuda ham yo'q, to'g'ridan-to'g'ri havola bilan ham ochilmaydi */
+function RequirePermission({ permission, children }: { permission: Permission; children: ReactNode }) {
   const { t } = useI18n();
   const { can } = useAuth();
-  return can(...roles) ? children : <EmptyState icon={ShieldOff} title={t('common.forbidden')} description={t('common.forbiddenHint')} action={<HomeLink />} />;
+  return can(permission) ? children : <EmptyState icon={ShieldOff} title={t('common.forbidden')} description={t('common.forbiddenHint')} action={<HomeLink />} />;
 }
 
-const managers = (node: ReactNode) => <RequireRole roles={MANAGERS}>{node}</RequireRole>;
+const guard = (permission: Permission, node: ReactNode) => <RequirePermission permission={permission}>{node}</RequirePermission>;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,20 +73,17 @@ const router = createBrowserRouter(
       element: <AppShell />,
       children: [
         { index: true, element: <Navigate to="/orders" replace /> },
-        { path: 'orders', element: page('orders') },
-        { path: 'orders/:id', element: page('order') },
-        { path: 'payments', element: managers(page('payments')) },
-        { path: 'catalog', element: managers(page('catalog')) },
-        { path: 'catalog/categories', element: managers(page('categories')) },
-        { path: 'catalog/:id', element: managers(page('product')) },
-        { path: 'stock', element: page('stock') },
-        { path: 'customers', element: managers(page('customers')) },
-        { path: 'customers/:id', element: managers(page('customer')) },
-        { path: 'reports/receivables', element: managers(page('receivables')) },
-        {
-          path: 'staff',
-          element: <RequireRole roles={['SUPER_ADMIN']}>{page('staff')}</RequireRole>,
-        },
+        { path: 'orders', element: guard('orders.view', page('orders')) },
+        { path: 'orders/:id', element: guard('orders.view', page('order')) },
+        { path: 'payments', element: guard('payments.manage', page('payments')) },
+        { path: 'catalog', element: guard('catalog.edit', page('catalog')) },
+        { path: 'catalog/categories', element: guard('catalog.edit', page('categories')) },
+        { path: 'catalog/:id', element: guard('catalog.edit', page('product')) },
+        { path: 'stock', element: guard('stock.manage', page('stock')) },
+        { path: 'customers', element: guard('customers.manage', page('customers')) },
+        { path: 'customers/:id', element: guard('customers.manage', page('customer')) },
+        { path: 'reports/receivables', element: guard('customers.manage', page('receivables')) },
+        { path: 'staff', element: guard('staff.manage', page('staff')) },
         { path: '*', element: <NotFound /> },
       ],
     },

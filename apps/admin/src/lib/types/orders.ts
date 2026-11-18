@@ -99,8 +99,9 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
       type: CustomerType;
       companyName: string | null;
       inn: string | null;
-      creditLimit: number;
-      balanceCached: number;
+      // null — moliya ruxsati yo'q (omborchi)
+      creditLimit: number | null;
+      balanceCached: number | null;
       paymentTermDays: number;
       allowedPaymentMethods: PaymentMethod[];
       priceGroup: { id: string; name: string } | null;

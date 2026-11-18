@@ -6,7 +6,8 @@ from typing import Annotated
 
 from fastapi import Depends, File, UploadFile
 
-from app.auth.deps import AuthUser, Staff, require_roles
+from app.auth.deps import AuthUser, require_roles
+from app.auth.permissions import Can
 from app.core.files import read_upload
 from app.core.http import api_router
 from app.core.params import UuidPath, uuid_path
@@ -16,6 +17,9 @@ from app.modules.deliveries.schemas import AssignDeliveryInput, DriverDeliverInp
 from app.modules.orders import admin as orders
 from app.modules.orders.schemas import body_of
 from app.services.storage import MAX_RECEIPT_BYTES, private_file_response, save_private, upload_json
+
+OrdersManage = Can("orders.manage")
+ProofViewer = Can("orders.view", "DRIVER")
 
 router = api_router(tags=["deliveries"])
 
@@ -27,21 +31,21 @@ OrderId = Annotated[str, Depends(uuid_path("orderId"))]
 
 
 @router.get("/admin/drivers")
-async def drivers(u: Staff, db: Db):
+async def drivers(u: OrdersManage, db: Db):
     return await deliveries.drivers(db)
 
 
 @router.put("/admin/orders/{id}/delivery")
-async def assign(u: Staff, id: UuidPath, body: Annotated[AssignDeliveryInput, Depends(body_of(AssignDeliveryInput))], db: Db):
+async def assign(
+    u: OrdersManage, id: UuidPath, body: Annotated[AssignDeliveryInput, Depends(body_of(AssignDeliveryInput))], db: Db
+):
     """Haydovchi biriktirish / almashtirish / olib tashlash"""
     await deliveries.assign(db, id, body, u)
     return await orders.detail(db, id, u)
 
 
 @router.get("/admin/orders/{id}/delivery/proof")
-async def proof(
-    u: Annotated[AuthUser, Depends(require_roles("MANAGER", "SUPER_ADMIN", "WAREHOUSE", "DRIVER"))], id: UuidPath, db: Db
-):
+async def proof(u: ProofViewer, id: UuidPath, db: Db):
     upload = await deliveries.proof_for(db, id, u)
     return private_file_response(upload)
 

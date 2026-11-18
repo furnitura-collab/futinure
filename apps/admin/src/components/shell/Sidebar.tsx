@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { usePendingPayments } from '@/lib/hooks';
 import { prefetchPage } from '@/lib/pages';
 import { cn } from '@/lib/utils';
-import { MANAGERS, NAV, type NavItem as NavItemDef } from '../nav';
+import { NAV, type NavItem as NavItemDef } from '../nav';
 
 export function Brand({ compact }: { compact?: boolean }) {
   const { t } = useI18n();
@@ -65,12 +65,12 @@ function NavItem({ item: n, count, collapsed, onNavigate }: { item: NavItemDef; 
 
 export function NavList({ collapsed, onNavigate, items }: { collapsed?: boolean; onNavigate?: () => void; items?: NavItemDef[] }) {
   const { me, can } = useAuth();
-  const pending = usePendingPayments(can(...MANAGERS));
+  const pending = usePendingPayments(can('payments.manage'));
   if (!me) return null;
 
   return (
     <nav className="flex flex-col gap-0.5">
-      {(items ?? NAV.filter((n) => n.roles.includes(me.role))).map((n) => (
+      {(items ?? NAV.filter((n) => can(n.permission))).map((n) => (
         <NavItem
           key={n.to}
           item={n}

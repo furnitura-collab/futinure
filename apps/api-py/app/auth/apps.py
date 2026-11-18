@@ -17,8 +17,8 @@ APP_ROLES: dict[str, frozenset[str]] = {
 }
 
 _WRONG_APP = {
-    "customer": ("USE_ADMIN_PANEL", "Xodimlar admin paneldan kiradi"),
-    "admin": ("PANEL_FORBIDDEN", "Bu hisob bilan admin panelga kirib bo'lmaydi"),
+    "customer": ("USE_ADMIN_PANEL", "Xodimlar «Mebel Xodim» ilovasi yoki admin paneldan kiradi"),
+    "admin": ("PANEL_FORBIDDEN", "Mijozlar va haydovchilar «Mebel Order» ilovasidan kiradi"),
 }
 
 

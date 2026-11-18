@@ -5,13 +5,14 @@ Mijoz va menejer bir xil yo'llardan foydalanadi: /orders/:id/messages. Kim niman
 
 from typing import Annotated, Any
 
-from fastapi import Depends, Query
+from fastapi import Query
 from pydantic import BeforeValidator, model_validator
 from sqlalchemy import and_, exists, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.auth.deps import AuthUser, require_roles
+from app.auth.deps import AuthUser
+from app.auth.permissions import Can, can
 from app.core.errors import AppError
 from app.core.http import api_router
 from app.core.params import UuidPath
@@ -23,13 +24,13 @@ from app.modules.uploads.router import CHAT_PURPOSE
 from app.services.outbox import add_event
 from app.services.storage import private_file_response
 
-router = api_router(tags=["chat"])
+Participant = Can("orders.chat", "CUSTOMER")
 
-Participant = Annotated[AuthUser, Depends(require_roles("CUSTOMER", "MANAGER", "SUPER_ADMIN"))]
+router = api_router(tags=["chat"])
 
 
 def is_staff(u: AuthUser) -> bool:
-    return u.role in ("MANAGER", "SUPER_ADMIN")
+    return can(u.role, "orders.chat")
 
 
 class ChatMessageInput(Schema):

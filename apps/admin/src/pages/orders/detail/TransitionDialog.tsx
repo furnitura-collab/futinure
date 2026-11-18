@@ -58,7 +58,7 @@ export function TransitionDialog({
   const accept = to === 'PREPARING' && order.status === 'NEW';
   const pickupHandover = to === 'DELIVERED' && order.status === 'READY';
   const override = blocked?.code === 'ADVANCE_NOT_PAID' ? 'overrideAdvance' : blocked ? 'overrideCreditLimit' : null;
-  const canOverride = override === 'overrideCreditLimit' || (override === 'overrideAdvance' && can('SUPER_ADMIN'));
+  const canOverride = override === 'overrideCreditLimit' || (override === 'overrideAdvance' && can('orders.override'));
   const actionLabel = accept ? t('order.accept') : t(`order.action.${to}`);
   // Shartlar oldin saqlangan va o'zgarmagan bo'lsa — qayta yuborilmaydi
   const termsChanged = !order.paymentTerms || !sameTerms(terms, defaultTerms(order));

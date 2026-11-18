@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { usePendingPayments } from '@/lib/hooks';
 import { prefetchPage } from '@/lib/pages';
 import { cn } from '@/lib/utils';
-import { MANAGERS, NAV, type NavItem } from '../nav';
+import { NAV, type NavItem } from '../nav';
 import { NavList } from './Sidebar';
 
 /** Tab bar'da 5 joy: bo'limlar ko'p bo'lsa — 4 tasi va "Yana" */
@@ -42,11 +42,11 @@ export function BottomNav() {
   const { t } = useI18n();
   const { me, can } = useAuth();
   const { pathname } = useLocation();
-  const pending = usePendingPayments(can(...MANAGERS));
+  const pending = usePendingPayments(can('payments.manage'));
   const [more, setMore] = useState(false);
   if (!me) return null;
 
-  const items = NAV.filter((n) => n.roles.includes(me.role));
+  const items = NAV.filter((n) => can(n.permission));
   const overflow = items.length > SLOTS;
   const tabs = overflow ? items.slice(0, SLOTS - 1) : items;
   const rest = overflow ? items.slice(SLOTS - 1) : [];

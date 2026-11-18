@@ -78,7 +78,7 @@ export function CatalogPage() {
                 onClick: () => void apiDownload('/admin/catalog/export.xlsx', t('catalog.exportFile', { date: new Date().toISOString().slice(0, 10) })),
               },
               { icon: Upload, label: t('catalog.import'), onClick: () => setDialog('import') },
-              ...(can('SUPER_ADMIN') ? [{ icon: Percent, label: t('catalog.bulkPrice'), onClick: () => setDialog('bulk') }] : []),
+              ...(can('prices.manage') ? [{ icon: Percent, label: t('catalog.bulkPrice'), onClick: () => setDialog('bulk') }] : []),
             ]}
           />
         }

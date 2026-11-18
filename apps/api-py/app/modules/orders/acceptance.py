@@ -14,6 +14,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import AuthUser
+from app.auth.permissions import can
 from app.core.errors import AppError
 from app.db import transaction
 from app.domain.pricing import compute_order_totals
@@ -48,7 +49,7 @@ def _check_payments(order: LockedOrder, columns: dict[str, Any], body: Transitio
     required = grand_total if terms == "PREPAID" else advance if terms == "ADVANCE" else 0
     has_comment = bool((body.comment or "").strip())
     if order.paid_total < required:
-        can_override = body.override_advance and actor.role == "SUPER_ADMIN" and has_comment
+        can_override = body.override_advance and can(actor.role, "orders.override") and has_comment
         if not can_override:
             raise AppError("ADVANCE_NOT_PAID", "Avans hali to'lanmagan", 409, {"required": required, "paid": order.paid_total})
 
@@ -88,7 +89,7 @@ async def save_terms(db: AsyncSession, order_id: str, body: SetTermsInput, actor
                 "TERMS_ONLY_NEW", "Shartlarni faqat yangi buyurtmada o'zgartirish mumkin", 409, {"status": order.status}
             )
         columns = _terms_columns(order, body.terms)
-        if not order.manager_id and actor.role in ("MANAGER", "SUPER_ADMIN"):
+        if not order.manager_id and can(actor.role, "orders.manage"):
             columns["manager_id"] = actor.id
         result = await db.execute(
             update(Order)

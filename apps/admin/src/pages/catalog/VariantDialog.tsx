@@ -81,7 +81,7 @@ export function VariantDialog({ product, variant, onClose }: { product: AdminPro
       title={variant ? t('variant.title', { sku: variant.sku }) : t('variant.newTitle')}
       footer={
         <>
-          {variant && can('SUPER_ADMIN') && (
+          {variant && can('catalog.delete') && (
             <IconButton icon={Trash} variant="ghost-destructive" size="icon" className="max-sm:w-full sm:mr-auto" label={t('common.delete')} onClick={() => setDeleting(true)} />
           )}
           <Button variant="outline" onClick={onClose}>

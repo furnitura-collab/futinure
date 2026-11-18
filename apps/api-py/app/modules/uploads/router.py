@@ -1,12 +1,15 @@
 from typing import Annotated
 
-from fastapi import Depends, File, UploadFile
+from fastapi import File, UploadFile
 
-from app.auth.deps import AuthUser, require_roles
+from app.auth.permissions import Can
 from app.core.files import read_upload
 from app.core.http import api_router
 from app.db import Db, transaction
 from app.services.storage import MAX_IMAGE_BYTES, MAX_RECEIPT_BYTES, save_catalog_image, save_private, upload_json
+
+CatalogEdit = Can("catalog.edit")
+ChatUploader = Can("orders.chat", "CUSTOMER")
 
 router = api_router(tags=["uploads"])
 
@@ -15,7 +18,7 @@ CHAT_PURPOSE = "CHAT"
 
 @router.post("/admin/uploads/images", status_code=201)
 async def catalog_image(
-    _: Annotated[AuthUser, Depends(require_roles("MANAGER", "SUPER_ADMIN"))],
+    _: CatalogEdit,
     file: Annotated[UploadFile | None, File()] = None,
 ):
     """Katalog rasmlari (ochiq). URL har doim /uploads/catalog/... — Supabase'da bo'lsa main.py yo'naltiradi"""
@@ -26,7 +29,7 @@ async def catalog_image(
 
 @router.post("/uploads/chat", status_code=201)
 async def chat_attachment(
-    user: Annotated[AuthUser, Depends(require_roles("CUSTOMER", "MANAGER", "SUPER_ADMIN"))],
+    user: ChatUploader,
     db: Db,
     file: Annotated[UploadFile | None, File()] = None,
 ):

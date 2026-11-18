@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/auth';
 import { customerName } from '@/lib/format';
 import { useDebounced } from '@/lib/hooks';
 import type { AdminProduct, CustomerRow, OrderCard, Paginated } from '@/lib/types';
-import { MANAGERS } from '../nav';
 
 export interface SearchHit {
   id: string;
@@ -31,7 +30,7 @@ const list = <T>(path: string, q: string) =>
 export function useCommandSearch(input: string) {
   const { money } = useI18n();
   const { can } = useAuth();
-  const manager = can(...MANAGERS);
+  const manager = can('customers.manage');
   const q = useDebounced(input.trim(), 250);
   const enabled = q.length >= 2;
 

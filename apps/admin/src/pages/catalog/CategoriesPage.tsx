@@ -21,7 +21,7 @@ export function CategoriesPage() {
         <CategoryTree />
         <div className="min-w-0 space-y-4">
           <BrandsCard />
-          <PriceGroupsCard editable={can('SUPER_ADMIN')} />
+          <PriceGroupsCard editable={can('prices.manage')} />
         </div>
       </div>
     </div>

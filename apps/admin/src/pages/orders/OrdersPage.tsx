@@ -24,7 +24,7 @@ const isScope = (v: string | null): v is Scope => SCOPES.includes(v as Scope);
 /** Buyurtmalar: kanban (sudrab status o'zgartirish) yoki jadval; filtrlar URL'da — havola bilan ulashiladi */
 export function OrdersPage() {
   const { t, label } = useI18n();
-  const { me } = useAuth();
+  const { me, can } = useAuth();
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === 'list' ? 'list' : 'board';
   const scopeParam = params.get('scope');
@@ -77,23 +77,28 @@ export function OrdersPage() {
             })
           }
           filters={[
-            {
-              id: 'scope',
-              label: t('orders.manager'),
-              active: scope !== 'all',
-              node: (
-                <Segmented
-                  label={t('orders.manager')}
-                  value={scope}
-                  onChange={(v) => set('scope', v === 'all' ? null : v)}
-                  options={[
-                    { value: 'all', label: t('orders.scopeAll') },
-                    { value: 'mine', label: t('orders.scopeMine') },
-                    { value: 'none', label: t('orders.scopeNone') },
-                  ]}
-                />
-              ),
-            },
+            // Menejer bo'yicha filtr — boshqaruvchilarga (omborchiga ma'nosiz)
+            ...(can('orders.manage')
+              ? [
+                  {
+                    id: 'scope',
+                    label: t('orders.manager'),
+                    active: scope !== 'all',
+                    node: (
+                      <Segmented
+                        label={t('orders.manager')}
+                        value={scope}
+                        onChange={(v) => set('scope', v === 'all' ? null : v)}
+                        options={[
+                          { value: 'all', label: t('orders.scopeAll') },
+                          { value: 'mine', label: t('orders.scopeMine') },
+                          { value: 'none', label: t('orders.scopeNone') },
+                        ]}
+                      />
+                    ),
+                  },
+                ]
+              : []),
             ...(view === 'list'
               ? [
                   {

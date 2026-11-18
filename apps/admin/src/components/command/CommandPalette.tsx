@@ -7,7 +7,7 @@ import { useI18n } from '@/i18n';
 import { useAuth } from '@/lib/auth';
 import { prefetchPage } from '@/lib/pages';
 import { useTheme } from '@/lib/theme';
-import { MANAGERS, NAV } from '../nav';
+import { NAV } from '../nav';
 import { useCommandSearch, type SearchHit } from './useCommandSearch';
 
 const ITEM =
@@ -36,7 +36,7 @@ function Hit({ hit, onPick }: { hit: SearchHit; onPick: (to: string) => void }) 
 /** ⌘K / Ctrl+K: bo'limlar, buyurtma/mijoz/mahsulot qidiruvi va tezkor amallar */
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { t } = useI18n();
-  const { me, can } = useAuth();
+  const { can } = useAuth();
   const { resolved, setTheme } = useTheme();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
@@ -63,9 +63,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   };
   const go = (to: string) => run(() => navigate(to));
   const needle = q.trim().toLowerCase();
-  const sections = NAV.filter((n) => me && n.roles.includes(me.role) && t(n.label).toLowerCase().includes(needle));
+  const sections = NAV.filter((n) => can(n.permission) && t(n.label).toLowerCase().includes(needle));
   const actions = [
-    can(...MANAGERS) && { id: 'new-product', label: t('palette.newProduct'), run: () => go('/catalog/new') },
+    can('catalog.edit') && { id: 'new-product', label: t('palette.newProduct'), run: () => go('/catalog/new') },
     { id: 'theme', label: t('palette.toggleTheme'), run: () => run(() => setTheme(resolved === 'dark' ? 'light' : 'dark')) },
   ].filter((a): a is { id: string; label: string; run: () => void } => !!a && a.label.toLowerCase().includes(needle));
   const hits = groups.orders.length + groups.customers.length + groups.products.length;

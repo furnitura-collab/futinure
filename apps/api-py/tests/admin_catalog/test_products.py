@@ -25,7 +25,10 @@ async def test_warehouse_can_add_stock_but_not_edit_products(ctx: Ctx, c: Simple
     # Kirim uchun tovar qidira oladi
     assert (await ctx.http.get("/api/v1/admin/products?q=kronospan", headers=wh)).status_code == 200
     assert (await ctx.http.get(f"/api/v1/admin/products/{c.board.id}", headers=wh)).status_code == 200
-    assert (await ctx.http.get("/api/v1/admin/categories", headers=wh)).status_code == 403
+    # Kategoriyalarni o'qiydi (qidiruv filtri), o'zgartira olmaydi
+    assert (await ctx.http.get("/api/v1/admin/categories", headers=wh)).status_code == 200
+    res = await ctx.http.post("/api/v1/admin/categories", headers=wh, json={"slug": "x", "nameUz": "X", "nameRu": "X"})
+    assert res.status_code == 403
 
 
 async def test_bulk_price_and_delete_super_admin_only(ctx: Ctx, c: SimpleNamespace, manager, admin):

@@ -8,8 +8,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import tokens
-from app.auth.deps import SuperAdmin
 from app.auth.password import hash_password
+from app.auth.permissions import Can
 from app.core.errors import AppError
 from app.core.http import api_router
 from app.core.params import UuidPath
@@ -18,6 +18,8 @@ from app.db import Db, transaction
 from app.domain.state_machine import STAFF_ROLES
 from app.models import User
 from app.services.audit import audit
+
+StaffManage = Can("staff.manage")
 
 router = api_router("/admin/staff", tags=["staff"])
 
@@ -70,13 +72,13 @@ async def _find_staff(db: AsyncSession, id: str) -> User | None:
 
 
 @router.get("")
-async def list_staff(_: SuperAdmin, db: Db):
+async def list_staff(_: StaffManage, db: Db):
     rows = await db.scalars(select(User).where(User.role.in_(STAFF_ROLES)).order_by(User.is_active.desc(), User.created_at.asc()))
     return [_json(u) for u in rows]
 
 
 @router.post("", status_code=201)
-async def create(actor: SuperAdmin, body: CreateStaff, db: Db):
+async def create(actor: StaffManage, body: CreateStaff, db: Db):
     if await db.scalar(select(func.count()).select_from(User).where(User.phone == body.phone)):
         raise phone_taken()
     password_hash = await hash_password(body.password)
@@ -96,7 +98,7 @@ async def create(actor: SuperAdmin, body: CreateStaff, db: Db):
 
 
 @router.patch("/{id}")
-async def update(actor: SuperAdmin, id: UuidPath, body: UpdateStaff, db: Db):
+async def update(actor: StaffManage, id: UuidPath, body: UpdateStaff, db: Db):
     staff = await _find_staff(db, id)
     if not staff:
         raise AppError.not_found("Xodim")

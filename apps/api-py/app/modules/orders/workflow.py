@@ -21,6 +21,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import AuthUser
+from app.auth.permissions import can
 from app.core.errors import AppError
 from app.db import transaction
 from app.domain.dates import add_days, business_date, to_date
@@ -52,7 +53,7 @@ async def apply(db: AsyncSession, order_id: str, body: TransitionInput, actor: A
         if driver_id != actor.id:
             raise AppError.not_found("Buyurtma")
     # Xodim o'zi tegishli bo'lmagan buyurtmaga ham tegishi mumkin; birinchi tekkan menejer biriktiriladi
-    assign = {"manager_id": actor.id} if not order.manager_id and actor.role in ("MANAGER", "SUPER_ADMIN") else {}
+    assign = {"manager_id": actor.id} if not order.manager_id and can(actor.role, "orders.manage") else {}
     comment = opt(body.comment)
 
     match body.to:
@@ -87,7 +88,7 @@ async def apply(db: AsyncSession, order_id: str, body: TransitionInput, actor: A
 
 async def cancel(db: AsyncSession, order: LockedOrder, reason: str | None, actor: AuthUser) -> None:
     """Mijoz bekor qilishi ham shu yerdan o'tadi — yon ta'sirlar bir joyda"""
-    if order.status == "PREPARING" and order.cutting_lists > 0 and actor.role != "SUPER_ADMIN":
+    if order.status == "PREPARING" and order.cutting_lists > 0 and not can(actor.role, "orders.override"):
         raise AppError("CUTTING_STARTED", "Raspil boshlangan buyurtmani faqat super admin bekor qiladi", 403)
     await transition(db, order, "CANCELLED", actor, comment=reason)
     await inventory.release(db, order.id, actor.id, "Buyurtma bekor qilindi")

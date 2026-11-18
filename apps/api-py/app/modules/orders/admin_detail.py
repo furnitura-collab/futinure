@@ -7,6 +7,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import AuthUser
+from app.auth.permissions import can, visible_order_statuses
 from app.core.errors import AppError
 from app.core.serialize import row
 from app.db import transaction
@@ -36,12 +37,25 @@ def _user_pick(u: Any, *fields: str) -> dict[str, Any] | None:
     return {f: getattr(u, {"id": "id", "fullName": "full_name", "phone": "phone", "role": "role"}[f]) for f in fields}
 
 
-async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]:
-    """viewer — `.role` atributi bor obyekt"""
+def _profile_json(profile: Any, price_group: Any, finance: bool) -> dict[str, Any]:
+    out = row(profile, priceGroup=price_group)
+    if not finance:
+        out.update(balanceCached=None, creditLimit=None)
+    return out
+
+
+async def detail(db: AsyncSession, order_id: str, viewer: Any, *, scoped: bool = False) -> dict[str, Any]:
+    """
+    viewer — `.role` atributi bor obyekt. scoped — ko'rish so'rovi: rol ko'rmaydigan status 404
+    (amal javobida emas: omborchi topshirgan buyurtma yakunlanib, uning doirasidan chiqadi).
+    Moliya (to'lovlar, mijoz balansi va krediti) — faqat `orders.finance` ruxsati bilan.
+    """
     await db.flush()
     order = (await db.scalars(select(Order).where(Order.id == order_id).execution_options(populate_existing=True))).first()
-    if not order:
+    statuses = visible_order_statuses(viewer.role)
+    if not order or (scoped and statuses is not None and order.status not in statuses):
         raise AppError.not_found("Buyurtma")
+    finance = can(viewer.role, "orders.finance")
 
     def fresh(stmt: Any) -> Any:
         return stmt.execution_options(populate_existing=True)
@@ -129,7 +143,7 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
         return row(i, stock=stock)
 
     credit_check = None
-    if profile:
+    if profile and finance:
         credit_check = {
             "creditLimit": profile.credit_limit,
             "balance": profile.balance_cached,
@@ -150,13 +164,13 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
             "id": customer.id,
             "phone": customer.phone,
             "fullName": customer.full_name,
-            "customerProfile": row(profile, priceGroup=price_group) if profile else None,
+            "customerProfile": _profile_json(profile, price_group, finance) if profile else None,
             "_count": {"orders": count or 0},
         },
         "manager": _user_pick(manager, "id", "fullName", "phone"),
         "pickupWarehouse": row(warehouse) if warehouse else None,
         "statusHistory": [row(h, actor=actor_json(h.actor_id)) for h in history],
-        "payments": [row(p) for p in payments],
+        "payments": [row(p) for p in payments] if finance else [],
         "delivery": row(delivery, driver=_user_pick(driver, "id", "fullName", "phone")) if delivery else None,
         "balanceDue": order.grand_total - order.paid_total,
         "creditCheck": credit_check,
@@ -167,7 +181,7 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any) -> dict[str, Any]
             if t.to != "OUT_FOR_DELIVERY" or driver_id
         ],
         # Shartlar (to'lov turi, yetkazish narxi) faqat qabul qilinmagan buyurtmada o'zgaradi
-        "canSetTerms": order.status == "NEW",
+        "canSetTerms": order.status == "NEW" and can(viewer.role, "orders.manage"),
         "today": business_date(),
     }
 
