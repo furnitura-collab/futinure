@@ -1,0 +1,52 @@
+# Backend: main'ga push → testlar → Render deploy (Deploy Hook). Testlar yiqilsa — deploy yo'q.
+# Sozlash (bir marta): Render → mebel-order → Settings → Deploy Hook manzilini nusxalang →
+# GitHub → Settings → Secrets and variables → Actions → New secret: RENDER_DEPLOY_HOOK_URL.
+# Ikki marta deploy bo'lmasin: Render → Settings → Auto-Deploy: Off (deploy faqat shu yerdan).
+name: api
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/api-py/**', 'apps/admin/**', 'apps/mobile/**', 'packages/**', 'Dockerfile', 'render.yaml', '.github/workflows/api.yml']
+  pull_request:
+    paths: ['apps/api-py/**', 'packages/**']
+  workflow_dispatch:
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: mebel, POSTGRES_PASSWORD: mebel, POSTGRES_DB: mebel }
+        ports: ['5433:5432']
+        options: --health-cmd "pg_isready -U mebel" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6380:6379']
+    defaults:
+      run:
+        working-directory: apps/api-py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run ruff check app tests && uv run ruff format --check app tests
+      - run: uv run pytest -q
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Render deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "::warning::RENDER_DEPLOY_HOOK_URL secret yo'q — deploy o'tkazib yuborildi"; exit 0; fi
+          curl -fsS -X POST "$HOOK&ref=${GITHUB_SHA}" > /dev/null || curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Render deploy boshlandi: ${GITHUB_SHA::7}"

@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy import text
 
 from app.core.http import api_router
@@ -11,4 +13,5 @@ router = api_router("/health", tags=["health"])
 async def health(db: Db):
     await db.execute(text("SELECT 1"))
     await redis().ping()
-    return {"status": "ok"}
+    # Qaysi versiya ishlayapti (Render o'zi beradi) — deploy yetib kelganini tekshirish uchun
+    return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT", "")[:7] or None}
