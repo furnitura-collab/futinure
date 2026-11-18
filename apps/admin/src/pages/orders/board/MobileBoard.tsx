@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Segmented } from '@/components/Segmented';
+import { ResponsiveTabs } from '@/components/ResponsiveTabs';
 import { useI18n } from '@/i18n';
 import type { KanbanColumn } from '@/lib/types';
 import { BoardCard } from './BoardCard';
 
 /**
- * Telefonda kanban o'rniga: holat tablari (soni bilan) va tanlangan holat ro'yxati — bir ustun ekranni
+ * Telefonda kanban o'rniga: holat tanlovi (soni bilan) va tanlangan holat ro'yxati — bir ustun ekranni
  * band qilmaydi. Holat buyurtma sahifasidagi pastki tugmalar bilan o'zgartiriladi.
  */
 export function MobileBoard({ columns }: { columns: KanbanColumn[] }) {
@@ -16,8 +16,7 @@ export function MobileBoard({ columns }: { columns: KanbanColumn[] }) {
 
   return (
     <div className="space-y-3">
-      <Segmented
-        className="w-full"
+      <ResponsiveTabs
         label={t('orders.statusFilter')}
         value={col.status}
         onChange={setPicked}

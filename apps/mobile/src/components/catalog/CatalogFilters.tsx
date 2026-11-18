@@ -1,7 +1,7 @@
 import type { ProductSort } from '@mebel/shared';
 import { router } from 'expo-router';
 import { useState, type ComponentRef, type RefObject } from 'react';
-import { ScrollView, View, type TextInput } from 'react-native';
+import { View, type TextInput } from 'react-native';
 import { Chip, IconButton, Input, OptionList, Sheet } from '@/components/ui';
 import { useI18n, type I18nKey } from '@/i18n';
 import { useCategories } from '@/lib/categories';
@@ -21,12 +21,13 @@ export interface Filters {
   sort: ProductSort;
 }
 
-/** Katalog tepasidagi yopishgan panel: qidiruv, kod bo'yicha buyurtma, saralash va filtr chiplari */
+/** Katalog tepasidagi yopishgan panel: qidiruv, kod bo'yicha buyurtma, kategoriya, saralash va "faqat borlar" */
 export function CatalogFilters({ value, onChange, inputRef }: { value: Filters; onChange: (f: Partial<Filters>) => void; inputRef: RefObject<ComponentRef<typeof TextInput> | null> }) {
   const { t, name } = useI18n();
   const categories = useCategories();
-  const [sorting, setSorting] = useState(false);
+  const [picker, setPicker] = useState<'sort' | 'category' | null>(null);
   const sortLabel = t(SORTS.find((s) => s.value === value.sort)!.key);
+  const category = categories.data?.find((c) => c.id === value.categoryId);
 
   return (
     <View style={{ gap: space(3) }}>
@@ -46,21 +47,29 @@ export function CatalogFilters({ value, onChange, inputRef }: { value: Filters; 
         </View>
         <IconButton icon="barcode" variant="secondary" size={48} label={t('quickSku')} onPress={() => router.push('/sku')} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space(2), paddingHorizontal: space(4) }} style={{ marginHorizontal: -space(4) }}>
-        <Chip label={sortLabel} onPress={() => setSorting(true)} />
-        <Chip label={t('inStockOnly')} active={value.inStock} onPress={() => onChange({ inStock: !value.inStock })} />
-        <Chip label={t('all')} active={!value.categoryId} onPress={() => onChange({ categoryId: null })} />
-        {categories.data?.map((c) => (
-          <Chip key={c.id} label={name(c)} active={value.categoryId === c.id} onPress={() => onChange({ categoryId: value.categoryId === c.id ? null : c.id })} />
-        ))}
-      </ScrollView>
-      <Sheet open={sorting} onClose={() => setSorting(false)} title={t('sortTitle')}>
+      {/* Aylanadigan chiplar o'rniga: ikki tanlov (pastdan ro'yxat) va bitta almashtirgich — bir qatorga sig'adi */}
+      <View style={{ flexDirection: 'row', gap: space(2) }}>
+        <Chip grow label={category ? name(category) : t('category')} active={!!category} caret onPress={() => setPicker('category')} />
+        <Chip grow label={sortLabel} caret onPress={() => setPicker('sort')} />
+        <Chip grow label={t('inStockOnly')} active={value.inStock} onPress={() => onChange({ inStock: !value.inStock })} />
+      </View>
+      <Sheet open={picker === 'category'} onClose={() => setPicker(null)} title={t('categories')}>
+        <OptionList
+          value={value.categoryId ?? ''}
+          options={[{ value: '', label: t('all') }, ...(categories.data ?? []).map((c) => ({ value: c.id, label: name(c) }))]}
+          onChange={(id) => {
+            onChange({ categoryId: id || null });
+            setPicker(null);
+          }}
+        />
+      </Sheet>
+      <Sheet open={picker === 'sort'} onClose={() => setPicker(null)} title={t('sortTitle')}>
         <OptionList
           value={value.sort}
           options={SORTS.map((s) => ({ value: s.value, label: t(s.key) }))}
           onChange={(sort) => {
             onChange({ sort });
-            setSorting(false);
+            setPicker(null);
           }}
         />
       </Sheet>

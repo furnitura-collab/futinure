@@ -5,11 +5,10 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
 import { Pagination } from '@/components/Pagination';
-import { SCROLL_TABS } from '@/components/ScrollRow';
+import { ResponsiveTabs } from '@/components/ResponsiveTabs';
 import { ReceiptText } from '@/components/icons';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useI18n, type TKey } from '@/i18n';
 import { api } from '@/lib/api';
 import { usePendingPayments } from '@/lib/hooks';
@@ -24,7 +23,6 @@ const TABS: { value: Tab; label: TKey }[] = [
   { value: 'REJECTED', label: 'payments.rejected' },
   { value: 'ALL', label: 'payments.all' },
 ];
-const isTab = (v: string): v is Tab => TABS.some((x) => x.value === v);
 
 export function PaymentsPage() {
   const { t } = useI18n();
@@ -41,27 +39,16 @@ export function PaymentsPage() {
   return (
     <div>
       <PageHeader title={t('payments.title')} description={t('payments.subtitle')} />
-      <Tabs
+      <ResponsiveTabs
+        className="mb-3"
+        label={t('payments.title')}
         value={tab}
-        onValueChange={(v) => {
-          if (!isTab(v)) return;
+        onChange={(v) => {
           setTab(v);
           setPage(1);
         }}
-        className="mb-3"
-      >
-        {/* Telefonda tablar ekran chetigacha gorizontal aylanadi; pastki chiziq (indikator) kesilmasin — pb */}
-        <TabsList variant="line" className={SCROLL_TABS}>
-          {TABS.map((x) => (
-            <TabsTrigger key={x.value} value={x.value} className="h-8 flex-none gap-1.5">
-              {t(x.label)}
-              {x.value === 'PENDING' && !!pending.data && (
-                <span className="rounded-full bg-warning/15 px-1.5 text-[11px] leading-4 font-semibold text-warning tabular">{pending.data}</span>
-              )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+        options={TABS.map((x) => ({ value: x.value, label: t(x.label), ...(x.value === 'PENDING' && { count: pending.data ?? 0, urgent: true }) }))}
+      />
 
       {isPending ? (
         <Card className="gap-0 divide-y py-0">

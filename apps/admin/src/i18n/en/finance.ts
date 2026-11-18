@@ -30,6 +30,7 @@ export const finance: Pick<Dictionary, keyof typeof uzPart> = {
     creditLimit: 'Credit limit',
     overdue: 'Overdue',
     turnover: 'Turnover',
+    sections: 'Customer sections',
     ledger: 'Ledger',
     reconciliation: 'Reconciliation',
     recentOrders: 'Recent orders',

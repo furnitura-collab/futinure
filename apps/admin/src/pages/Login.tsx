@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router';
-import { formatUzPhoneInput, normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
+import { normalizeUzPhone, PASSWORD_MIN } from '@mebel/shared';
 import { Callout } from '@/components/Callout';
 import { FormField } from '@/components/FormField';
 import { IconButton } from '@/components/IconButton';
@@ -14,6 +14,7 @@ import { api, tokenStore, type Tokens } from '@/lib/api';
 import { PANEL_ROLES, useAuth } from '@/lib/auth';
 import type { Me } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { PhoneInput } from '@/components/PhoneInput';
 
 // Telefonda kattaroq maydon (barmoq va o'qish uchun); 16px shrift — iOS/WebView fokusda sahifani kattalashtirmaydi
 const FIELD = 'h-12 text-base sm:h-10 md:text-base';
@@ -72,22 +73,7 @@ export function LoginPage() {
         <form onSubmit={submit} className="grid gap-3.5" noValidate>
           <FormField label={t('auth.phone')}>
             {(f) => (
-              <div className="relative">
-                {/* "+998" o'zgarmaydi — faqat 9 raqam yoziladi va "90 123 45 67" ko'rinishida guruhlanadi */}
-                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-base text-muted-foreground">+998</span>
-                <Input
-                  {...f}
-                  className={cn(FIELD, 'pl-[3.6rem]')}
-                  autoFocus
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  enterKeyHint="next"
-                  placeholder="90 123 45 67"
-                  value={phone}
-                  onChange={(e) => setPhone(formatUzPhoneInput(e.target.value))}
-                />
-              </div>
+              <PhoneInput {...f} large className={cn(FIELD, 'pl-[3.6rem]')} autoFocus autoComplete="tel-national" enterKeyHint="next" value={phone} onChange={setPhone} />
             )}
           </FormField>
           <FormField label={t('auth.password')}>

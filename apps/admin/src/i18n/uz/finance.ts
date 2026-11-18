@@ -28,6 +28,7 @@ export const finance = {
     creditLimit: 'Kredit limiti',
     overdue: "Muddati o'tgan",
     turnover: 'Aylanma',
+    sections: "Mijoz bo'limlari",
     ledger: 'Hisob daftari',
     reconciliation: 'Akt-sverka',
     recentOrders: 'Oxirgi buyurtmalar',

@@ -57,6 +57,7 @@ export const common = {
   lastQty: 'Oxirgi safar: {qty}',
   addLastQty: "Savatga qo'shish: {qty}",
   categories: 'Kategoriyalar',
+  category: 'Kategoriya',
   allProducts: 'Barcha tovarlar',
   popularProducts: "Ko'p sotilganlar",
   productsCount: '{n} ta tovar',

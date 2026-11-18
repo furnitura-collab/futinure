@@ -92,20 +92,24 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         collapsed ? 'w-16' : 'w-60',
       )}
     >
-      <div className={cn('flex h-14 items-center', collapsed ? 'justify-center' : 'px-4')}>
-        <Brand compact={collapsed} />
-      </div>
-      <div className="flex-1 overflow-y-auto px-2.5 py-2">
-        <NavList collapsed={collapsed} />
-      </div>
-      <div className={cn('flex p-2.5', collapsed ? 'justify-center' : 'justify-end')}>
+      {/* Yig'ish tugmasi yuqorida: kengaygan — brend yonida; yig'ilgan — logotip ustiga kelganda (yoki fokusda) uning o'rnida */}
+      <div className={cn('group relative flex h-14 shrink-0 items-center', collapsed ? 'justify-center' : 'justify-between pr-2.5 pl-4')}>
+        <div className={cn(collapsed && 'transition-opacity group-focus-within:opacity-0 group-hover:opacity-0')}>
+          <Brand compact={collapsed} />
+        </div>
         <IconButton
           icon={SidebarToggle}
           label={collapsed ? t('common.expand') : t('common.collapse')}
           side="right"
-          className="text-muted-foreground"
+          className={cn(
+            'text-muted-foreground',
+            collapsed && 'absolute inset-0 m-auto opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100',
+          )}
           onClick={onToggle}
         />
+      </div>
+      <div className="flex-1 overflow-y-auto px-2.5 py-2">
+        <NavList collapsed={collapsed} />
       </div>
     </aside>
   );

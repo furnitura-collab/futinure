@@ -54,6 +54,7 @@ export const common: Pick<Dict, keyof typeof uzPart> = {
   lastQty: 'В прошлый раз: {qty}',
   addLastQty: 'Добавить в корзину: {qty}',
   categories: 'Категории',
+  category: 'Категория',
   allProducts: 'Все товары',
   popularProducts: 'Популярные товары',
   productsCount: '{n} товар|{n} товара|{n} товаров',

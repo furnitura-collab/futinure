@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { createStaffSchema, PASSWORD_MIN, STAFF_ROLES, updateStaffSchema, type CreateStaff, type Role, type UpdateStaff } from '@mebel/shared';
+import { createStaffSchema, formatUzPhoneInput, PASSWORD_MIN, STAFF_ROLES, updateStaffSchema, type CreateStaff, type Role, type UpdateStaff } from '@mebel/shared';
 import { FormField } from '@/components/FormField';
 import { OptionSelect } from '@/components/OptionSelect';
 import { SwitchField } from '@/components/SwitchField';
@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useApiMutation } from '@/lib/mutation';
 import type { StaffMember } from '@/lib/types';
+import { PhoneInput } from '@/components/PhoneInput';
 
 type Field = 'fullName' | 'phone' | 'role' | 'password';
 const FIELD_ERROR: Record<Field, TKey> = {
@@ -27,7 +28,7 @@ export function StaffSheet({ member, onClose }: { member: StaffMember | null; on
   const { me } = useAuth();
   const self = member?.id === me?.id;
   const [fullName, setFullName] = useState(member?.fullName ?? '');
-  const [phone, setPhone] = useState(member?.phone ?? '');
+  const [phone, setPhone] = useState(formatUzPhoneInput(member?.phone ?? ''));
   const [role, setRole] = useState<Role>(member?.role ?? 'MANAGER');
   const [password, setPassword] = useState('');
   const [isActive, setIsActive] = useState(member?.isActive ?? true);
@@ -65,15 +66,7 @@ export function StaffSheet({ member, onClose }: { member: StaffMember | null; on
             </FormField>
             <FormField label={t('staff.phone')} error={errorFor('phone')}>
               {(f) => (
-                <Input
-                  {...f}
-                  inputMode="tel"
-                  autoComplete="off"
-                  placeholder="+998 90 123 45 67"
-                  disabled={!!member}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+                <PhoneInput {...f} autoComplete="off" disabled={!!member} value={phone} onChange={setPhone} />
               )}
             </FormField>
             <FormField label={t('staff.role')} error={errorFor('role')}>

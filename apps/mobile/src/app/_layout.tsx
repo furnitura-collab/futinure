@@ -88,10 +88,11 @@ function Navigator() {
       ) : (
         <WebShell enabled={site}>
           <Stack screenOptions={{ ...header, headerShown: !site, headerBackTitle: t('back'), contentStyle: { backgroundColor: colors.background } }}>
-            <Stack.Protected guard={!me}>
+            {/* redirectTo: aks holda router birinchi ochiq ekranni (masalan, parol) ochib qo'yadi */}
+            <Stack.Protected guard={!me} redirectTo={home}>
               <Stack.Screen name="login" options={{ headerShown: false }} />
             </Stack.Protected>
-            <Stack.Protected guard={!!needsSetup}>
+            <Stack.Protected guard={!!needsSetup} redirectTo={home}>
               <Stack.Screen name="setup" options={{ headerShown: false }} />
             </Stack.Protected>
             <Stack.Protected guard={driver} redirectTo={home}>
@@ -114,7 +115,7 @@ function Navigator() {
               <Stack.Screen name="address-new" options={{ title: t('addAddress'), ...modal }} />
               <Stack.Screen name="notifications" options={{ title: t('notifications') }} />
             </Stack.Protected>
-            <Stack.Protected guard={driver || (!!customer && !needsSetup)}>
+            <Stack.Protected guard={driver || (!!customer && !needsSetup)} redirectTo={home}>
               <Stack.Screen name="password" options={{ title: t('changePassword'), ...modal }} />
             </Stack.Protected>
           </Stack>
