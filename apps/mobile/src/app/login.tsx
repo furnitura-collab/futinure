@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -28,7 +29,10 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await login(await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password, app: 'customer' } }));
+      const res = await api<Tokens & { me: Me }>('/auth/login', { body: { phone: normalized, password, app: 'customer' } });
+      await login(res);
+      // Rol bo'yicha bosh sahifa; aks holda router himoyalangan ekranlardan birinchisini (masalan, parol) ochib qo'yadi
+      router.replace(res.me.role === 'DRIVER' ? '/driver' : '/');
     } catch (e) {
       setError(e instanceof ApiError ? errorText(e.code, e.message) : t('error'));
       setBusy(false);
