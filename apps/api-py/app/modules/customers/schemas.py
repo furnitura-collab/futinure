@@ -56,8 +56,6 @@ class AdminCustomerListQuery(Schema):
     price_group_id: Uuid | None = None
     # Faqat qarzdorlar (balans > 0)
     debtors: BoolQuery | None = None
-    # Faqat muddati o'tgan qarzi borlar
-    overdue: BoolQuery | None = None
 
 
 # ───────── Tana (body) ─────────
@@ -94,8 +92,6 @@ class AdminCustomerUpdate(Schema):
     company_name: trimmed(0, 200) | None = None  # type: ignore[valid-type]
     inn: Annotated[str | None, BeforeValidator(_inn)] = None
     price_group_id: Uuid | None = None
-    credit_limit: Money = None  # type: ignore[assignment]
-    payment_term_days: Annotated[StrictInt, Field(ge=0, le=365)] = None  # type: ignore[assignment]
     allowed_payment_methods: Annotated[list[PaymentMethod], Field(min_length=1), AfterValidator(_methods)] = None  # type: ignore[assignment]
 
 

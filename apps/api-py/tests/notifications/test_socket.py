@@ -1,42 +1,11 @@
-from datetime import date
 from types import SimpleNamespace
 
 import pytest
 import socketio
-from sqlalchemy import update
 
-from app.models import Order
-from app.modules.notifications import debt_reminders
 from app.services import realtime as RT
-from tests.notifications.helpers import NS, TERMS, drain, go, next_event, notifications, place_order, token
+from tests.notifications.helpers import NS, TERMS, drain, go, next_event, place_order, token
 from tests.support import assert_matches, user_with_token
-
-# ───── nasiya eslatmalari ─────
-
-
-async def test_debt_reminders_2_days_before_on_day_every_3_days_after_once_per_day(s: SimpleNamespace):
-    ctx = s.ctx
-    o = await place_order(s)
-    await ctx.db.execute(
-        update(Order)
-        .where(Order.id == o["id"])
-        .values(
-            status="COMPLETED", payment_terms="CREDIT", grand_total=4_620_000, paid_total=620_000, due_date=date(2026, 11, 10)
-        )
-    )
-    await ctx.db.commit()
-
-    assert await debt_reminders.run("2026-11-07") == 0
-    assert await debt_reminders.run("2026-11-08") == 1
-    assert await debt_reminders.run("2026-11-08") == 0
-    assert await debt_reminders.run("2026-11-10") == 1
-    assert await debt_reminders.run("2026-11-12") == 0
-    assert await debt_reminders.run("2026-11-13") == 1
-
-    items = await notifications(s)
-    assert [n.type for n in items] == ["debt.soon", "debt.soon", "debt.overdue"]
-    assert items[2].body == f"{o['number']}: 4 000 000 so'm qarz, muddat 2026-11-10 edi"
-
 
 # ───── socket ─────
 

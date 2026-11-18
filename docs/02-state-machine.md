@@ -11,7 +11,7 @@ stateDiagram-v2
     READY --> DELIVERED : mijoz olib ketdi (PICKUP)
     OUT_FOR_DELIVERY --> DELIVERED : topshirildi (foto)
     OUT_FOR_DELIVERY --> READY : yetkazib bo'lmadi
-    DELIVERED --> COMPLETED : to'lov yopildi yoki nasiyaga yozildi
+    DELIVERED --> COMPLETED : to'lov yopildi
 
     NEW --> CANCELLED
     PREPARING --> CANCELLED
@@ -30,22 +30,22 @@ buyurtma avans tushguncha `NEW`da kutadi.
 
 | # | Dan → Ga | Kim qila oladi | Shart (guard) | Yon ta'sirlar (bitta tranzaksiyada) |
 |---|---|---|---|---|
-| 1 | NEW → PREPARING | MANAGER, SUPER_ADMIN | To'lov shartlari (so'rovda yoki oldin saqlangan). Barcha qatorlar uchun qoldiq yetarli (yoki ON_ORDER). `ADVANCE`/`PREPAID` bo'lsa avans to'langan (yoki SUPER_ADMIN izoh bilan chetlab o'tadi). `CREDIT` bo'lsa yangi balans `<= credit_limit` yoki menejer izoh bilan tasdiqlagan | Shartlar va summalar yoziladi, menejer biriktiriladi, rezerv (`RESERVE`), push mijozga ("qabul qilindi") |
+| 1 | NEW → PREPARING | MANAGER, SUPER_ADMIN | To'lov shartlari (so'rovda yoki oldin saqlangan). Barcha qatorlar uchun qoldiq yetarli (yoki ON_ORDER). `ADVANCE`/`PREPAID` bo'lsa avans to'langan (yoki SUPER_ADMIN izoh bilan chetlab o'tadi) | Shartlar va summalar yoziladi, menejer biriktiriladi, rezerv (`RESERVE`), push mijozga ("qabul qilindi") |
 | 2 | PREPARING → READY | WAREHOUSE, MANAGER | Raspil kartalari `DONE` | Push mijozga ("tayyor" / "olib ketishga tayyor") |
 | 3 | READY → OUT_FOR_DELIVERY | DRIVER, MANAGER | `delivery_type = DELIVERY`, haydovchi biriktirilgan | Qoldiqdan yechiladi (`OUT`, rezerv `RELEASE`), push mijozga |
 | 4 | READY → DELIVERED | WAREHOUSE, MANAGER | `delivery_type = PICKUP`, qabul qiluvchi ismi | Qoldiqdan yechiladi, ledger `DEBIT grand_total` |
 | 5 | OUT_FOR_DELIVERY → DELIVERED | DRIVER | Foto va qabul qiluvchi ismi | Ledger `DEBIT grand_total`, push |
 | 6 | OUT_FOR_DELIVERY → READY | DRIVER, MANAGER | Sabab majburiy | Qoldiq qaytariladi (`IN` + `RESERVE`), menejerga xabar |
-| 7 | DELIVERED → COMPLETED | tizim (avtomatik) | `paid_total >= grand_total` YOKI `payment_terms = CREDIT` | — |
+| 7 | DELIVERED → COMPLETED | tizim (avtomatik) | `paid_total >= grand_total` | — |
 | 8 | * → CANCELLED | CUSTOMER: faqat NEW. MANAGER: NEW, PREPARING (raspilsiz). SUPER_ADMIN: READY gacha hammasi | Sabab majburiy | Rezerv `RELEASE`. To'langan bo'lsa: ledger'da mijoz balansiga qaytariladi (haqdor) yoki `REFUND` yoziladi — tanlov menejerda |
 
 ## Amalga oshirishdagi aniqliklar
 
 - **Rezerv:** "buyurtma asosida" (ON_ORDER) tovar qoldiq yetmasa band qilinmaydi; jo'natishda qoldiq bo'lmasa 409 `STOCK_NOT_RECEIVED` — avval kirim qilinadi.
 - **Qancha band qilingani** alohida saqlanmaydi, `stock_movements` dan hisoblanadi (RESERVE − RELEASE) — bo'shatish doim aniq.
-- **Avansni chetlab o'tish** (`overrideAdvance`) — faqat super admin, izoh bilan. **Kredit limitidan oshish** (`overrideCreditLimit`) — menejer, izoh bilan.
+- **Avansni chetlab o'tish** (`overrideAdvance`) — faqat super admin, izoh bilan.
 - **Olib ketishda** `receiverName` majburiy, tarixga "Qabul qildi: …" bo'lib yoziladi.
-- **Nasiyada** topshirilganda `due_date = bugun + payment_term_days`, buyurtma darhol COMPLETED (qarz ledger'da qoladi).
+- **Nasiya (`CREDIT`) va kredit limiti olib tashlangan** (migratsiya `0003_drop_credit`): to'lov shartlari — `PREPAID`, `ADVANCE`, `ON_DELIVERY`. Eski nasiya buyurtmalari tarixda `CREDIT` bilan qoladi. To'lanmay topshirilgan buyurtma DELIVERED'da qoladi, qarz ledger'da (debitorlik).
 - **Shartlarni oldindan saqlash** (`PUT /admin/orders/{id}/terms`) — faqat `NEW`da; status o'zgarmaydi, versiya oshadi.
   `PREPAID`/`ADVANCE` bo'lsa mijozga "X so'm to'lang" xabari boradi; to'lov `NEW` buyurtmaga shartlar bor bo'lsa qabul qilinadi.
 - **Menejer biriktirish** — buyurtmaga birinchi tekkan menejer avtomatik biriktiriladi; qo'lda almashtirish versiyani oshirmaydi.

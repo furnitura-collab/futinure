@@ -21,8 +21,6 @@ export interface Me {
     type: CustomerType;
     companyName: string | null;
     inn: string | null;
-    creditLimit: number;
-    paymentTermDays: number;
     allowedPaymentMethods: PaymentMethod[];
     balanceCached: number;
     priceGroup: { id: string; name: string } | null;

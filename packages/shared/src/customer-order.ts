@@ -1,4 +1,3 @@
-import { businessDate } from './dates.js';
 import type { Locale, OrderStatus, PaymentTerms } from './enums.js';
 
 /**
@@ -29,12 +28,8 @@ export interface AmountDueInput {
   grandTotal: number;
   paidTotal: number;
   advanceAmount: number;
-  /** Nasiya muddati (YYYY-MM-DD yoki ISO) */
-  dueDate: string | Date | null;
   /** Tekshirilayotgan cheklar — mijoz allaqachon to'lagan, qayta so'ramaymiz */
   pendingTotal?: number;
-  /** Bugungi sana (test uchun), standart — Toshkent bo'yicha bugun */
-  today?: string;
 }
 
 const AFTER_HANDOVER: readonly OrderStatus[] = ['DELIVERED', 'COMPLETED'];
@@ -43,7 +38,7 @@ const AT_HANDOVER: readonly OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY', ...AFT
 /**
  * Mijoz HOZIR to'lashi kerak bo'lgan summa (0 — hozircha to'lov kutilmaydi).
  * Shartlar belgilanmaguncha (yangi buyurtma) to'lov yo'q. Qoidalar API'dagi PREPARING oldi tekshiruvi bilan
- * bir xil: PREPAID — hammasi, ADVANCE — avans, topshirishda — tayyor bo'lganda, nasiya — muddati kelganda.
+ * bir xil: PREPAID — hammasi, ADVANCE — avans, topshirishda — tayyor bo'lganda (eski nasiya — topshirilgach).
  */
 export function amountDueNow(o: AmountDueInput): number {
   if (!o.paymentTerms || o.status === 'CANCELLED') return 0;
@@ -59,11 +54,10 @@ export function amountDueNow(o: AmountDueInput): number {
     case 'ON_DELIVERY':
       required = AT_HANDOVER.includes(o.status) ? balance : 0;
       break;
-    case 'CREDIT': {
-      const due = o.dueDate ? (typeof o.dueDate === 'string' ? o.dueDate : o.dueDate.toISOString()).slice(0, 10) : null;
-      required = due && due <= (o.today ?? businessDate()) ? balance : 0;
+    // Eski nasiya buyurtmasi (yangisiga tanlanmaydi) — topshirilgan, qolgan qarz to'lanadi
+    case 'CREDIT':
+      required = AFTER_HANDOVER.includes(o.status) ? balance : 0;
       break;
-    }
   }
   return Math.max(0, Math.min(balance, required) - (o.pendingTotal ?? 0));
 }

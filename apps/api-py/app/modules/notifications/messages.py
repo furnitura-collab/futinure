@@ -80,22 +80,6 @@ TEXTS: dict[str, Template] = {
         ("Yangi yetkazish", "Новая доставка", "New delivery"),
         ("{number}: {address}", "{number}: {address}", "{number}: {address}"),
     ),
-    "debtSoon": _t(
-        ("To'lov muddati yaqin", "Скоро срок оплаты", "Payment due soon"),
-        (
-            "{number}: {due} gacha {amount} to'lash kerak",
-            "{number}: до {due} нужно оплатить {amount}",
-            "{number}: {amount} is due by {due}",
-        ),
-    ),
-    "debtOverdue": _t(
-        ("To'lov muddati o'tgan", "Просрочена оплата", "Payment overdue"),
-        (
-            "{number}: {amount} qarz, muddat {due} edi",
-            "{number}: долг {amount}, срок был {due}",
-            "{number}: {amount} outstanding, was due {due}",
-        ),
-    ),
 }
 
 _PLACEHOLDER = re.compile(r"\{(\w+)\}", re.ASCII)

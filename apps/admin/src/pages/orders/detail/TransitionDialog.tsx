@@ -13,9 +13,7 @@ import { useApiMutation } from '@/lib/mutation';
 import type { OrderDetail } from '@/lib/types';
 import { defaultTerms, requiredPrepayment, TermsForm, termsGrandTotal, termsPayload, type TermsValue } from './TermsForm';
 
-type Blocked =
-  | { code: 'ADVANCE_NOT_PAID'; required: number; paid: number }
-  | { code: 'CREDIT_LIMIT_EXCEEDED'; creditLimit: number; exposure: number };
+type Blocked = { code: 'ADVANCE_NOT_PAID'; required: number; paid: number };
 
 function num(details: unknown, key: string): number {
   const v = details && typeof details === 'object' ? (details as Record<string, unknown>)[key] : undefined;
@@ -25,7 +23,6 @@ function num(details: unknown, key: string): number {
 function toBlocked(e: unknown): Blocked | null {
   if (!(e instanceof ApiError)) return null;
   if (e.code === 'ADVANCE_NOT_PAID') return { code: e.code, required: num(e.details, 'required'), paid: num(e.details, 'paid') };
-  if (e.code === 'CREDIT_LIMIT_EXCEEDED') return { code: e.code, creditLimit: num(e.details, 'creditLimit'), exposure: num(e.details, 'exposure') };
   return null;
 }
 
@@ -35,7 +32,7 @@ const sameTerms = (a: TermsValue, b: TermsValue) => JSON.stringify(termsPayload(
  * Status o'tishi. Har bir maqsadga kerakli maydonlar:
  *   qabul qilish (NEW → PREPARING) — to'lov shartlari; CANCELLED / qaytdi — sabab; olib ketishda DELIVERED — kim oldi.
  * Oldindan to'lovda (PREPAID/ADVANCE, hali to'lanmagan) — "Shartlarni saqlash": status NEW qoladi, mijoz to'laydi.
- * Avans/kredit tekshiruvidan o'tmasa — sabab ko'rsatiladi va (huquq bo'lsa) izoh bilan "baribir davom etish" mumkin.
+ * Avans tekshiruvidan o'tmasa — sabab ko'rsatiladi va (huquq bo'lsa) izoh bilan "baribir davom etish" mumkin.
  */
 export function TransitionDialog({
   order,
@@ -57,8 +54,7 @@ export function TransitionDialog({
 
   const accept = to === 'PREPARING' && order.status === 'NEW';
   const pickupHandover = to === 'DELIVERED' && order.status === 'READY';
-  const override = blocked?.code === 'ADVANCE_NOT_PAID' ? 'overrideAdvance' : blocked ? 'overrideCreditLimit' : null;
-  const canOverride = override === 'overrideCreditLimit' || (override === 'overrideAdvance' && can('orders.override'));
+  const canOverride = can('orders.override');
   const actionLabel = accept ? t('order.accept') : t(`order.action.${to}`);
   // Shartlar oldin saqlangan va o'zgarmagan bo'lsa — qayta yuborilmaydi
   const termsChanged = !order.paymentTerms || !sameTerms(terms, defaultTerms(order));
@@ -76,14 +72,14 @@ export function TransitionDialog({
           comment: comment.trim() || undefined,
           ...(accept && termsChanged && { terms: termsPayload(terms) }),
           ...(pickupHandover && { receiverName: receiverName.trim() }),
-          ...(override && { [override]: true }),
+          ...(blocked && { overrideAdvance: true }),
         },
       }),
     {
       invalidate: [['order', order.id], ['orders']],
       success: t('transition.done', { number: order.number, status: label('orderStatus', to) }),
       onSuccess: onClose,
-      silentCodes: ['ADVANCE_NOT_PAID', 'CREDIT_LIMIT_EXCEEDED'],
+      silentCodes: ['ADVANCE_NOT_PAID'],
     },
   );
 
@@ -146,9 +142,8 @@ export function TransitionDialog({
 
         {blocked && (
           <Callout tone="warning">
-            {blocked.code === 'ADVANCE_NOT_PAID'
-              ? `${t('transition.advanceNotPaid', { required: money(blocked.required), paid: money(blocked.paid) })} ${canOverride ? t('transition.canOverride') : t('transition.onlySuperAdmin')}`
-              : t('transition.creditExceeded', { limit: money(blocked.creditLimit), exposure: money(blocked.exposure) })}
+            {t('transition.advanceNotPaid', { required: money(blocked.required), paid: money(blocked.paid) })}{' '}
+            {canOverride ? t('transition.canOverride') : t('transition.onlySuperAdmin')}
           </Callout>
         )}
 

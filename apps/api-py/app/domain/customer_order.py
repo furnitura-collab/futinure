@@ -1,9 +1,5 @@
 """Mijoz ko'rinishi — packages/shared/src/customer-order.ts (bosqichlar va hozir to'lanadigan summa)."""
 
-from datetime import date, datetime
-
-from app.domain.dates import business_date
-
 # Mijozga ko'rinadigan 4 bosqich. Ichki statuslar (7 ta) mijoz uchun ortiqcha
 CUSTOMER_STAGES = ("PLACED", "PREPARING", "ON_THE_WAY", "HANDED_OVER")
 
@@ -33,13 +29,11 @@ def amount_due_now(
     grand_total: int,
     paid_total: int,
     advance_amount: int,
-    due_date: str | date | datetime | None,
     pending_total: int = 0,
-    today: str | None = None,
 ) -> int:
     """
     Mijoz HOZIR to'lashi kerak bo'lgan summa (0 — hozircha to'lov kutilmaydi).
-    PREPAID — hammasi, ADVANCE — avans, topshirishda — tayyor bo'lganda, nasiya — muddati kelganda.
+    PREPAID — hammasi, ADVANCE — avans, topshirishda — tayyor bo'lganda (eski nasiya — topshirilgach).
     pending_total — tekshirilayotgan cheklar (qayta so'ramaymiz).
     """
     if not payment_terms or status == "CANCELLED":
@@ -52,10 +46,6 @@ def amount_due_now(
             required = balance if status in _AT_HANDOVER else advance_amount - paid_total
         case "ON_DELIVERY":
             required = balance if status in _AT_HANDOVER else 0
-        case _:  # CREDIT
-            due = None
-            if due_date is not None:
-                due = due_date if isinstance(due_date, str) else due_date.isoformat()
-                due = due[:10]
-            required = balance if due and due <= (today or business_date()) else 0
+        case _:  # eski nasiya buyurtmasi — topshirilgan, qolgan qarz to'lanadi
+            required = balance if status in ("DELIVERED", "COMPLETED") else 0
     return max(0, min(balance, required) - pending_total)

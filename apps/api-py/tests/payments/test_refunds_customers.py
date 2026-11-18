@@ -38,13 +38,15 @@ async def test_manual_adjustment_old_debt(ctx: Ctx, env: Env):
 # ───────────────────────── Admin: mijozlar ─────────────────────────
 
 
-async def test_manager_changes_group_only_super_admin_changes_limit(ctx: Ctx, env: Env):
+async def test_manager_changes_group_credit_fields_gone(ctx: Ctx, env: Env):
     url = f"/api/v1/admin/customers/{env.customer.user.id}"
     res = expect(await ctx.http.patch(url, headers=env.manager, json={"priceGroupId": env.c.usta.id, "type": "MASTER"}), 200)
     assert_matches(res.json()["customerProfile"], {"type": "MASTER", "priceGroup": {"name": "Usta"}})
-    expect(await ctx.http.patch(url, headers=env.manager, json={"creditLimit": 5_000_000}), 403)
-    ok = expect(await ctx.http.patch(url, headers=env.admin, json={"creditLimit": 5_000_000, "paymentTermDays": 15}), 200)
-    assert_matches(ok.json()["finance"], {"creditLimit": 5_000_000, "paymentTermDays": 15})
+    # Kredit limiti va nasiya muddati olib tashlangan — eski ilova yuborsa e'tiborsiz qoladi
+    res = expect(
+        await ctx.http.patch(url, headers=env.manager, json={"creditLimit": 5_000_000, "paymentTermDays": 15}), 200
+    ).json()
+    assert not {"creditLimit", "paymentTermDays"} & (set(res["finance"]) | set(res["customerProfile"]))
 
 
 async def test_blocking_closes_sessions(ctx: Ctx, env: Env):

@@ -7,8 +7,6 @@ const base: AmountDueInput = {
   grandTotal: 1_000_000,
   paidTotal: 0,
   advanceAmount: 0,
-  dueDate: null,
-  today: '2026-11-04',
 };
 
 describe('mijoz bosqichlari', () => {
@@ -46,10 +44,10 @@ describe('hozir to\'lanadigan summa', () => {
     expect(amountDueNow({ ...cod, status: 'OUT_FOR_DELIVERY' })).toBe(1_000_000);
   });
 
-  it('nasiya — muddati kelgandagina', () => {
-    const credit = { ...base, paymentTerms: 'CREDIT' as const, status: 'DELIVERED' as const };
-    expect(amountDueNow({ ...credit, dueDate: '2026-11-20' })).toBe(0);
-    expect(amountDueNow({ ...credit, dueDate: new Date('2026-11-04T00:00:00Z') })).toBe(1_000_000);
+  it('eski nasiya buyurtmasi — topshirilgach qolgan qarz', () => {
+    const credit = { ...base, paymentTerms: 'CREDIT' as const };
+    expect(amountDueNow({ ...credit, status: 'READY' })).toBe(0);
+    expect(amountDueNow({ ...credit, status: 'COMPLETED', paidTotal: 400_000 })).toBe(600_000);
   });
 });
 

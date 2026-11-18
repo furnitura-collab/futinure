@@ -35,7 +35,7 @@ export const orders = {
   termsHintPREPAID: "Tayyorlash to'liq to'lovdan keyin boshlanadi.",
   termsHintADVANCE: "Avvaliga avans, qolgan qismi — topshirishda.",
   termsHintON_DELIVERY: "Tovarni olayotganda to'laysiz.",
-  termsHintCREDIT: "Keyin to'laysiz — muddat: {date}.",
+  termsHintCREDIT: "Tovar olingan — qolgan qarzni to'lang.",
   buyAgainShort: 'Yana buyurtma',
   noOrders: "Hali buyurtma yo'q",
   noOrdersHint: 'Katalogdan tovar tanlang — buyurtma holatini shu yerda kuzatasiz',

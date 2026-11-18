@@ -76,7 +76,6 @@ export const orders = {
     weight: "Og'irlik: {kg} kg",
     paymentTerms: "To'lov sharti",
     advance: 'Avans: {amount}',
-    dueDate: "To'lov muddati: {date}",
     payments: "To'lovlar",
     recordPayment: "To'lov kiritish",
     noPayments: "To'lov yo'q",
@@ -87,8 +86,6 @@ export const orders = {
     ordersCount: 'Buyurtmalar: {n}',
     priceGroup: 'Guruh: {name}',
     balance: 'Balans',
-    creditLimit: 'Kredit limiti',
-    limitExceeded: 'Bu buyurtma bilan limitdan oshadi ({amount})',
     manager: 'Menejer',
     managerAssigned: 'Menejer biriktirildi',
     action: {
@@ -134,7 +131,6 @@ export const orders = {
     advanceNotPaid: "Avans to'lanmagan: kerak {required}, to'langan {paid}.",
     canOverride: 'Izoh yozib davom etishingiz mumkin.',
     onlySuperAdmin: "Faqat super admin chetlab o'ta oladi.",
-    creditExceeded: 'Kredit limitidan oshadi: limit {limit}, buyurtmadan keyin qarz {exposure}. Izoh yozib tasdiqlang.',
     reasonRequired: 'Sabab / izoh (majburiy)',
     refundNote: "Mijoz {amount} to'lagan. Pul uning balansida qoladi — qaytarish mijoz sahifasidan qilinadi.",
     override: 'Baribir davom etish',
@@ -142,8 +138,6 @@ export const orders = {
   },
   terms: {
     paymentTerms: "To'lov sharti",
-    creditLimit: 'Kredit limiti: {amount}',
-    notOpened: '(mijozga ochilmagan)',
     advanceAmount: 'Avans miqdori',
     methods: "To'lov usullari",
     deliveryFee: 'Yetkazish narxi',

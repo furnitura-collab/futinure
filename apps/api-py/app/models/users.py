@@ -40,8 +40,6 @@ class CustomerProfile(Base):
     inn: Mapped[str | None] = mapped_column(Text)
     bank_details: Mapped[Any | None] = mapped_column("bank_details", JSONB)
     price_group_id: Mapped[str | None] = fk("price_groups.id", nullable=True, name="price_group_id")
-    credit_limit: Mapped[int] = mapped_column("credit_limit", BigInteger, default=0)
-    payment_term_days: Mapped[int] = mapped_column("payment_term_days", Integer, default=0)
     allowed_payment_methods: Mapped[list[str]] = mapped_column(
         "allowed_payment_methods", ARRAY(PAYMENT_METHOD), default=lambda: ["CASH", "CARD_TRANSFER"]
     )

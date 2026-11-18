@@ -20,8 +20,6 @@ export const PERMISSIONS = {
   'prices.manage': ['SUPER_ADMIN'],
   'stock.manage': ['WAREHOUSE', 'MANAGER', 'SUPER_ADMIN'],
   'customers.manage': ['MANAGER', 'SUPER_ADMIN'],
-  // Kredit limiti va to'lov muddati
-  'customers.credit': ['SUPER_ADMIN'],
   'staff.manage': ['SUPER_ADMIN'],
 } as const satisfies Record<string, readonly Role[]>;
 

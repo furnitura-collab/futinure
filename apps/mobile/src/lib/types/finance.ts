@@ -1,12 +1,9 @@
 /** Balans, hisob-kitob va to'lov rekvizitlari */
 import type { PaymentMethod } from '@mebel/shared';
 
+/** balance > 0 — mijoz qarzdor */
 export interface Balance {
   balance: number;
-  creditLimit: number;
-  availableCredit: number;
-  paymentTermDays: number;
-  overdueAmount: number;
   pendingPayments: number;
   allowedPaymentMethods: PaymentMethod[];
 }

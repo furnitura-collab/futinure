@@ -11,7 +11,7 @@ const TERMS_HINT: Record<NonNullable<OrderDetail['paymentTerms']>, I18nKey> = {
   PREPAID: 'termsHintPREPAID',
   ADVANCE: 'termsHintADVANCE',
   ON_DELIVERY: 'termsHintON_DELIVERY',
-  CREDIT: 'termsHintCREDIT',
+  CREDIT: 'termsHintCREDIT', // eski nasiya buyurtmalari
 };
 
 /** To'lov: jami, to'langan, qolgan — oddiy so'zlar bilan; shart va yuborilgan cheklar */
@@ -33,7 +33,7 @@ export function PaymentSummary({ o }: { o: OrderDetail }) {
           <Text v="small" bold>
             {`${t('terms')}: ${terms(o.paymentTerms)}${o.paymentTerms === 'ADVANCE' ? ` — ${money(o.advanceAmount)}` : ''}`}
           </Text>
-          <Text v="caption">{t(TERMS_HINT[o.paymentTerms], { date: o.dueDate ? formatDate(o.dueDate) : '—' })}</Text>
+          <Text v="caption">{t(TERMS_HINT[o.paymentTerms])}</Text>
           {o.allowedMethods.length > 0 && <Text v="caption">{t('methodsList', { list: o.allowedMethods.map(method).join(', ') })}</Text>}
         </View>
       )}

@@ -24,7 +24,6 @@ def amount_due(o: Any, payments: list[Any]) -> int:
         grand_total=o.grand_total,
         paid_total=o.paid_total,
         advance_amount=o.advance_amount,
-        due_date=o.due_date,
         pending_total=sum(p.amount for p in payments if p.status == "PENDING"),
     )
 
@@ -99,7 +98,7 @@ async def list_orders(db: AsyncSession, customer_id: str, q: OrderListQuery) -> 
                     "paid_total",
                     "advance_amount",
                     "payment_terms",
-                    "due_date",
+                    "allowed_methods",
                     "created_at",
                 ),
                 "preview": preview[o.id],

@@ -39,6 +39,8 @@ export interface OrderListItem {
   /** Hozir to'lanishi kerak summa (0 — to'lov kutilmaydi) */
   amountDue: number;
   paymentTerms: PaymentTerms | null;
+  /** Shu buyurtmada ruxsat etilgan to'lov usullari (naqd — ilovada to'lanmaydi) */
+  allowedMethods: PaymentMethod[];
   createdAt: string;
   /** Birinchi 3 ta tovar — kartada "nima buyurtma qilingan" */
   preview: { nameUz: string; nameRu: string; qty: string; unit: Unit }[];
@@ -75,7 +77,6 @@ export interface OrderDetail {
   paymentTerms: PaymentTerms | null;
   advanceAmount: number;
   allowedMethods: PaymentMethod[];
-  dueDate: string | null;
   deliveryDate: string | null;
   customerComment: string | null;
   cancelReason: string | null;

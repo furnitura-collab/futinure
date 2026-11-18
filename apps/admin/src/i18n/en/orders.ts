@@ -78,7 +78,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
     weight: 'Weight: {kg} kg',
     paymentTerms: 'Payment terms',
     advance: 'Advance: {amount}',
-    dueDate: 'Payment due: {date}',
     payments: 'Payments',
     recordPayment: 'Record payment',
     noPayments: 'No payments',
@@ -89,8 +88,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
     ordersCount: 'Orders: {n}',
     priceGroup: 'Group: {name}',
     balance: 'Balance',
-    creditLimit: 'Credit limit',
-    limitExceeded: 'This order exceeds the limit ({amount})',
     manager: 'Manager',
     managerAssigned: 'Manager assigned',
     action: {
@@ -136,7 +133,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
     advanceNotPaid: 'Advance not paid: required {required}, paid {paid}.',
     canOverride: 'You can proceed with a comment.',
     onlySuperAdmin: 'Only a super admin can override this.',
-    creditExceeded: 'Credit limit exceeded: limit {limit}, debt after this order {exposure}. Confirm with a comment.',
     reasonRequired: 'Reason / comment (required)',
     refundNote: 'The customer paid {amount}. The money stays on their balance — refunds are made from the customer page.',
     override: 'Proceed anyway',
@@ -144,8 +140,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
   },
   terms: {
     paymentTerms: 'Payment terms',
-    creditLimit: 'Credit limit: {amount}',
-    notOpened: '(not enabled for customer)',
     advanceAmount: 'Advance amount',
     methods: 'Payment methods',
     deliveryFee: 'Delivery fee',

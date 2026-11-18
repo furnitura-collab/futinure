@@ -5,9 +5,7 @@ Har qadamda status, qoldiq/rezerv, ledger va mijozga ko'rinadigan holat tekshiri
 
 from decimal import Decimal
 
-from sqlalchemy import update
-
-from app.models import CustomerProfile, ProductVariant
+from app.models import ProductVariant
 from tests.support import Ctx
 from tests.support_orders import API, accept, admin_order, assign_driver, cast, move, ok, place_order
 
@@ -78,20 +76,18 @@ async def test_delivery_flow_to_completed(ctx: Ctx):
 
 async def test_pickup_flow(ctx: Ctx):
     k = await cast(ctx)
-    await ctx.db.execute(
-        update(CustomerProfile).where(CustomerProfile.user_id == k.customer.user.id).values(credit_limit=5_000_000)
-    )
-    await ctx.db.commit()
     oid = (await place_order(ctx, k, [(k.c.black.id, 2)], delivery="PICKUP"))["id"]
-    await accept(ctx, k, oid, {"paymentTerms": "CREDIT", "allowedMethods": ["CASH"]})
+    await accept(ctx, k, oid, {"paymentTerms": "ON_DELIVERY", "allowedMethods": ["CASH"]})
     await move(ctx, k.warehouse_user, oid, "READY")
     # Olib ketishda haydovchi yo'q, qabul qiluvchi ismi majburiy
     await move(ctx, k.warehouse_user, oid, "OUT_FOR_DELIVERY", 403)
     await move(ctx, k.manager, oid, "OUT_FOR_DELIVERY", 409)
     await move(ctx, k.warehouse_user, oid, "DELIVERED", 422)
     await move(ctx, k.warehouse_user, oid, "DELIVERED", receiverName="Aziz")
-    detail = await admin_order(ctx, k, oid)
-    # Nasiyada topshirilgach darhol yakunlanadi, qarz ledger'da qoladi
-    assert detail["status"] == "COMPLETED"
+    # Topshirildi, lekin to'lanmagan — qarz ledger'da, yakunlanish to'lovni kutadi
+    assert (await admin_order(ctx, k, oid))["status"] == "DELIVERED"
     assert await stock(ctx, k.c.black.id) == (Decimal(4), Decimal(0))
     assert ok(await ctx.http.get(f"{API}/me/balance", headers=k.customer.auth))["balance"] == 2 * 420_000
+    body = {"customerId": k.customer.user.id, "orderId": oid, "amount": 2 * 420_000, "method": "CASH"}
+    ok(await ctx.http.post(f"{API}/admin/payments", headers=k.manager.auth, json=body), 201)
+    assert (await admin_order(ctx, k, oid))["status"] == "COMPLETED"

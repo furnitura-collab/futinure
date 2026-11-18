@@ -43,7 +43,8 @@ async def test_detail_stock_shortage_and_available_transitions(ctx: Ctx, env: En
     assert [t["to"] for t in res["availableTransitions"]] == ["PREPARING", "CANCELLED"]
     assert res["canSetTerms"] is True
     assert "quotes" not in res and "canQuote" not in res
-    assert_matches(res["customer"]["customerProfile"], {"creditLimit": 0, "balanceCached": 0})
+    assert_matches(res["customer"]["customerProfile"], {"balanceCached": 0})
+    assert "creditLimit" not in res["customer"]["customerProfile"] and "creditCheck" not in res
 
 
 # ───────────────────────── Qabul qilish (NEW → PREPARING) ─────────────────────────
@@ -107,10 +108,11 @@ async def test_warehouse_cannot_accept_new(env: Env):
     assert res.json()["error"]["code"] == "TRANSITION_FORBIDDEN_ROLE"
 
 
-async def test_credit_not_allowed_without_credit_limit(env: Env):
+async def test_credit_terms_no_longer_accepted(env: Env):
+    # Nasiya olib tashlangan: na qabul qilishda, na shartlarni saqlashda tanlab bo'lmaydi
     o = await env.place_order([(env.c.white.id, 1)])
-    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms(paymentTerms="CREDIT")}), 422)
-    assert res.json()["error"]["code"] == "CREDIT_NOT_ALLOWED"
+    expect(await env.go(o["id"], env.manager, {"to": "PREPARING", "terms": terms(paymentTerms="CREDIT")}), 422)
+    expect(await env.set_terms(o["id"], env.manager, {"terms": terms(paymentTerms="CREDIT")}), 422)
 
 
 async def test_stale_version_409(env: Env):

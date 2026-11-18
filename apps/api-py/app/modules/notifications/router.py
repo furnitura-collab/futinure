@@ -11,7 +11,7 @@ from app.auth.deps import CurrentUser
 from app.core.http import api_router
 from app.core.schemas import PageQuery, Schema, Uuid, custom_error
 from app.db import Db
-from app.modules.notifications import debt_reminders, dispatcher, service
+from app.modules.notifications import dispatcher, service
 
 router = api_router("/notifications", tags=["notifications"])
 
@@ -37,4 +37,4 @@ async def read(u: CurrentUser, body: NotificationsRead, db: Db):
     return await service.mark_read(db, u.id, None if body.all else body.ids)
 
 
-background_tasks = [dispatcher.run_forever, debt_reminders.run_hourly]
+background_tasks = [dispatcher.run_forever]

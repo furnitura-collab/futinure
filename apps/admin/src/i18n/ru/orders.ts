@@ -78,7 +78,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
     weight: 'Вес: {kg} кг',
     paymentTerms: 'Условия оплаты',
     advance: 'Аванс: {amount}',
-    dueDate: 'Срок оплаты: {date}',
     payments: 'Платежи',
     recordPayment: 'Внести оплату',
     noPayments: 'Оплат нет',
@@ -89,8 +88,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
     ordersCount: 'Заказов: {n}',
     priceGroup: 'Группа: {name}',
     balance: 'Баланс',
-    creditLimit: 'Кредитный лимит',
-    limitExceeded: 'С этим заказом лимит будет превышен ({amount})',
     manager: 'Менеджер',
     managerAssigned: 'Менеджер назначен',
     action: {
@@ -136,7 +133,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
     advanceNotPaid: 'Аванс не оплачен: нужно {required}, оплачено {paid}.',
     canOverride: 'Можно продолжить, указав комментарий.',
     onlySuperAdmin: 'Обойти может только супер-админ.',
-    creditExceeded: 'Превышен кредитный лимит: лимит {limit}, долг после заказа {exposure}. Подтвердите с комментарием.',
     reasonRequired: 'Причина / комментарий (обязательно)',
     refundNote: 'Клиент оплатил {amount}. Деньги остаются на его балансе — возврат делается со страницы клиента.',
     override: 'Всё равно продолжить',
@@ -144,8 +140,6 @@ export const orders: Pick<Dictionary, keyof typeof uzPart> = {
   },
   terms: {
     paymentTerms: 'Условия оплаты',
-    creditLimit: 'Кредитный лимит: {amount}',
-    notOpened: '(клиенту не открыт)',
     advanceAmount: 'Сумма аванса',
     methods: 'Способы оплаты',
     deliveryFee: 'Стоимость доставки',

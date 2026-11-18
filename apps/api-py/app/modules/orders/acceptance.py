@@ -37,12 +37,12 @@ def _terms_columns(order: LockedOrder, body_terms: OrderTermsInput) -> dict[str,
         delivery_fee=terms["deliveryFee"],
         discount_total=terms["discountTotal"],
     ).as_dict()
-    validate_terms(terms, totals, order.customer_profile)
+    validate_terms(terms, totals)
     return terms_data(terms, totals)
 
 
 def _check_payments(order: LockedOrder, columns: dict[str, Any], body: TransitionInput, actor: AuthUser) -> None:
-    """Yig'ishdan oldin: avans to'langanmi, nasiya limitdan oshmaydimi (yangi shartlar bo'lsa — shular bo'yicha)"""
+    """Yig'ishdan oldin: avans to'langanmi (yangi shartlar bo'lsa — shular bo'yicha)"""
     terms = columns.get("payment_terms", order.payment_terms)
     grand_total = columns.get("grand_total", order.grand_total)
     advance = columns.get("advance_amount", order.advance_amount)
@@ -52,18 +52,6 @@ def _check_payments(order: LockedOrder, columns: dict[str, Any], body: Transitio
         can_override = body.override_advance and can(actor.role, "orders.override") and has_comment
         if not can_override:
             raise AppError("ADVANCE_NOT_PAID", "Avans hali to'lanmagan", 409, {"required": required, "paid": order.paid_total})
-
-    if terms == "CREDIT":
-        profile = order.customer_profile
-        assert profile is not None
-        exposure = profile.balance_cached + grand_total
-        if exposure > profile.credit_limit and not (body.override_credit_limit and has_comment):
-            raise AppError(
-                "CREDIT_LIMIT_EXCEEDED",
-                "Mijoz kredit limitidan oshadi. Izoh bilan tasdiqlang",
-                409,
-                {"creditLimit": profile.credit_limit, "balance": profile.balance_cached, "exposure": exposure},
-            )
 
 
 async def accept(db: AsyncSession, order: LockedOrder, body: TransitionInput, actor: AuthUser, assign: dict[str, Any]) -> None:

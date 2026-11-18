@@ -38,23 +38,6 @@ async def test_advance_paid_passes_with_saved_terms(ctx: Ctx, env: Env):
     assert_matches(res.json(), {"status": "PREPARING", "paymentTerms": "ADVANCE", "advanceAmount": 1_000_000})
 
 
-async def test_credit_over_limit_requires_comment_override(ctx: Ctx, env: Env):
-    await ctx.db.execute(
-        update(CustomerProfile).where(CustomerProfile.user_id == env.customer.user.id).values(credit_limit=1_000_000)
-    )
-    await ctx.db.commit()
-    o = await env.place_order([(env.c.white.id, 12)])
-    expect(await env.set_terms(o["id"], env.manager, {"terms": terms(paymentTerms="CREDIT")}), 200)
-
-    detail = expect(await ctx.http.get(f"/api/v1/admin/orders/{o['id']}", headers=env.manager), 200)
-    assert_matches(detail.json()["creditCheck"], {"creditLimit": 1_000_000, "exposureAfter": 4_620_000, "exceeds": True})
-
-    res = expect(await env.go(o["id"], env.manager, {"to": "PREPARING"}), 409)
-    assert_matches(res.json()["error"], {"code": "CREDIT_LIMIT_EXCEEDED", "details": {"exposure": 4_620_000}})
-    override = {"to": "PREPARING", "overrideCreditLimit": True, "comment": "Direktor ruxsat berdi"}
-    expect(await env.go(o["id"], env.manager, override), 200)
-
-
 # ───────────────────────── Olib ketish oqimi (PICKUP) ─────────────────────────
 
 
@@ -87,20 +70,6 @@ async def test_pickup_handover_stock_written_off_debt_recorded_unpaid_stays_deli
     assert (e.type, e.amount, e.balance_after, e.order_id) == ("DEBIT", 4_676_000, 4_676_000, o["id"])
     profile = await ctx.get(CustomerProfile, env.customer.user.id)
     assert profile.balance_cached == 4_676_000
-
-
-async def test_credit_pickup_auto_completed_with_due_date(ctx: Ctx, env: Env):
-    await ctx.db.execute(
-        update(CustomerProfile)
-        .where(CustomerProfile.user_id == env.customer.user.id)
-        .values(credit_limit=10_000_000, payment_term_days=15)
-    )
-    await ctx.db.commit()
-    o = await ready_pickup(env, paymentTerms="CREDIT")
-    res = expect(await env.go(o["id"], env.warehouse, {"to": "DELIVERED", "receiverName": "Aziz"}), 200).json()
-    assert res["status"] == "COMPLETED"
-    assert res["dueDate"]
-    assert [h["toStatus"] for h in res["statusHistory"]][-2:] == ["DELIVERED", "COMPLETED"]
 
 
 async def test_fully_prepaid_completed_on_handover(ctx: Ctx, env: Env):

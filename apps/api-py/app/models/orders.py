@@ -87,7 +87,6 @@ class Order(Base):
     payment_terms: Mapped[str | None] = mapped_column("payment_terms", PAYMENT_TERMS)
     advance_amount: Mapped[int] = mapped_column("advance_amount", BigInteger, default=0)
     allowed_methods: Mapped[list[str]] = mapped_column("allowed_methods", ARRAY(PAYMENT_METHOD), default=list)
-    due_date: Mapped[date | None] = mapped_column("due_date", Date)
     total_weight_kg: Mapped[Decimal] = qty("total_weight_kg", default=Decimal(0))
     total_volume_m3: Mapped[Decimal] = qty("total_volume_m3", default=Decimal(0), precision=(12, 4))
     customer_comment: Mapped[str | None] = mapped_column("customer_comment", Text)

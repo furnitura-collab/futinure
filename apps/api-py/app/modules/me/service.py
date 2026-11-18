@@ -26,8 +26,6 @@ async def get_me(db: AsyncSession, user_id: str) -> dict:
             "type": p.type,
             "companyName": p.company_name,
             "inn": p.inn,
-            "creditLimit": p.credit_limit,
-            "paymentTermDays": p.payment_term_days,
             "allowedPaymentMethods": p.allowed_payment_methods,
             "balanceCached": p.balance_cached,
             "priceGroup": p.price_group and {"id": p.price_group.id, "name": p.price_group.name},

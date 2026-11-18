@@ -8,11 +8,10 @@ import { Button, Card, IconButton, Input, Screen, Segmented, SkeletonList, Text,
 import { useI18n } from '@/i18n';
 import { api, fileToForm } from '@/lib/api';
 import { useApiMutation } from '@/lib/mutation';
+import { onlineMethods, type OnlineMethod } from '@/lib/orders';
 import type { Picked } from '@/lib/pick';
 import type { Balance, OrderDetail, PaymentInfo } from '@/lib/types';
 import { space } from '@/theme';
-
-type PayMethod = 'CARD_TRANSFER' | 'BANK_TRANSFER';
 
 /**
  * To'lov haqida xabar: buyurtma uchun (?orderId=) yoki umumiy qarzga.
@@ -30,7 +29,7 @@ export default function Pay() {
   const b = balance.data;
   // Faqat ruxsat etilgan onlayn usullar (naqd — haydovchiga yoki ofisda); server boshqasini rad etadi
   const allowed = (orderId ? o?.allowedMethods : b?.allowedPaymentMethods) ?? [];
-  const methods = (['CARD_TRANSFER', 'BANK_TRANSFER'] as const).filter((m) => allowed.includes(m));
+  const methods = onlineMethods(allowed);
   // Tekshiruvdagi cheklar qoldiqdan ayriladi — server ham shunday cheklaydi
   const pending = o?.payments.reduce((s, p) => (p.status === 'PENDING' ? s + p.amount : s), 0) ?? 0;
   const due = orderId ? Math.max(0, (o?.balanceDue ?? 0) - pending) : Math.max(0, (b?.balance ?? 0) - (b?.pendingPayments ?? 0));
@@ -38,7 +37,7 @@ export default function Pay() {
   const suggested = o ? Math.min(o.amountDue, due) : due;
 
   const [amount, setAmount] = useState<string | null>(null);
-  const [picked, setPayMethod] = useState<PayMethod | null>(null);
+  const [picked, setPayMethod] = useState<OnlineMethod | null>(null);
   const payMethod = picked && methods.includes(picked) ? picked : methods[0];
   const [file, setFile] = useState<Picked | null>(null);
   const value = amount ?? (suggested ? String(suggested) : '');

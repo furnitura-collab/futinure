@@ -1,9 +1,7 @@
-from datetime import date
-
 import pytest
 from sqlalchemy import update
 
-from app.models import CustomerProfile, Order
+from app.models import CustomerProfile
 from tests.payments.helpers import Env, expect
 from tests.support import Ctx, assert_matches, user_with_token
 
@@ -36,40 +34,40 @@ async def test_manager_payment_for_other_customers_order_422(ctx: Ctx, env: Env)
     expect(await ctx.http.post("/api/v1/admin/payments", headers=env.manager, json=body), 422)
 
 
-# ───────────────────────── Nasiya: umumiy qarz, FIFO, muddati o'tgan, akt-sverka ─────────────────────────
+# ───────────────────────── Qarz: umumiy to'lov (FIFO), debitorlik, akt-sverka ─────────────────────────
 
 
 @pytest.fixture
-async def credit_env(ctx: Ctx, env: Env) -> Env:
+async def debt_env(ctx: Ctx, env: Env) -> Env:
     await ctx.db.execute(
         update(CustomerProfile)
         .where(CustomerProfile.user_id == env.customer.user.id)
-        .values(credit_limit=50_000_000, payment_term_days=10, allowed_payment_methods=["CASH", "CARD_TRANSFER"])
+        .values(allowed_payment_methods=["CASH", "CARD_TRANSFER"])
     )
     await ctx.db.commit()
     return env
 
 
-async def two_credit_orders(env: Env) -> tuple[str, str]:
-    a = await env.order([(env.c.white.id, 12)], {"paymentTerms": "CREDIT"})
+async def two_unpaid_orders(env: Env) -> tuple[str, str]:
+    """Topshirilgan, lekin to'lanmagan ikki buyurtma (topshirishda to'lash) — qarz ledger'da"""
+    a = await env.order([(env.c.white.id, 12)], {"paymentTerms": "ON_DELIVERY"})
     await env.deliver(a)
-    b = await env.order([(env.c.hinge_v.id, 2)], {"paymentTerms": "CREDIT"})
+    b = await env.order([(env.c.hinge_v.id, 2)], {"paymentTerms": "ON_DELIVERY"})
     await env.deliver(b)
     return a, b
 
 
-async def test_credit_orders_balance_and_limit(ctx: Ctx, credit_env: Env):
-    env = credit_env
-    await two_credit_orders(env)
-    res = expect(await ctx.http.get("/api/v1/me/balance", headers=env.customer.auth), 200)
-    assert_matches(
-        res.json(), {"balance": 4_648_000, "creditLimit": 50_000_000, "availableCredit": 45_352_000, "overdueAmount": 0}
-    )
+async def test_balance_without_credit_fields(ctx: Ctx, debt_env: Env):
+    await two_unpaid_orders(debt_env)
+    res = expect(await ctx.http.get("/api/v1/me/balance", headers=debt_env.customer.auth), 200).json()
+    assert_matches(res, {"balance": 4_648_000, "pendingPayments": 0})
+    # Nasiya va kredit limiti olib tashlangan
+    assert not {"creditLimit", "availableCredit", "paymentTermDays", "overdueAmount"} & set(res)
 
 
-async def test_general_debt_payment_closes_oldest_orders_fifo(ctx: Ctx, credit_env: Env):
-    env = credit_env
-    a, b = await two_credit_orders(env)
+async def test_general_debt_payment_closes_oldest_orders_fifo(ctx: Ctx, debt_env: Env):
+    env = debt_env
+    a, b = await two_unpaid_orders(env)
     too_much = await ctx.http.post(
         "/api/v1/me/payments",
         headers=env.customer.auth,
@@ -91,24 +89,26 @@ async def test_general_debt_payment_closes_oldest_orders_fifo(ctx: Ctx, credit_e
     assert (await env.profile()).balance_cached == 18_000
 
 
-async def test_overdue_debt_and_receivables_report(ctx: Ctx, credit_env: Env):
-    env = credit_env
-    _, b = await two_credit_orders(env)
-    await ctx.db.execute(update(Order).where(Order.id == b).values(due_date=date(2020, 1, 1)))
-    await ctx.db.commit()
+async def test_receivables_report_biggest_debt_first(ctx: Ctx, debt_env: Env):
+    env = debt_env
+    await two_unpaid_orders(env)
+    other = await user_with_token(ctx, "CUSTOMER")
+    o = await env.order([(env.c.hinge_v.id, 2)], {"paymentTerms": "ON_DELIVERY"}, who=other)
+    await env.deliver(o)
 
-    assert (await ctx.http.get("/api/v1/me/balance", headers=env.customer.auth)).json()["overdueAmount"] == 28_000
-    overdue = expect(await ctx.http.get("/api/v1/admin/customers?overdue=true", headers=env.manager), 200)
-    assert [u["id"] for u in overdue.json()["items"]] == [env.customer.user.id]
-
+    debtors = expect(await ctx.http.get("/api/v1/admin/customers?debtors=true", headers=env.manager), 200)
+    assert [u["id"] for u in debtors.json()["items"]] == [env.customer.user.id, other.user.id]
     rep = expect(await ctx.http.get("/api/v1/admin/reports/receivables", headers=env.manager), 200).json()
-    assert_matches(rep, {"totalReceivable": 4_648_000, "totalOverdue": 28_000})
-    assert_matches(rep["customers"][0], {"customer_id": env.customer.user.id, "overdue": 28_000})
+    assert rep["totalReceivable"] == 4_648_000 + 28_000
+    assert [(c["customer_id"], c["balance"]) for c in rep["customers"]] == [
+        (env.customer.user.id, 4_648_000),
+        (other.user.id, 28_000),
+    ]
 
 
-async def test_reconciliation_opening_plus_debit_minus_credit_equals_closing(ctx: Ctx, credit_env: Env):
-    env = credit_env
-    await two_credit_orders(env)
+async def test_reconciliation_opening_plus_debit_minus_credit_equals_closing(ctx: Ctx, debt_env: Env):
+    env = debt_env
+    await two_unpaid_orders(env)
     body = {"customerId": env.customer.user.id, "amount": 100_000, "method": "CASH"}
     expect(await ctx.http.post("/api/v1/admin/payments", headers=env.manager, json=body), 201)
     res = expect(await ctx.http.get("/api/v1/me/reconciliation", headers=env.customer.auth), 200).json()

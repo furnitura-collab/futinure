@@ -44,7 +44,7 @@ class TermsDict(TypedDict, total=False):
 
 
 class _TermsFields(Schema):
-    """To'lov va yetkazish shartlari. PREPAID / ADVANCE / ON_DELIVERY / CREDIT"""
+    """To'lov va yetkazish shartlari. PREPAID / ADVANCE / ON_DELIVERY"""
 
     payment_terms: PaymentTerms
     advance_amount: Money = 0
@@ -105,8 +105,6 @@ class TransitionInput(Schema):
     expected_version: StrictInt | None = None
     # NEW → PREPARING: shartlar hali saqlanmagan bo'lsa majburiy
     terms: OrderTermsInput | None = None
-    # Kredit limitidan oshsa ham davom etish (izoh majburiy)
-    override_credit_limit: StrictBool = False
     # Avans to'lanmagan bo'lsa ham ishlab chiqarishga berish (faqat super admin, izoh majburiy)
     override_advance: StrictBool = False
     # Olib ketishda tovarni kim qabul qildi

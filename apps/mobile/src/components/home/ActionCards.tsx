@@ -1,11 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { Button, Card, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
-import { api } from '@/lib/api';
-import { useActiveOrders } from '@/lib/orders';
-import type { Balance } from '@/lib/types';
+import { onlineMethods, payActionKey, useActiveOrders } from '@/lib/orders';
 import { space, toneColors, useTheme, type Tone } from '@/theme';
 
 interface Action {
@@ -13,8 +10,8 @@ interface Action {
   tone: Tone;
   title: string;
   text: string;
-  button: string;
-  onPress: () => void;
+  /** Yo'q bo'lsa — faqat ma'lumot (masalan, naqd to'lov) */
+  button?: { title: string; onPress: () => void };
 }
 
 /** "Sizdan kutilmoqda" — to'lov, yangi xabar. Hech narsa bo'lmasa — umuman ko'rinmaydi */
@@ -22,28 +19,18 @@ export function ActionCards({ columns = 1 }: { columns?: number }) {
   const { t, money } = useI18n();
   const { colors } = useTheme();
   const orders = useActiveOrders();
-  const balance = useQuery({ queryKey: ['balance'], queryFn: () => api<Balance>('/me/balance') });
 
   const actions: Action[] = [];
-  if (balance.data && balance.data.overdueAmount > 0) {
-    actions.push({
-      key: 'overdue',
-      tone: 'destructive',
-      title: t('actOverdueTitle', { amount: money(balance.data.overdueAmount) }),
-      text: t('actOverdueText'),
-      button: t('payNow'),
-      onPress: () => router.push('/pay'),
-    });
-  }
   for (const o of orders.data?.items ?? []) {
     if (o.amountDue > 0) {
+      // Faqat naqd bo'lsa — to'lov tugmasi yo'q, qayerda to'lanishi yoziladi
+      const online = onlineMethods(o.allowedMethods).length > 0;
       actions.push({
         key: `p${o.id}`,
         tone: 'warning',
         title: t('actPayTitle', { amount: money(o.amountDue) }),
-        text: t('actPayText', { number: o.number }),
-        button: t('payNow'),
-        onPress: () => router.push({ pathname: '/pay', params: { orderId: o.id } }),
+        text: t(payActionKey(o, online), { number: o.number }),
+        button: online ? { title: t('payNow'), onPress: () => router.push({ pathname: '/pay', params: { orderId: o.id } }) } : undefined,
       });
     }
     if (o.unreadMessages > 0) {
@@ -52,8 +39,7 @@ export function ActionCards({ columns = 1 }: { columns?: number }) {
         tone: 'info',
         title: t('actMessageTitle', { n: o.unreadMessages }),
         text: t('actMessageText', { number: o.number }),
-        button: t('openChat'),
-        onPress: () => router.push({ pathname: '/order/[id]/chat', params: { id: o.id } }),
+        button: { title: t('openChat'), onPress: () => router.push({ pathname: '/order/[id]/chat', params: { id: o.id } }) },
       });
     }
   }
@@ -75,7 +61,7 @@ export function ActionCards({ columns = 1 }: { columns?: number }) {
                 <Text bold numberOfLines={2}>{a.title}</Text>
                 <Text v="small" muted numberOfLines={2}>{a.text}</Text>
               </View>
-              <Button title={a.button} size="sm" variant={a.tone === 'info' ? 'outline' : 'primary'} onPress={a.onPress} />
+              {a.button && <Button title={a.button.title} size="sm" variant={a.tone === 'info' ? 'outline' : 'primary'} onPress={a.button.onPress} />}
             </Card>
           );
         })}

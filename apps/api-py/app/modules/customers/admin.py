@@ -7,29 +7,25 @@ HTTP yo'llari payments modulida: /admin/customers/*,
 import re
 from typing import Any
 
-from sqlalchemy import exists, func, or_, select, text
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth import tokens
 from app.auth.deps import AuthUser
-from app.auth.permissions import can
 from app.core.errors import AppError
 from app.core.serialize import row
 from app.db import transaction
-from app.domain.dates import business_date, to_date
 from app.models import CustomerProfile, Order, PriceGroup, User, utcnow
 from app.modules.customers import finance
 from app.modules.customers.admin_ledger import adjust, receivables, refund
-from app.modules.customers.credit_orders import UNPAID_CREDIT_ORDER_SQL
 from app.modules.customers.schemas import AdminCustomerListQuery, AdminCustomerUpdate
 from app.services.audit import audit
 
-__all__ = ["SUPER_ADMIN_FIELDS", "list_customers", "detail", "update", "adjust", "refund", "receivables"]
+__all__ = ["list_customers", "detail", "update", "adjust", "refund", "receivables"]
 
 
 # Faqat super admin o'zgartira oladigan maydonlar
-SUPER_ADMIN_FIELDS = (("credit_limit", "creditLimit"), ("payment_term_days", "paymentTermDays"))
 
 
 def _profile_json(p: CustomerProfile | None) -> dict[str, Any] | None:
@@ -65,16 +61,6 @@ async def list_customers(db: AsyncSession, q: AdminCustomerListQuery) -> dict[st
         conds.append(_profile_has(CustomerProfile.price_group_id == q.price_group_id))
     if q.debtors:
         conds.append(_profile_has(CustomerProfile.balance_cached > 0))
-    if q.overdue:
-        ids = (
-            await db.execute(
-                text(
-                    f"SELECT DISTINCT customer_id FROM orders WHERE {UNPAID_CREDIT_ORDER_SQL} AND due_date < CAST(:today AS date)"
-                ),
-                {"today": to_date(business_date())},
-            )
-        ).scalars()
-        conds.append(User.id.in_([str(i) for i in ids]))
 
     orders_count = select(func.count()).select_from(Order).where(Order.customer_id == User.id).scalar_subquery()
     stmt = select(User, orders_count).options(_PROFILE).where(*conds)
@@ -137,7 +123,6 @@ async def detail(db: AsyncSession, customer_id: str) -> dict[str, Any]:
                 "grandTotal": o.grand_total,
                 "paidTotal": o.paid_total,
                 "createdAt": o.created_at,
-                "dueDate": o.due_date,
             }
             for o in recent
         ],
@@ -146,14 +131,9 @@ async def detail(db: AsyncSession, customer_id: str) -> dict[str, Any]:
 
 async def update(db: AsyncSession, customer_id: str, body: AdminCustomerUpdate, actor: AuthUser) -> dict[str, Any]:
     """
-    Mijozni tahrirlash. creditLimit/paymentTermDays — faqat SUPER_ADMIN (aks holda 403).
-    isActive=false — barcha sessiyalar yopiladi. Javob: detail().
+    Mijozni tahrirlash. isActive=false — barcha sessiyalar yopiladi. Javob: detail().
     """
     fields = body.model_fields_set
-    if not can(actor.role, "customers.credit"):
-        forbidden = [camel for f, camel in SUPER_ADMIN_FIELDS if f in fields and getattr(body, f) is not None]
-        if forbidden:
-            raise AppError.forbidden(f"Faqat super admin: {', '.join(forbidden)}")
     user = await db.scalar(
         select(User).options(selectinload(User.customer_profile)).where(User.id == customer_id, User.role == "CUSTOMER")
     )
@@ -178,8 +158,6 @@ async def update(db: AsyncSession, customer_id: str, body: AdminCustomerUpdate, 
             "company_name",
             "inn",
             "price_group_id",
-            "credit_limit",
-            "payment_term_days",
             "allowed_payment_methods",
         ):
             if f in fields:

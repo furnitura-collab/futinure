@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { CUSTOMER_TYPES, formatDateTime, PAYMENT_METHODS, type CustomerType, type PaymentMethod } from '@mebel/shared';
 import { ChipGroup } from '@/components/ChipGroup';
 import { FormField } from '@/components/FormField';
-import { MoneyInput } from '@/components/MoneyInput';
 import { OptionSelect } from '@/components/OptionSelect';
 import { SectionCard } from '@/components/SectionCard';
 import { SwitchField } from '@/components/SwitchField';
@@ -12,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LOCALE_NAMES, useI18n } from '@/i18n';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 import { usePriceGroups } from '@/lib/catalog';
 import { useApiMutation } from '@/lib/mutation';
 import type { CustomerDetail } from '@/lib/types';
@@ -21,8 +19,7 @@ import { cn } from '@/lib/utils';
 const isCustomerType = (v: string): v is CustomerType => (CUSTOMER_TYPES as readonly string[]).includes(v);
 
 export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
-  const { t, money, label } = useI18n();
-  const { can } = useAuth();
+  const { t, label } = useI18n();
   const groups = usePriceGroups();
   const p = c.customerProfile;
   const [fullName, setFullName] = useState(c.fullName ?? '');
@@ -30,11 +27,8 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
   const [companyName, setCompanyName] = useState(p?.companyName ?? '');
   const [inn, setInn] = useState(p?.inn ?? '');
   const [priceGroupId, setPriceGroupId] = useState(p?.priceGroupId ?? '');
-  const [creditLimit, setCreditLimit] = useState(p?.creditLimit ?? 0);
-  const [termDays, setTermDays] = useState(String(p?.paymentTermDays ?? 0));
   const [methods, setMethods] = useState<PaymentMethod[]>(p?.allowedPaymentMethods ?? ['CASH']);
   const [isActive, setIsActive] = useState(c.isActive);
-  const admin = can('customers.credit');
 
   const body = {
     fullName: fullName.trim() || undefined,
@@ -44,7 +38,6 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
     priceGroupId: priceGroupId || null,
     allowedPaymentMethods: methods,
     isActive,
-    ...(admin && { creditLimit, paymentTermDays: Number(termDays) || 0 }),
   };
   // Boshlang'ich holat bilan solishtiriladi — o'zgarish bo'lmasa saqlash tugmasi o'chiq
   const [initial] = useState(() => JSON.stringify(body));
@@ -93,14 +86,6 @@ export function ProfileCard({ customer: c }: { customer: CustomerDetail }) {
           </FormField>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
-        <FormField label={t('customer.creditLimit')} hint={admin ? undefined : t('customer.onlySuperAdmin')}>
-          {(f) => (admin ? <MoneyInput {...f} value={creditLimit} onChange={setCreditLimit} /> : <Input {...f} disabled value={money(creditLimit)} />)}
-        </FormField>
-        <FormField label={t('customer.termDays')}>
-          {(f) => <Input {...f} disabled={!admin} inputMode="numeric" value={termDays} onChange={(e) => setTermDays(e.target.value.replace(/\D/g, ''))} />}
-        </FormField>
-      </div>
       <div className="grid gap-1.5">
         <Label>{t('customer.allowedMethods')}</Label>
         <ChipGroup

@@ -40,7 +40,7 @@ def _user_pick(u: Any, *fields: str) -> dict[str, Any] | None:
 def _profile_json(profile: Any, price_group: Any, finance: bool) -> dict[str, Any]:
     out = row(profile, priceGroup=price_group)
     if not finance:
-        out.update(balanceCached=None, creditLimit=None)
+        out.update(balanceCached=None)
     return out
 
 
@@ -48,7 +48,7 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any, *, scoped: bool =
     """
     viewer — `.role` atributi bor obyekt. scoped — ko'rish so'rovi: rol ko'rmaydigan status 404
     (amal javobida emas: omborchi topshirgan buyurtma yakunlanib, uning doirasidan chiqadi).
-    Moliya (to'lovlar, mijoz balansi va krediti) — faqat `orders.finance` ruxsati bilan.
+    Moliya (to'lovlar, mijoz balansi) — faqat `orders.finance` ruxsati bilan.
     """
     await db.flush()
     order = (await db.scalars(select(Order).where(Order.id == order_id).execution_options(populate_existing=True))).first()
@@ -142,17 +142,6 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any, *, scoped: bool =
             }
         return row(i, stock=stock)
 
-    credit_check = None
-    if profile and finance:
-        credit_check = {
-            "creditLimit": profile.credit_limit,
-            "balance": profile.balance_cached,
-            "exposureAfter": profile.balance_cached + (0 if terminal or order.status == "DELIVERED" else order.grand_total),
-            "exceeds": order.payment_terms == "CREDIT"
-            and not terminal
-            and profile.balance_cached + order.grand_total > profile.credit_limit,
-        }
-
     def actor_json(actor_id: str | None) -> dict[str, Any] | None:
         a = users.get(actor_id) if actor_id else None
         return {"id": a.id, "fullName": a.full_name, "role": a.role} if a else None
@@ -173,7 +162,6 @@ async def detail(db: AsyncSession, order_id: str, viewer: Any, *, scoped: bool =
         "payments": [row(p) for p in payments] if finance else [],
         "delivery": row(delivery, driver=_user_pick(driver, "id", "fullName", "phone")) if delivery else None,
         "balanceDue": order.grand_total - order.paid_total,
-        "creditCheck": credit_check,
         "availableTransitions": [
             {"to": t.to, "requiresComment": t.requires_comment}
             for t in available_transitions(order.status, viewer.role, order.delivery_type)

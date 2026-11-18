@@ -63,7 +63,7 @@ export const orders: Pick<Dict, keyof typeof uzPart> = {
   termsHintPREPAID: 'Сборка начнётся после полной оплаты.',
   termsHintADVANCE: 'Сначала аванс, остальное — при получении.',
   termsHintON_DELIVERY: 'Оплатите при получении товара.',
-  termsHintCREDIT: 'Оплатите позже — срок: {date}.',
+  termsHintCREDIT: 'Товар получен — оплатите оставшийся долг.',
   buyAgainShort: 'Заказать снова',
   toPayNow: 'К оплате',
   payNow: 'Оплатить',

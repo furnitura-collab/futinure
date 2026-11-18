@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { formatDate } from '@mebel/shared';
 import { Button, Card, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
-import { orderAction, statusSentenceKey } from '@/lib/orders';
+import { onlineMethods, orderAction, statusSentenceKey } from '@/lib/orders';
 import type { OrderDetail } from '@/lib/types';
 import { space, useTheme } from '@/theme';
 import { OrderStepper } from './OrderStepper';
@@ -26,7 +26,8 @@ export function OrderHeaderCard({ o }: { o: OrderDetail }) {
             <Text v="small" muted>{t('toPayNow')}</Text>
             <Text v="title" style={{ fontVariant: ['tabular-nums'] }}>{money(o.amountDue)}</Text>
           </View>
-          <Button title={t('payNow')} block onPress={() => router.push({ pathname: '/pay', params: { orderId: o.id } })} />
+          {/* Faqat naqd bo'lsa — tugma yo'q, haydovchiga yoki ofisda to'lanadi */}
+          {onlineMethods(o.allowedMethods).length > 0 && <Button title={t('payNow')} block onPress={() => router.push({ pathname: '/pay', params: { orderId: o.id } })} />}
         </View>
       )}
     </Card>

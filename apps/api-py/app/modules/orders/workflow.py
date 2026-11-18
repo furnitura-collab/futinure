@@ -24,7 +24,6 @@ from app.auth.deps import AuthUser
 from app.auth.permissions import can
 from app.core.errors import AppError
 from app.db import transaction
-from app.domain.dates import add_days, business_date, to_date
 from app.models import Delivery, Order, utcnow
 from app.modules.orders import acceptance, inventory
 from app.modules.orders.lock import LockedOrder, lock_order
@@ -102,12 +101,7 @@ async def _deliver(db: AsyncSession, order: LockedOrder, body: TransitionInput, 
         raise AppError("RECEIVER_REQUIRED", "Tovarni kim olib ketganini kiriting", 422)
     parts = [f"Qabul qildi: {body.receiver_name}" if body.receiver_name else None, body.comment]
     comment = ". ".join(p for p in parts if p) or None
-    term_days = order.customer_profile.payment_term_days if order.customer_profile else 0
-    data = dict(assign)
-    if order.payment_terms == "CREDIT":
-        data["due_date"] = to_date(add_days(business_date(), term_days))
-
-    await transition(db, order, "DELIVERED", actor, comment=comment, data=data)
+    await transition(db, order, "DELIVERED", actor, comment=comment, data=dict(assign))
     if pickup:
         await inventory.ship(db, order.id, actor.id)
     else:
@@ -151,14 +145,11 @@ async def complete_if_settled(db: AsyncSession, order_id: str) -> None:
                 Order.delivery_type,
                 Order.paid_total,
                 Order.grand_total,
-                Order.payment_terms,
             ).where(Order.id == order_id)
         )
     ).one()
     if o.status != "DELIVERED":
         return
-    settled = o.paid_total >= o.grand_total or o.payment_terms == "CREDIT"
-    if not settled:
+    if o.paid_total < o.grand_total:
         return
-    comment = "Nasiyaga o'tdi" if o.payment_terms == "CREDIT" and o.paid_total < o.grand_total else "To'liq to'landi"
-    await transition(db, _Target(o.id, o.status, o.version, o.delivery_type), "COMPLETED", None, comment=comment)
+    await transition(db, _Target(o.id, o.status, o.version, o.delivery_type), "COMPLETED", None, comment="To'liq to'landi")

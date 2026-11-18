@@ -64,8 +64,8 @@ function CustomerView({ customer: c }: { customer: CustomerDetail }) {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4 xl:col-span-2">
-          {/* Telefonda 2×2, raqamlar kichikroq — uzun summa kartaga sig'adi */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+          {/* Raqamlar telefonda kichikroq — uzun summa kartaga sig'adi */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <StatCard
               label={t('customer.balance')}
               value={<span className="max-sm:text-base">{money(Math.abs(f.balance))}</span>}
@@ -73,12 +73,6 @@ function CustomerView({ customer: c }: { customer: CustomerDetail }) {
               tone={f.balance > 0 ? 'warning' : 'success'}
               emphasize={f.balance !== 0}
             />
-            <StatCard
-              label={t('customer.creditLimit')}
-              value={<span className="max-sm:text-base">{money(f.creditLimit)}</span>}
-              hint={f.creditLimit > 0 ? t('customer.available', { amount: money(f.availableCredit) }) : undefined}
-            />
-            <StatCard label={t('customer.overdue')} value={<span className="max-sm:text-base">{money(f.overdueAmount)}</span>} tone="destructive" emphasize={f.overdueAmount > 0} />
             <StatCard label={t('customer.turnover')} value={<span className="max-sm:text-base">{money(c.stats.turnover)}</span>} hint={t('order.ordersCount', { n: c.stats.orders })} />
           </div>
 

@@ -35,7 +35,6 @@ xodim mijoz ilovasida — "Mebel Xodim / admin paneldan kiring".
 | `prices.manage` — narx guruhlari, ommaviy narx o'zgartirish | | | | | ✓ |
 | `stock.manage` — qoldiq, kirim, inventarizatsiya | | | ✓ | ✓ | ✓ |
 | `customers.manage` — mijozlar, akt-sverka, debitorlik | | | | ✓ | ✓ |
-| `customers.credit` — kredit limiti va to'lov muddati | | | | | ✓ |
 | `staff.manage` — xodimlar | | | | | ✓ |
 
 ¹ Omborchi faqat **qabul qilingan** buyurtmalarni ko'radi (Yig'ilmoqda, Tayyor, Yo'lda); yangi, yakunlangan va bekor

@@ -76,8 +76,6 @@ export const adminCustomerListQuerySchema = paginationSchema.extend({
   priceGroupId: uuidSchema.optional(),
   /** Faqat qarzdorlar (balans > 0) */
   debtors: boolQuery.optional(),
-  /** Faqat muddati o'tgan qarzi borlar */
-  overdue: boolQuery.optional(),
 });
 export type AdminCustomerListQuery = z.infer<typeof adminCustomerListQuerySchema>;
 
@@ -92,8 +90,6 @@ export const adminCustomerUpdateSchema = z
       .regex(/^\d{9}$/, 'INVALID_INN')
       .nullable(),
     priceGroupId: uuidSchema.nullable(),
-    creditLimit: moneySchema,
-    paymentTermDays: z.number().int().min(0).max(365),
     allowedPaymentMethods: z
       .array(z.enum(PAYMENT_METHODS))
       .min(1)

@@ -86,7 +86,6 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
   discountTotal: number;
   advanceAmount: number;
   allowedMethods: PaymentMethod[];
-  dueDate: string | null;
   deliveryDate: string | null;
   vehicleType: string | null;
   customerComment: string | null;
@@ -100,9 +99,7 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
       companyName: string | null;
       inn: string | null;
       // null — moliya ruxsati yo'q (omborchi)
-      creditLimit: number | null;
       balanceCached: number | null;
-      paymentTermDays: number;
       allowedPaymentMethods: PaymentMethod[];
       priceGroup: { id: string; name: string } | null;
     } | null;
@@ -119,7 +116,6 @@ export interface OrderDetail extends Omit<OrderCard, 'itemsCount' | 'unreadMessa
   }[];
   payments: PaymentRow[];
   delivery: DeliveryInfo | null;
-  creditCheck: { creditLimit: number; balance: number; exposureAfter: number; exceeds: boolean } | null;
   availableTransitions: { to: OrderStatus; requiresComment: boolean }[];
   /** Shartlarni faqat yangi (qabul qilinmagan) buyurtmada saqlash mumkin */
   canSetTerms: boolean;

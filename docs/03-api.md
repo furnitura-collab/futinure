@@ -172,7 +172,7 @@ To'liq sxema: `/api/docs` (OpenAPI, zod sxemalardan generatsiya).
 ## Haydovchi (`/driver/*`, rol: DRIVER)
 | Metod | Yo'l | Izoh |
 |---|---|---|
-Haydovchi faqat o'ziga biriktirilgan buyurtmani ko'radi va o'zgartiradi (boshqasi — 404; `/admin/orders/:id/transition` uchun ham). Narxlar ko'rsatilmaydi — faqat `toCollect` (nasiyada 0).
+Haydovchi faqat o'ziga biriktirilgan buyurtmani ko'radi va o'zgartiradi (boshqasi — 404; `/admin/orders/:id/transition` uchun ham). Narxlar ko'rsatilmaydi — faqat `toCollect` (to'lanmagan qism).
 
 | Metod | Yo'l | Izoh |
 |---|---|---|
@@ -209,7 +209,7 @@ Ko'p server nusxasi uchun Redis adapter. Event nomlari: `@mebel/shared` → `RT`
 
 **Yetkazish kafolati:** hodisalar o'zgarish bilan bir tranzaksiyada `outbox_events` ga yoziladi, dispatcher (500 ms) tarqatadi. Xato bo'lsa — eksponensial qayta urinish (8 marta). Bildirishnoma `(event_id, user_id)` bo'yicha bir marta.
 
-**Mijozga push** (Expo): to'lov kutilmoqda (oldindan to'lov shartlari), qabul qilindi, tayyor / olib ketishga tayyor, yo'lda, topshirildi, bekor qilindi, to'lov qabul qilindi/rad etildi, menejer xabari, nasiya eslatmasi (2 kun oldin, muddat kuni, keyin har 3 kunda). Matn foydalanuvchi tilida (uz/ru).
+**Mijozga push** (Expo): to'lov kutilmoqda (oldindan to'lov shartlari), qabul qilindi, tayyor / olib ketishga tayyor, yo'lda, topshirildi, bekor qilindi, to'lov qabul qilindi/rad etildi, menejer xabari. Matn foydalanuvchi tilida (uz/ru).
 
 **Telegram (xodimlar guruhi):** yangi buyurtma, yangi chek, mijoz bekor qildi.
 

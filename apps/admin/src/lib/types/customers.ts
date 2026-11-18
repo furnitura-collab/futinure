@@ -13,8 +13,6 @@ export interface CustomerProfile {
   inn: string | null;
   priceGroupId: string | null;
   priceGroup: { id: string; name: string } | null;
-  creditLimit: number;
-  paymentTermDays: number;
   allowedPaymentMethods: PaymentMethod[];
   balanceCached: number;
 }
@@ -32,10 +30,6 @@ export interface CustomerRow {
 
 export interface CustomerFinance {
   balance: number;
-  creditLimit: number;
-  availableCredit: number;
-  paymentTermDays: number;
-  overdueAmount: number;
   pendingPayments: number;
   allowedPaymentMethods: PaymentMethod[];
 }
@@ -45,7 +39,7 @@ export interface CustomerDetail extends Omit<CustomerRow, '_count'> {
   addresses: { id: string; label: string | null; addressText: string }[];
   finance: CustomerFinance;
   stats: { orders: number; turnover: number };
-  recentOrders: { id: string; number: string; status: OrderStatus; grandTotal: number; paidTotal: number; createdAt: string; dueDate: string | null }[];
+  recentOrders: { id: string; number: string; status: OrderStatus; grandTotal: number; paidTotal: number; createdAt: string }[];
 }
 
 export interface LedgerEntry {
@@ -70,16 +64,12 @@ export interface Reconciliation {
 
 export interface Receivables {
   totalReceivable: number;
-  totalOverdue: number;
   customers: {
     customer_id: string;
     full_name: string | null;
     phone: string;
     company_name: string | null;
     balance: number;
-    credit_limit: number;
-    overdue: number;
-    oldest_due: string | null;
   }[];
 }
 

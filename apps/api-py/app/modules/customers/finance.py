@@ -1,19 +1,18 @@
 """
-Mijoz moliyasi: balans, daftar, akt-sverka, muddati o'tgan qarz.
+Mijoz moliyasi: balans, daftar, akt-sverka.
 HTTP yo'llari payments modulida: /me/balance, /me/ledger, /me/reconciliation, /admin/customers/:id/ledger|reconciliation.
 """
 
 from typing import Any
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.errors import AppError
 from app.core.serialize import row
-from app.domain.dates import business_date, day_start, next_day_start, to_date
+from app.domain.dates import business_date, day_start, next_day_start
 from app.models import CustomerProfile, LedgerEntry, Payment, User
-from app.modules.customers.credit_orders import UNPAID_CREDIT_ORDER_SQL
 from app.modules.customers.schemas import LedgerQuery, PeriodQuery
 
 
@@ -25,7 +24,6 @@ async def balance(db: AsyncSession, customer_id: str) -> dict[str, Any]:
     profile = await db.get(CustomerProfile, customer_id)
     if not profile:
         raise AppError.not_found("Mijoz")
-    overdue = await overdue_amount(db, customer_id)
     pending = await db.scalar(
         select(func.sum(Payment.amount)).where(Payment.customer_id == customer_id, Payment.status == "PENDING")
     )
@@ -33,25 +31,9 @@ async def balance(db: AsyncSession, customer_id: str) -> dict[str, Any]:
     return {
         # Musbat — mijoz qarzdor, manfiy — haqdor
         "balance": bal,
-        "creditLimit": profile.credit_limit,
-        "availableCredit": profile.credit_limit - bal if profile.credit_limit > bal else 0,
-        "paymentTermDays": profile.payment_term_days,
-        "overdueAmount": overdue,
         "pendingPayments": int(pending or 0),
         "allowedPaymentMethods": profile.allowed_payment_methods,
     }
-
-
-async def overdue_amount(db: AsyncSession, customer_id: str) -> int:
-    """Nasiya muddati o'tgan, to'lanmagan qism (buyurtmalar bo'yicha)"""
-    total = await db.scalar(
-        text(
-            "SELECT SUM(grand_total - paid_total)::bigint AS sum FROM orders "
-            f"WHERE customer_id = CAST(:id AS uuid) AND {UNPAID_CREDIT_ORDER_SQL} AND due_date < CAST(:today AS date)"
-        ),
-        {"id": customer_id, "today": to_date(business_date())},
-    )
-    return int(total or 0)
 
 
 def _ledger_json(e: LedgerEntry) -> dict[str, Any]:

@@ -75,8 +75,6 @@ erDiagram
 | type | enum | `INDIVIDUAL`, `MASTER` (usta), `COMPANY` |
 | company_name, inn, bank_details (jsonb) | | yuridik shaxs uchun |
 | price_group_id | FK null | null bo'lsa chakana narx |
-| credit_limit | bigint | 0 = nasiya yo'q |
-| payment_term_days | int | nasiya muddati, masalan 15 |
 | allowed_payment_methods | enum[] | admin belgilaydi |
 | balance_cached | bigint | ledger yig'indisi (tez o'qish uchun, tranzaksiyada yangilanadi). Musbat = mijoz qarzdor |
 
@@ -176,7 +174,6 @@ Narx tanlash qoidasi (bitta joyda, `PricingService`): mijoz guruhi narxi, pog'on
 | paid_total | bigint | tasdiqlangan to'lovlar yig'indisi |
 | payment_terms | enum | `PREPAID`, `ADVANCE`, `ON_DELIVERY`, `CREDIT` |
 | advance_amount | bigint | ADVANCE uchun |
-| due_date | date null | CREDIT uchun |
 | total_weight_kg, total_volume_m3 | numeric | |
 | customer_comment | text | |
 | idempotency_key | varchar | UNIQUE(customer_id, idempotency_key) |

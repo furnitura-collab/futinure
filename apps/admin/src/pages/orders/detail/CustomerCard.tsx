@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth';
 import type { OrderDetail } from '@/lib/types';
 
 export function CustomerCard({ order }: { order: OrderDetail }) {
-  const { t, money } = useI18n();
+  const { t } = useI18n();
   const { can } = useAuth();
   const c = order.customer;
   const p = c.customerProfile;
@@ -40,13 +40,9 @@ export function CustomerCard({ order }: { order: OrderDetail }) {
             className="text-xs"
             rows={[
               { label: t('order.balance'), value: <BalanceText value={p.balanceCached} /> },
-              { label: t('order.creditLimit'), value: money(p.creditLimit ?? 0) },
             ]}
           />
         </Inset>
-      )}
-      {order.creditCheck?.exceeds && (
-        <p className="pt-1 text-xs font-medium text-destructive">{t('order.limitExceeded', { amount: money(order.creditCheck.exposureAfter) })}</p>
       )}
     </SectionCard>
   );

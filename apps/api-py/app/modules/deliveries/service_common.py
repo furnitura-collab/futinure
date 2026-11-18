@@ -91,7 +91,7 @@ async def _present(db: AsyncSession, rows: list[Delivery]) -> list[dict[str, Any
                     },
                     itemsCount=counts.get(o.id, 0),
                     # Nasiyada pul olinmaydi; qolgan holatda — to'lanmagan qoldiq
-                    toCollect=0 if o.payment_terms == "CREDIT" or due < 0 else due,
+                    toCollect=max(due, 0),
                 ),
             )
         )

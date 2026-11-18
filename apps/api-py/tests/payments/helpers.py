@@ -51,7 +51,7 @@ class Env:
         return await self.ctx.http.post(f"/api/v1/admin/orders/{order_id}/transition", headers=auth or self.manager, json=body)
 
     async def deliver(self, order_id: str) -> httpx.Response:
-        expect(await self.go(order_id, {"to": "PREPARING", "overrideCreditLimit": True, "comment": "test"}), 200)
+        expect(await self.go(order_id, {"to": "PREPARING"}), 200)
         expect(await self.go(order_id, {"to": "READY"}), 200)
         return expect(await self.go(order_id, {"to": "DELIVERED", "receiverName": "Aziz"}), 200)
 

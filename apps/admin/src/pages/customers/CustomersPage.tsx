@@ -20,13 +20,13 @@ import { useDebounced } from '@/lib/hooks';
 import type { CustomerRow, Paginated } from '@/lib/types';
 import { CustomerTags } from './CustomerTags';
 
-const DEBTS = ['all', 'debtors', 'overdue'] as const;
+const DEBTS = ['all', 'debtors'] as const;
 type Debt = (typeof DEBTS)[number];
 const isDebt = (v: string | null): v is Debt => DEBTS.includes(v as Debt);
 
-/** Mijozlar: qidiruv, qarz va narx guruhi filtrlari (URL'da), balans va limit */
+/** Mijozlar: qidiruv, qarz va narx guruhi filtrlari (URL'da), balans */
 export function CustomersPage() {
-  const { t, money } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const groups = usePriceGroups();
   const [params, setParams] = useSearchParams();
@@ -48,7 +48,6 @@ export function CustomersPage() {
     q: query.length >= 2 ? query : undefined,
     priceGroupId: group === 'all' ? undefined : group,
     debtors: debt === 'debtors' || undefined,
-    overdue: debt === 'overdue' || undefined,
   };
   const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['customers', filters, page],
@@ -96,16 +95,6 @@ export function CustomersPage() {
       hideBelow: 'sm',
       sortValue: (c) => c.customerProfile?.balanceCached ?? 0,
       cell: (c) => <span className="whitespace-nowrap tabular">{balance(c)}</span>,
-    },
-    {
-      id: 'limit',
-      header: t('customers.limit'),
-      align: 'right',
-      hideBelow: 'lg',
-      sortValue: (c) => c.customerProfile?.creditLimit ?? 0,
-      cell: (c) => (
-        <span className="whitespace-nowrap text-muted-foreground tabular">{c.customerProfile?.creditLimit ? money(c.customerProfile.creditLimit) : '—'}</span>
-      ),
     },
     {
       id: 'orders',
@@ -168,7 +157,6 @@ export function CustomersPage() {
                   options={[
                     { value: 'all', label: t('customers.debtAll') },
                     { value: 'debtors', label: t('customers.debtors') },
-                    { value: 'overdue', label: t('customers.overdue') },
                   ]}
                 />
               ),

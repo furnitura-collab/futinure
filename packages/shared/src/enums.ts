@@ -46,6 +46,8 @@ export type DeliveryType = (typeof DELIVERY_TYPES)[number];
 
 export const PAYMENT_TERMS = values('PREPAID', 'ADVANCE', 'ON_DELIVERY', 'CREDIT');
 export type PaymentTerms = (typeof PAYMENT_TERMS)[number];
+/** Yangi buyurtmaga tanlanadigan shartlar — nasiya (CREDIT) olib tashlangan, faqat eski buyurtmalarda qoladi */
+export const ORDER_PAYMENT_TERMS = ['PREPAID', 'ADVANCE', 'ON_DELIVERY'] as const satisfies readonly PaymentTerms[];
 
 export const PAYMENT_METHODS = values('CASH', 'CARD_TRANSFER', 'CLICK', 'PAYME', 'BANK_TRANSFER');
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];

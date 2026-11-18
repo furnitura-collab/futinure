@@ -75,8 +75,6 @@ async def seed(db: AsyncSession) -> dict[str, int]:
     profile = await db.get(CustomerProfile, aziz.id)
     assert profile is not None
     profile.price_group_id = usta.id
-    profile.credit_limit = 10_000_000
-    profile.payment_term_days = 15
     profile.allowed_payment_methods = ["CASH", "CARD_TRANSFER", "BANK_TRANSFER"]
 
     category_ids: dict[str, str] = {}

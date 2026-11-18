@@ -26,7 +26,7 @@ export function RecentOrders({ orders }: { orders: CustomerDetail['recentOrders'
                 </span>
                 <span className="text-right font-medium tabular">{money(o.grandTotal)}</span>
                 <span className="col-span-3 text-xs text-muted-foreground sm:col-span-1 sm:text-right">
-                  {o.dueDate ? t('customer.due', { date: formatDate(o.dueDate) }) : formatDate(o.createdAt)}
+                  {formatDate(o.createdAt)}
                 </span>
               </Link>
             </li>

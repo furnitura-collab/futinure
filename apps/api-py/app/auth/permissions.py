@@ -30,7 +30,6 @@ PERMISSIONS: dict[str, tuple[str, ...]] = {
     "prices.manage": ("SUPER_ADMIN",),
     "stock.manage": ("WAREHOUSE", *MANAGERS),
     "customers.manage": MANAGERS,
-    "customers.credit": ("SUPER_ADMIN",),
     "staff.manage": ("SUPER_ADMIN",),
 }
 

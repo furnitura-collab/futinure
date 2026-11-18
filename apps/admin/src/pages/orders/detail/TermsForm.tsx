@@ -1,4 +1,4 @@
-import { PAYMENT_METHODS, PAYMENT_TERMS, type PaymentMethod, type PaymentTerms } from '@mebel/shared';
+import { ORDER_PAYMENT_TERMS, PAYMENT_METHODS, type PaymentMethod, type PaymentTerms } from '@mebel/shared';
 import { ChipGroup } from '@/components/ChipGroup';
 import { FormField } from '@/components/FormField';
 import { MoneyInput } from '@/components/MoneyInput';
@@ -18,7 +18,7 @@ export interface TermsValue {
   deliveryDate: string;
 }
 
-const isTerms = (v: string): v is PaymentTerms => (PAYMENT_TERMS as readonly string[]).includes(v);
+const isTerms = (v: string): v is PaymentTerms => (ORDER_PAYMENT_TERMS as readonly string[]).includes(v);
 
 export function defaultTerms(order: OrderDetail): TermsValue {
   const profile = order.customer.customerProfile;
@@ -69,24 +69,19 @@ export function TermsForm({
 }) {
   const { t, money, label } = useI18n();
   const set = <K extends keyof TermsValue>(k: K, v: TermsValue[K]) => onChange({ ...value, [k]: v });
-  const credit = order.customer.customerProfile?.creditLimit ?? 0;
   const itemsTotal = activeItemsTotal(order);
   const grand = termsGrandTotal(order, value);
 
   return (
     <div className="grid gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={t('terms.paymentTerms')} hint={value.paymentTerms === 'CREDIT' ? t('terms.creditLimit', { amount: money(credit) }) : undefined}>
+        <FormField label={t('terms.paymentTerms')}>
           {(f) => (
             <OptionSelect
               {...f}
               value={value.paymentTerms}
               onValueChange={(v) => isTerms(v) && set('paymentTerms', v)}
-              options={PAYMENT_TERMS.map((pt) => ({
-                value: pt,
-                disabled: pt === 'CREDIT' && credit <= 0,
-                label: pt === 'CREDIT' && credit <= 0 ? `${label('paymentTerms', pt)} ${t('terms.notOpened')}` : label('paymentTerms', pt),
-              }))}
+              options={ORDER_PAYMENT_TERMS.map((pt) => ({ value: pt, label: label('paymentTerms', pt) }))}
             />
           )}
         </FormField>

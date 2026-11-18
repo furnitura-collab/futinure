@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_TERMS } from '../enums.js';
+import { ORDER_PAYMENT_TERMS, ORDER_STATUSES, PAYMENT_METHODS } from '../enums.js';
 import { moneySchema, paginationSchema, uuidSchema } from './common.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'INVALID_DATE');
@@ -9,7 +9,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'INVALID_DATE');
  * PREPAID — to'liq oldindan, ADVANCE — avans, ON_DELIVERY — topshirishda, CREDIT — nasiya.
  */
 const termsShape = {
-  paymentTerms: z.enum(PAYMENT_TERMS),
+  paymentTerms: z.enum(ORDER_PAYMENT_TERMS),
   advanceAmount: moneySchema.default(0),
   allowedMethods: z
     .array(z.enum(PAYMENT_METHODS))
@@ -45,8 +45,6 @@ export const transitionSchema = z.object({
   expectedVersion: z.number().int().optional(),
   /** NEW → PREPARING: shartlar hali saqlanmagan bo'lsa majburiy */
   terms: orderTermsSchema.optional(),
-  /** Kredit limitidan oshsa ham davom etish (izoh majburiy) */
-  overrideCreditLimit: z.boolean().default(false),
   /** Avans to'lanmagan bo'lsa ham ishlab chiqarishga berish (faqat super admin, izoh majburiy) */
   overrideAdvance: z.boolean().default(false),
   /** Olib ketishda tovarni kim qabul qildi */

@@ -1,9 +1,9 @@
 from decimal import Decimal
 from types import SimpleNamespace
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 
-from app.models import CustomerProfile, Delivery, LedgerEntry, Notification, Order, OrderStatusHistory, Payment
+from app.models import Delivery, LedgerEntry, Notification, Order, OrderStatusHistory, Payment
 from app.modules.notifications import dispatcher
 from tests.deliveries.helpers import DUE, assign, driver_api, go, order, proof, ready, stock
 from tests.support import assert_matches
@@ -167,17 +167,3 @@ async def test_delivery_failed_returns_to_warehouse_notifies_and_reassignable(s:
     again = await assign(s, id, {"driverId": s.driver.user.id, "scheduledDate": "2026-11-11"})
     assert again.status_code == 200
     assert_matches(again.json()["delivery"], {"status": "ASSIGNED", "scheduledDate": "2026-11-11T00:00:00.000Z"})
-
-
-async def test_credit_collects_nothing(s: SimpleNamespace):
-    ctx = s.ctx
-    await ctx.db.execute(
-        update(CustomerProfile).where(CustomerProfile.user_id == s.customer.user.id).values(credit_limit=5_000_000)
-    )
-    await ctx.db.commit()
-    id = await order(s, {"paymentTerms": "CREDIT"})
-    assert (await assign(s, id, {"driverId": s.driver.user.id})).status_code == 200
-    res = await ctx.http.get(f"/api/v1/driver/deliveries/{id}", headers=s.driver.auth)
-    assert res.status_code == 200
-    assert res.json()["order"]["toCollect"] == 0
-    assert len(res.json()["order"]["items"]) == 1

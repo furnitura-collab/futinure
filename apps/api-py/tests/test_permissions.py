@@ -63,7 +63,7 @@ async def test_warehouse_sees_only_accepted_orders_without_finance(ctx: Ctx):
     assert (await ctx.http.get(f"{API}/admin/orders/{new}", headers=wh)).status_code == 404
 
     detail = ok(await ctx.http.get(f"{API}/admin/orders/{taken}", headers=wh))
-    assert detail["payments"] == [] and detail["creditCheck"] is None and detail["canSetTerms"] is False
+    assert detail["payments"] == [] and detail["canSetTerms"] is False
     assert detail["customer"]["customerProfile"]["balanceCached"] is None
     assert [t["to"] for t in detail["availableTransitions"]] == ["READY"]
     # Menejer moliyani ko'radi

@@ -116,4 +116,3 @@ async def test_warehouse_accept_forbidden_before_terms_and_payment_checks(env: E
     o = await env.place_order([(env.c.white.id, 1)])
     unpaid = {"to": "PREPARING", "terms": terms(paymentTerms="ADVANCE", advanceAmount=1_000_000)}
     expect(await env.go(o["id"], env.warehouse, unpaid), 403)
-    expect(await env.go(o["id"], env.warehouse, {"to": "PREPARING", "terms": terms(paymentTerms="CREDIT")}), 403)

@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { Button, Card, Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import type { Balance } from '@/lib/types';
-import { space, useTheme } from '@/theme';
+import { space } from '@/theme';
 
 /**
  * Pul holati oddiy so'zlar bilan (buxgalteriya atamalarisiz):
@@ -12,7 +12,6 @@ import { space, useTheme } from '@/theme';
  */
 export function BalanceCard({ b, history = true, children }: { b: Balance; history?: boolean; children?: ReactNode }) {
   const { t, money } = useI18n();
-  const { colors } = useTheme();
   const debt = b.balance > 0;
 
   return (
@@ -22,16 +21,8 @@ export function BalanceCard({ b, history = true, children }: { b: Balance; histo
         <Text v="display" tone={debt ? 'destructive' : 'success'} style={{ fontVariant: ['tabular-nums'] }}>
           {b.balance === 0 ? t('noDebt') : money(Math.abs(b.balance))}
         </Text>
-        {b.overdueAmount > 0 && <Text v="small" bold tone="destructive">{t('overdueLine', { amount: money(b.overdueAmount) })}</Text>}
         {b.pendingPayments > 0 && <Text v="small" muted>{t('pendingPayments', { amount: money(b.pendingPayments) })}</Text>}
       </View>
-      {b.creditLimit > 0 && (
-        <View style={{ gap: 2, paddingTop: space(3), borderTopWidth: 1, borderTopColor: colors.border }}>
-          <Text v="small" bold>{t('creditLimitLine', { amount: money(b.creditLimit) })}</Text>
-          <Text v="caption">{t('creditAvailable', { amount: money(Math.max(0, b.availableCredit)) })}</Text>
-          <Text v="caption">{t('creditLimitHint')}</Text>
-        </View>
-      )}
       {children}
       {history && <Button title={t('paymentsHistory')} variant="ghost" size="sm" style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} onPress={() => router.push('/balance')} />}
     </Card>

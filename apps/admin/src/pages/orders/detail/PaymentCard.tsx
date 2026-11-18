@@ -1,4 +1,4 @@
-import { formatDate, formatDateTime } from '@mebel/shared';
+import { formatDateTime } from '@mebel/shared';
 import { Hint } from '@/components/IconButton';
 import { Inset } from '@/components/Inset';
 import { SectionCard } from '@/components/SectionCard';
@@ -30,7 +30,6 @@ export function PaymentCard({ order, onRecord }: { order: OrderDetail; onRecord?
             {terms === 'ADVANCE' && <span className="font-normal text-muted-foreground"> · {t('order.advance', { amount: money(order.advanceAmount) })}</span>}
           </p>
           <p className="text-muted-foreground">{order.allowedMethods.map((m) => label('paymentMethod', m)).join(', ')}</p>
-          {order.dueDate && <p>{t('order.dueDate', { date: formatDate(order.dueDate) })}</p>}
         </Inset>
       )}
       {order.payments.length === 0 ? (

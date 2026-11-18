@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { DeliveryType, OrderStatus } from '@mebel/shared';
+import type { DeliveryType, OrderStatus, PaymentMethod } from '@mebel/shared';
 import type { I18nKey } from '@/i18n';
 import { api } from './api';
 import type { OrderListItem, Paginated } from './types';
@@ -32,6 +32,26 @@ export function statusSentenceKey(status: OrderStatus, deliveryType: DeliveryTyp
   if (amountDue > 0 && status === 'NEW') return 'sayNEW_PAY';
   if (status === 'READY') return deliveryType === 'PICKUP' ? 'sayREADY_PICKUP' : 'sayREADY_DELIVERY';
   return `say${status}` as const;
+}
+
+/** Ilovada to'lanadigan (onlayn) usullar — naqd haydovchiga yoki ofisda beriladi */
+export type OnlineMethod = 'CARD_TRANSFER' | 'BANK_TRANSFER';
+
+export function onlineMethods(allowed: readonly PaymentMethod[]): OnlineMethod[] {
+  return (['CARD_TRANSFER', 'BANK_TRANSFER'] as const).filter((m) => allowed.includes(m));
+}
+
+type PayCardOrder = { status: OrderStatus; deliveryType: DeliveryType };
+
+/** "Sizdan kutilmoqda" kartasidagi jumla — holat va to'lov usuliga mos */
+export function payActionKey(o: PayCardOrder, online: boolean): I18nKey {
+  const handedOver = o.status === 'DELIVERED' || o.status === 'COMPLETED';
+  const atDriver = o.status === 'OUT_FOR_DELIVERY' || (o.status === 'READY' && o.deliveryType !== 'PICKUP');
+  if (!online) return atDriver ? 'actCashDriver' : 'actCashOffice';
+  if (handedOver) return 'actPayDebt';
+  if (o.status === 'OUT_FOR_DELIVERY') return 'actPayOnTheWay';
+  if (o.status === 'READY') return o.deliveryType === 'PICKUP' ? 'actPayReadyPickup' : 'actPayReadyDelivery';
+  return 'actPayText';
 }
 
 /** 3-bosqich nomi yetkazish turiga bog'liq: "Yo'lda" yoki "Olib ketishga tayyor" */
