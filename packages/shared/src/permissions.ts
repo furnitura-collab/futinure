@@ -1,7 +1,8 @@
 import type { Role } from './enums.js';
 
 /**
- * Rollar ruxsatlari — yagona manba (docs/15-roles-permissions-prompt.md).
+ * Rollar ruxsatlari — standart jadval (docs/15-roles-permissions-prompt.md). Super admin uni admin panelda o'zgartiradi;
+ * joriy ruxsatlar serverdan keladi (`/me` → permissions), bu jadval — zaxira.
  * Server nusxasi: apps/api-py/app/auth/permissions.py (tests/test_unit.py solishtiradi).
  * Holat o'tishlari alohida — order-state-machine.ts.
  */
@@ -24,6 +25,15 @@ export const PERMISSIONS = {
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;
+
+export const PERMISSION_KEYS = Object.keys(PERMISSIONS) as Permission[];
+
+/** Super admin o'zgartira oladigan rollar (super admin — doim hammasi; mijoz/haydovchi admin panelga kirmaydi) */
+export const EDITABLE_ROLES = ['MANAGER', 'WAREHOUSE'] as const satisfies readonly Role[];
+export type EditableRole = (typeof EDITABLE_ROLES)[number];
+
+/** Boshqa rolga berilmaydi: xodimlarni boshqargan menejer o'zini super admin qilib qo'yishi mumkin */
+export const SUPER_ADMIN_ONLY: readonly Permission[] = ['staff.manage'];
 
 export const hasPermission = (role: Role | null | undefined, p: Permission): boolean =>
   !!role && (PERMISSIONS[p] as readonly Role[]).includes(role);

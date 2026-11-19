@@ -2,7 +2,7 @@
  * API javoblarining admin ishlatadigan qismi.
  * Pul — number (so'm), miqdor — string ("12.5"), sana — ISO string.
  */
-import type { Locale, Role } from '@mebel/shared';
+import type { Locale, Permission, Role } from '@mebel/shared';
 
 export type { Paginated } from '@mebel/shared';
 export type * from './orders';
@@ -15,4 +15,6 @@ export interface Me {
   fullName: string | null;
   role: Role;
   locale: Locale;
+  /** Joriy ruxsatlar (super admin rollarga belgilagan) — menyu va tugmalar shundan */
+  permissions?: Permission[];
 }

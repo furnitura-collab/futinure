@@ -11,6 +11,7 @@ export const PAGES = {
   customer: () => import('@/pages/customers/CustomerDetailPage').then((m) => m.CustomerDetailPage),
   receivables: () => import('@/pages/reports/ReceivablesPage').then((m) => m.ReceivablesPage),
   staff: () => import('@/pages/staff/StaffPage').then((m) => m.StaffPage),
+  roles: () => import('@/pages/staff/RolesPage').then((m) => m.RolesPage),
 } as const;
 
 export type PageKey = keyof typeof PAGES;

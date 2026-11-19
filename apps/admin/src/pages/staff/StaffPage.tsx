@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { formatDateTime, formatPhone, type Role } from '@mebel/shared';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -107,6 +108,9 @@ export function StaffPage() {
   return (
     <div>
       <PageHeader title={t('staff.title')} description={t('staff.subtitle')}>
+        <Button variant="outline" asChild>
+          <Link to="/staff/roles">{t('access.open')}</Link>
+        </Button>
         <Button onClick={() => setEditing('new')}>
           {t('staff.add')}
         </Button>

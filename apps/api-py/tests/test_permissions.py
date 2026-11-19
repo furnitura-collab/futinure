@@ -12,13 +12,24 @@ from pathlib import Path
 
 import pytest
 
+from app.auth.permissions import PERMISSIONS
 from tests.support import Ctx, user_with_token
 from tests.support_orders import API, accept, admin_order, cast, move, ok, place_order
 from tests.support_routes import route_roles
 
 SNAPSHOT = Path(__file__).with_name("route_roles.txt")
 ROLES = ("CUSTOMER", "DRIVER", "WAREHOUSE", "MANAGER", "SUPER_ADMIN")
-GUARDED = [(m, p, r.split(",")) for m, p, r in route_roles() if r not in ("PUBLIC", "ANY_AUTH")]
+
+
+def _allowed(rule: str) -> list[str]:
+    """Standart jadval bo'yicha: "perm:orders.view+DRIVER" → ruxsat egalari + qo'shimcha rollar"""
+    if not rule.startswith("perm:"):
+        return rule.split(",")
+    permission, *also = rule.removeprefix("perm:").split("+")
+    return [*PERMISSIONS[permission], *also]
+
+
+GUARDED = [(m, p, _allowed(r)) for m, p, r in route_roles() if r not in ("PUBLIC", "ANY_AUTH")]
 
 
 def test_route_roles_match_snapshot():

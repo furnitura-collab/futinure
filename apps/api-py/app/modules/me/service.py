@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.auth.permissions import granted, refresh
 from app.core.errors import AppError
 from app.models import CustomerProfile, User
 
@@ -14,12 +15,15 @@ async def get_me(db: AsyncSession, user_id: str) -> dict:
     )
     if not user:
         raise AppError.not_found("Foydalanuvchi")
+    await refresh()
     p = user.customer_profile
     return {
         "id": user.id,
         "phone": user.phone,
         "fullName": user.full_name,
         "role": user.role,
+        # Admin panel menyu va tugmalarni shundan chizadi (super admin rollarga belgilagan ruxsatlar)
+        "permissions": granted(user.role),
         "locale": user.locale,
         "customerProfile": p
         and {

@@ -9,7 +9,7 @@ from typing import Any
 import socketio
 from sqlalchemy import func, select
 
-from app.auth.permissions import can
+from app.auth.permissions import can, refresh
 from app.auth.tokens import AccessPayload, decode_access
 from app.config import get_settings
 from app.db import standalone_session
@@ -105,6 +105,7 @@ def _register(server: socketio.AsyncServer) -> None:
             raise socketio.exceptions.ConnectionRefusedError({"code": "UNAUTHORIZED"})
         await server.save_session(sid, {"userId": payload.sub, "role": payload.role}, namespace=NS)
         await server.enter_room(sid, room_user(payload.sub), namespace=NS)
+        await refresh()
         if can(payload.role, "orders.manage"):
             await server.enter_room(sid, ROOM_STAFF, namespace=NS)
         if can(payload.role, "orders.view"):

@@ -43,6 +43,17 @@ qilinganlar — menejer ishi. Buyurtma sahifasida unga moliya (to'lovlar, mijoz 
 Holat o'tishlari alohida — `docs/02-state-machine.md` (kim qaysi statusdan qaysiga). Ruxsat "sahifani ko'radi",
 state machine "qaysi tugma" ni hal qiladi; tugmalar server bergan `availableTransitions` dan chiziladi.
 
+## Super admin ruxsatlarni belgilaydi
+
+Yuqoridagi jadval — **standart**. Super admin uni **Xodimlar → Rollar va ruxsatlar** (`/staff/roles`) sahifasida
+o'zgartiradi; saqlanadi `settings.role_permissions` ga (`GET/PUT /api/v1/admin/access/roles`, audit yoziladi).
+- Tahrirlanadigan rollar: menejer, omborchi. Super admin — doim hammasi (o'zini bloklab qo'ymasin).
+- `staff.manage` boshqa rolga berilmaydi (aks holda menejer o'zini super admin qilib qo'yadi).
+- Server har so'rovda joriy jadvalni ishlatadi (xotira keshi, saqlanganda darhol; boshqa server nusxasida — 30 s ichida).
+- Admin menyu va tugmalarni `/me` → `permissions` dan chizadi; snapshot (`tests/route_roles.txt`) endpointda ruxsat nomini
+  ko'rsatadi (`perm:orders.view`), rollar ro'yxatini emas.
+- Omborchining buyurtma doirasi (`WAREHOUSE_ORDER_STATUSES`) — rolga bog'liq, jadvalda emas.
+
 ## Topilgan muammolar (tekshiruv natijasi)
 
 1. **Omborchi buyurtmalarni ko'rmaydi:** menyuda "Buyurtmalar" bor, lekin `GET /admin/orders`, `/kanban`, `/{id}` —

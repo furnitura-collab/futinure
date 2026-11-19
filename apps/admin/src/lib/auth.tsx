@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading: hasTokens && meQuery.isPending,
       login,
       logout,
-      can: (p) => hasPermission(me?.role, p),
+      // Server bergan ro'yxat; eski server javobida yo'q bo'lsa — standart jadval
+      can: (p) => (me?.permissions ? me.permissions.includes(p) : hasPermission(me?.role, p)),
     }),
     [me, hasTokens, meQuery.isPending, login, logout],
   );

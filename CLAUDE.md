@@ -14,7 +14,8 @@
 - Baza uzoqda (har so'rov yuzlab ms) — so'rovlar sonini kamaytir; ochiq katalog Redis keshida (`app/core/cache.py`),
   admin o'zgarishi keshni avtomatik yangilaydi. Har javobda `Server-Timing` (SQL soni va vaqti) bor.
 - **Ruxsatlar — rol emas, ruxsat nomi** (`orders.view`, `catalog.edit`…): yagona manba `packages/shared/src/permissions.ts`
-  ↔ `apps/api-py/app/auth/permissions.py` (testda solishtiriladi). Backend: `u: Can("orders.view")`; admin: `can('orders.manage')`.
+  ↔ `apps/api-py/app/auth/permissions.py` (testda solishtiriladi) — bu **standart**; super admin `/staff/roles` da o'zgartiradi
+  (`settings.role_permissions`). Backend: `u: Can("orders.view")`; admin: `can('orders.manage')` (`/me` → permissions).
   Yangi endpoint yoki rol o'zgarsa `tests/route_roles.txt` testi yiqiladi — ataylab bo'lsa `uv run python -m tests.support_routes`.
   Matritsa: `docs/15-roles-permissions-prompt.md`. Shared o'zgarsa — `pnpm --filter @mebel/shared build`.
 

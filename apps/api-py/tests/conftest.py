@@ -34,6 +34,7 @@ import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from app import db as db_mod  # noqa: E402
+from app.auth import permissions  # noqa: E402
 from app.core.redis import redis  # noqa: E402
 from app.main import app as asgi_app  # noqa: E402
 from app.services.senders import override_senders  # noqa: E402
@@ -85,6 +86,7 @@ async def ctx(_http: httpx.AsyncClient, _fakes: tuple[FakeSms, FakePush, FakeTel
         await session.execute(text(f"TRUNCATE {', '.join(f'"{t}"' for t in tables)} RESTART IDENTITY CASCADE"))
         await session.commit()
     await redis().flushdb()
+    permissions.reset()
     sms.sent.clear()
     push.sent.clear()
     push.invalid.clear()

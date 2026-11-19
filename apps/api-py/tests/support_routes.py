@@ -19,6 +19,7 @@ def _walk(routes: list[Any], prefix: str = "") -> Iterator[tuple[str, APIRoute]]
 
 
 def _roles(route: APIRoute) -> str:
+    """ "perm:<ruxsat>[+ROL…]" (super admin o'zgartiradigan), qat'iy rollar ro'yxati, ANY_AUTH yoki PUBLIC"""
     roles: set[str] = set()
     auth = False
     stack = [route.dependant]
@@ -26,6 +27,8 @@ def _roles(route: APIRoute) -> str:
         d = stack.pop()
         name = getattr(d.call, "__name__", "")
         auth = auth or name == "current_user"
+        if permission := getattr(d.call, "permission", None):
+            return "+".join([f"perm:{permission}", *d.call.also])
         for cell in (d.call.__closure__ or ()) if name == "dep" else ():
             if isinstance(cell.cell_contents, tuple):
                 roles.update(cell.cell_contents)
@@ -35,7 +38,7 @@ def _roles(route: APIRoute) -> str:
 
 
 def route_roles() -> list[tuple[str, str, str]]:
-    """[(METHOD, /yo'l, ROLLAR | ANY_AUTH | PUBLIC)] — saralangan"""
+    """[(METHOD, /yo'l, perm:… | ROLLAR | ANY_AUTH | PUBLIC)] — saralangan"""
     out = [(m, path.removeprefix(PREFIX), _roles(r)) for path, r in _walk(fastapi_app.routes) for m in r.methods - {"HEAD"}]
     return sorted(out, key=lambda x: (x[1], x[0]))
 

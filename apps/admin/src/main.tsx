@@ -84,6 +84,7 @@ const router = createBrowserRouter(
         { path: 'customers/:id', element: guard('customers.manage', page('customer')) },
         { path: 'reports/receivables', element: guard('customers.manage', page('receivables')) },
         { path: 'staff', element: guard('staff.manage', page('staff')) },
+        { path: 'staff/roles', element: guard('staff.manage', page('roles')) },
         { path: '*', element: <NotFound /> },
       ],
     },
